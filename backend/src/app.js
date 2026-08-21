@@ -18,6 +18,9 @@ import { errorHandler } from './middleware/errorHandler.js'
 
 const app = express()
 
+// Atrás do proxy da Vercel/Render — necessário para req.ip e o rate-limit
+app.set('trust proxy', 1)
+
 // Security headers
 app.use(helmet())
 
@@ -97,9 +100,13 @@ app.use(errorHandler)
 
 const PORT = process.env.PORT || 3001
 
-app.listen(PORT, () => {
-  console.log(`[SIGAuto] Servidor iniciado na porta ${PORT} (${process.env.NODE_ENV || 'development'})`)
-  console.log(`[SIGAuto] API disponível em http://localhost:${PORT}/api/v1`)
-})
+// Na Vercel o app é importado como função serverless (sem servidor persistente).
+// Localmente e em hosts tradicionais (Render), sobe o servidor normalmente.
+if (!process.env.VERCEL) {
+  app.listen(PORT, () => {
+    console.log(`[SIGAuto] Servidor iniciado na porta ${PORT} (${process.env.NODE_ENV || 'development'})`)
+    console.log(`[SIGAuto] API disponível em http://localhost:${PORT}/api/v1`)
+  })
+}
 
 export default app
