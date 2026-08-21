@@ -39,6 +39,9 @@ Adapte suas respostas ao nível de acesso do usuário.${contexto ? `\n\nDADOS AT
     role: m.remetente === 'usuario' ? 'user' : 'model',
     parts: [{ text: m.conteudo }]
   }))
+  // O Gemini exige que o histórico comece com uma mensagem 'user'.
+  // Remove qualquer mensagem 'model' (assistente) do início da janela.
+  while (chatHistory.length && chatHistory[0].role !== 'user') chatHistory.shift()
 
   const chat = model.startChat({ history: chatHistory })
   const result = await comRetry(() => chat.sendMessage(pergunta))
