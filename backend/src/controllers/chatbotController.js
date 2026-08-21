@@ -1,6 +1,70 @@
 import { supabase } from '../services/supabaseClient.js'
 import { responderChatbot } from '../services/claudeService.js'
 
+// Coleta e pré-agrega os dados da oficina para o chatbot responder perguntas
+// analíticas (ranking de clientes, ticket médio, faturamento, estoque em alerta).
+// Roda com service role (ignora RLS) — dados sempre visíveis ao assistente.
+async function montarContextoOficina() {
+  try {
+    const [clientesRes, veiculosRes, osRes, estoqueRes, servicosRes] = await Promise.all([
+      supabase.from('cliente').select('id, nome').eq('ativo', true),
+      supabase.from('veiculo').select('id, id_cliente').eq('ativo', true),
+      supabase.from('ordem_servico').select('id_veiculo, valor_total, status, data_abertura'),
+      supabase.from('item_estoque').select('nome, quantidade, qtd_minima').eq('ativo', true),
+      supabase.from('servico_catalogo').select('nome, preco').eq('ativo', true),
+    ])
+
+    const clientes = clientesRes.data || []
+    const veiculos = veiculosRes.data || []
+    const ordens = osRes.data || []
+    const estoque = estoqueRes.data || []
+    const servicos = servicosRes.data || []
+
+    const veiculoParaCliente = Object.fromEntries(veiculos.map(v => [v.id, v.id_cliente]))
+    const nomePorCliente = Object.fromEntries(clientes.map(c => [c.id, c.nome]))
+
+    // Agrega OS por cliente (via veículo)
+    const agg = {}
+    for (const os of ordens) {
+      const cid = veiculoParaCliente[os.id_veiculo]
+      if (!cid) continue
+      if (!agg[cid]) agg[cid] = { nome: nomePorCliente[cid] || 'Desconhecido', qtd_os: 0, total_gasto: 0 }
+      agg[cid].qtd_os += 1
+      agg[cid].total_gasto += Number(os.valor_total || 0)
+    }
+
+    const rankingClientes = Object.values(agg)
+      .map(c => ({
+        nome: c.nome,
+        qtd_os: c.qtd_os,
+        total_gasto: +c.total_gasto.toFixed(2),
+        ticket_medio: c.qtd_os ? +(c.total_gasto / c.qtd_os).toFixed(2) : 0,
+      }))
+      .sort((a, b) => b.qtd_os - a.qtd_os || b.total_gasto - a.total_gasto)
+      .slice(0, 50)
+
+    const faturamentoTotal = ordens.reduce((s, o) => s + Number(o.valor_total || 0), 0)
+
+    return {
+      totais: {
+        clientes: clientes.length,
+        veiculos: veiculos.length,
+        ordens_servico: ordens.length,
+        faturamento_total: +faturamentoTotal.toFixed(2),
+        ticket_medio_geral: ordens.length ? +(faturamentoTotal / ordens.length).toFixed(2) : 0,
+      },
+      ranking_clientes: rankingClientes,
+      estoque_em_alerta: estoque
+        .filter(i => i.quantidade <= i.qtd_minima)
+        .map(i => ({ nome: i.nome, quantidade: i.quantidade, qtd_minima: i.qtd_minima })),
+      servicos_catalogo: servicos.slice(0, 50),
+    }
+  } catch (err) {
+    console.error('[Chatbot] Falha ao montar contexto da oficina:', err.message)
+    return null
+  }
+}
+
 export async function mensagem(req, res, next) {
   try {
     const { pergunta } = req.body
@@ -15,28 +79,31 @@ export async function mensagem(req, res, next) {
 
     const { data: historico } = await supabase
       .from('mensagem_chatbot')
-      .select('papel, conteudo')
+      .select('remetente, conteudo')
       .eq('id_usuario', req.user.id)
       .order('criado_em', { ascending: false })
       .limit(10)
 
     const historicoOrdenado = (historico || []).reverse()
 
+    const contexto = await montarContextoOficina()
+
     const resposta = await responderChatbot(
       pergunta.trim(),
       req.user.perfil,
-      historicoOrdenado
+      historicoOrdenado,
+      contexto
     )
 
     await supabase.from('mensagem_chatbot').insert([
       {
         id_usuario: req.user.id,
-        papel: 'usuario',
+        remetente: 'usuario',
         conteudo: pergunta.trim()
       },
       {
         id_usuario: req.user.id,
-        papel: 'assistente',
+        remetente: 'chatbot',
         conteudo: resposta
       }
     ])

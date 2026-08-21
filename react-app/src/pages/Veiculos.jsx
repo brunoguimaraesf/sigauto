@@ -118,7 +118,7 @@ export function Veiculos() {
     <div className="dashboard-grid">
       <section className="welcome-section stagger-1" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <h2>Garagem & Frota</h2>
+          <h2>Veículos</h2>
           <p>Gerenciamento completo dos veiculos cadastrados no sistema.</p>
         </div>
         <button className="btn-primary" onClick={handleOpenAdd} style={{ borderRadius: 'var(--radius-sm)', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
@@ -164,7 +164,7 @@ export function Veiculos() {
                   return (
                     <tr key={v.id}>
                       <td style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-sm)', background: 'rgba(255, 77, 0, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--neon-orange)' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-sm)', background: 'rgba(232, 89, 12, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--neon-orange)' }}>
                           <CarFront size={18} />
                         </div>
                         <div>

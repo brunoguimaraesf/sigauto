@@ -6,7 +6,7 @@ export async function exportarOSPDF(os, veiculo, cliente) {
   const { default: autoTable } = await import('jspdf-autotable')
 
   const doc = new jsPDF()
-  const laranja = [255, 77, 0]
+  const laranja = [232, 89, 12]
   const cinzaEscuro = [20, 20, 25]
   const cinzaTexto = [138, 139, 148]
 
@@ -135,7 +135,7 @@ export async function exportarRelatorioPDF(titulo, colunas, linhas, periodo) {
   const { default: autoTable } = await import('jspdf-autotable')
 
   const doc = new jsPDF({ orientation: linhas.length > 10 ? 'landscape' : 'portrait' })
-  const laranja = [255, 77, 0]
+  const laranja = [232, 89, 12]
   const cinzaEscuro = [20, 20, 25]
 
   doc.setFillColor(...cinzaEscuro)

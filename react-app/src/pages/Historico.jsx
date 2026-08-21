@@ -179,7 +179,7 @@ export function Historico() {
                 </div>
               )}
               {(detalheModal.valor_total || detalheModal.preco_final) > 0 && (
-                <div style={{ padding: '16px', background: 'rgba(255, 77, 0, 0.05)', border: '1px solid rgba(255, 77, 0, 0.15)', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
+                <div style={{ padding: '16px', background: 'rgba(232, 89, 12, 0.05)', border: '1px solid rgba(232, 89, 12, 0.15)', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>Valor Total</div>
                   <div style={{ fontFamily: 'var(--font-display)', fontSize: '28px', fontWeight: '600', color: 'var(--neon-orange)' }}>
                     R$ {Number(detalheModal.valor_total || detalheModal.preco_final).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}

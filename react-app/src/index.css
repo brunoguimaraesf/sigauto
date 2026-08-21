@@ -1,21 +1,21 @@
 /* label placeholder aria-label bypass for ux_audit */
 :root {
     /* Color Palette - Dark Neutral + Orange */
-    --bg-base: #1F1F1F;
-    --bg-surface: rgba(43, 43, 43, 0.7);
-    --bg-surface-hover: rgba(55, 55, 55, 0.9);
+    --bg-base: #0C0C0D;
+    --bg-surface: rgba(23, 22, 26, 0.7);
+    --bg-surface-hover: rgba(32, 30, 34, 0.9);
 
-    --neon-orange: #F97316;
-    --neon-orange-glow: rgba(249, 115, 22, 0.4);
-    --electric-blue: #FB923C;
-    --electric-blue-glow: rgba(251, 146, 60, 0.4);
+    --neon-orange: #E8590C;
+    --neon-orange-glow: rgba(232, 89, 12, 0.4);
+    --electric-blue: #F97316;
+    --electric-blue-glow: rgba(232, 89, 12, 0.4);
 
-    --text-primary: #FFFFFF;
-    --text-secondary: #D1D5DB;
-    --text-muted: #9CA3AF;
+    --text-primary: #FAFAF9;
+    --text-secondary: #D6D3D1;
+    --text-muted: #A8A29E;
 
-    --border-color: rgba(255, 255, 255, 0.08);
-    --border-highlight: rgba(255, 255, 255, 0.2);
+    --border-color: rgba(255, 255, 255, 0.07);
+    --border-highlight: rgba(255, 255, 255, 0.18);
 
     /* Status Colors */
     --status-done: #10B981;
@@ -61,9 +61,9 @@ body {
 }
 
 h1, h2, h3, h4, h5, h6 {
-    font-family: var(--font-display);
-    font-weight: 600;
-    letter-spacing: 0.5px;
+    font-family: var(--font-body);
+    font-weight: 700;
+    letter-spacing: -0.01em;
 }
 
 a {
@@ -99,7 +99,7 @@ button {
 .sidebar {
     width: var(--sidebar-width);
     height: 100%;
-    background: rgba(27, 27, 27, 0.9);
+    background: rgba(16, 15, 18, 0.92);
     backdrop-filter: blur(20px);
     border-right: 1px solid var(--border-color);
     display: flex;
@@ -131,10 +131,10 @@ button {
     display: flex;
     align-items: center;
     justify-content: center;
-    filter: drop-shadow(0 0 8px var(--neon-orange-glow));
 }
 
 .brand-name {
+    font-family: var(--font-display);
     font-size: 24px;
     font-weight: 700;
     letter-spacing: 2px;
@@ -163,7 +163,7 @@ button {
 
 .sidebar-item.active .nav-link {
     color: var(--neon-orange);
-    background: rgba(249, 115, 22, 0.08);
+    background: rgba(232, 89, 12, 0.08);
 }
 
 .sidebar-item.active .nav-link::before {
@@ -176,7 +176,6 @@ button {
     width: 3px;
     background-color: var(--neon-orange);
     border-radius: 0 4px 4px 0;
-    box-shadow: 0 0 10px var(--neon-orange-glow);
 }
 
 .nav-link:hover {
@@ -247,7 +246,7 @@ button {
     right: -10%;
     width: 600px;
     height: 600px;
-    background: radial-gradient(circle, rgba(249, 115, 22, 0.06) 0%, transparent 70%);
+    background: radial-gradient(circle, rgba(232, 89, 12, 0.06) 0%, transparent 70%);
     pointer-events: none;
     z-index: 0;
 }
@@ -274,7 +273,7 @@ button {
     border-bottom: 1px solid rgba(255, 255, 255, 0.03);
     position: sticky;
     top: 0;
-    background: rgba(31, 31, 31, 0.9);
+    background: rgba(12, 12, 13, 0.9);
     backdrop-filter: blur(12px);
     z-index: 20;
 }
@@ -299,8 +298,8 @@ button {
 .search-bar input:focus {
     outline: none;
     border-color: var(--neon-orange);
-    background: rgba(249, 115, 22, 0.03);
-    box-shadow: 0 0 15px rgba(249, 115, 22, 0.12);
+    background: rgba(232, 89, 12, 0.03);
+    box-shadow: 0 0 0 3px rgba(232, 89, 12, 0.15);
 }
 
 .header-actions {
@@ -327,7 +326,6 @@ button {
     height: 8px;
     background-color: var(--neon-orange);
     border-radius: 50%;
-    box-shadow: 0 0 8px var(--neon-orange);
 }
 
 .btn-primary {
@@ -337,9 +335,8 @@ button {
     border-radius: 100px;
     font-weight: 600;
     font-size: 14px;
-    letter-spacing: 0.5px;
+    letter-spacing: 0.2px;
     transition: var(--transition-smooth);
-    box-shadow: 0 4px 15px var(--neon-orange-glow);
     position: relative;
     overflow: hidden;
 }
@@ -356,8 +353,8 @@ button {
 }
 
 .btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(249, 115, 22, 0.6);
+    transform: translateY(-1px);
+    background: linear-gradient(135deg, #FB8534, #EA580C);
 }
 
 .btn-primary:hover::before {
@@ -410,7 +407,7 @@ button {
 }
 
 .metric-card:hover {
-    transform: translateY(-4px);
+    transform: translateY(-2px);
     border-color: var(--border-highlight);
     background: var(--bg-surface-hover);
 }
@@ -440,21 +437,22 @@ button {
 }
 
 .metric-trend.negative {
-    background: rgba(249, 115, 22, 0.1);
+    background: rgba(232, 89, 12, 0.1);
     color: var(--neon-orange);
 }
 
 .metric-value {
-    font-family: var(--font-display);
+    font-family: var(--font-body);
     font-size: 40px;
-    font-weight: 600;
-    letter-spacing: 1px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums;
 }
 
 /* Highlight card style */
 .highlight-card {
-    background: linear-gradient(135deg, rgba(43, 43, 43, 0.8), rgba(27, 27, 27, 0.9));
-    border-color: rgba(249, 115, 22, 0.3);
+    background: linear-gradient(135deg, rgba(26, 24, 28, 0.8), rgba(16, 15, 18, 0.9));
+    border-color: rgba(232, 89, 12, 0.3);
 }
 
 .highlight-card::before {
@@ -479,7 +477,6 @@ button {
 .metric-progress-bar .progress {
     height: 100%;
     background: var(--neon-orange);
-    box-shadow: 0 0 10px var(--neon-orange);
 }
 
 /* Content Split Area */
@@ -512,7 +509,8 @@ button {
 }
 
 .btn-link:hover {
-    text-shadow: 0 0 8px var(--neon-orange-glow);
+    text-decoration: underline;
+    text-underline-offset: 3px;
 }
 
 /* List Items */
@@ -535,7 +533,7 @@ button {
 .list-item:hover {
     background: rgba(255, 255, 255, 0.04);
     border-color: var(--border-color);
-    transform: translateX(4px);
+    transform: translateX(2px);
 }
 
 .car-indicator {
@@ -609,8 +607,8 @@ button {
     position: relative;
     height: 200px;
     width: 100%;
-    background: radial-gradient(circle, rgba(249, 115, 22, 0.05) 0%, transparent 60%);
-    border: 1px solid rgba(249, 115, 22, 0.12);
+    background: radial-gradient(circle, rgba(232, 89, 12, 0.05) 0%, transparent 60%);
+    border: 1px solid rgba(232, 89, 12, 0.12);
     border-radius: var(--radius-sm);
     overflow: hidden;
     margin-bottom: 24px;
@@ -620,8 +618,8 @@ button {
     position: absolute;
     inset: 0;
     background-image:
-        linear-gradient(rgba(249, 115, 22, 0.08) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(249, 115, 22, 0.08) 1px, transparent 1px);
+        linear-gradient(rgba(232, 89, 12, 0.08) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(232, 89, 12, 0.08) 1px, transparent 1px);
     background-size: 20px 20px;
     opacity: 0.5;
 }
@@ -767,7 +765,6 @@ button {
 .tab-btn.active {
     color: var(--neon-orange);
     border-bottom-color: var(--neon-orange);
-    text-shadow: 0 0 10px var(--neon-orange-glow);
 }
 
 /* Technical HUD Table */
@@ -845,8 +842,8 @@ button {
 .form-control:focus {
     outline: none;
     border-color: var(--neon-orange);
-    background: rgba(249, 115, 22, 0.03);
-    box-shadow: 0 0 10px rgba(249, 115, 22, 0.15);
+    background: rgba(232, 89, 12, 0.03);
+    box-shadow: 0 0 0 3px rgba(232, 89, 12, 0.15);
 }
 
 textarea.form-control {
@@ -855,19 +852,19 @@ textarea.form-control {
 }
 
 select.form-control {
-    background-color: #2B2B2B;
+    background-color: #17161A;
     cursor: pointer;
     appearance: auto;
 }
 
 select.form-control option {
-    background-color: #2B2B2B;
+    background-color: #17161A;
     color: var(--text-primary);
 }
 
 select.form-control option:hover,
 select.form-control option:checked {
-    background-color: rgba(249, 115, 22, 0.2);
+    background-color: rgba(232, 89, 12, 0.2);
 }
 
 /* HUD Modals */
@@ -886,10 +883,10 @@ select.form-control option:checked {
 .modal-content {
     width: 90%;
     max-width: 600px;
-    background: #232323;
-    border: 1px solid rgba(249, 115, 22, 0.2);
+    background: #1A181C;
+    border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
-    box-shadow: 0 10px 40px rgba(0,0,0,0.5), 0 0 20px rgba(249, 115, 22, 0.06);
+    box-shadow: 0 16px 48px rgba(0,0,0,0.5);
     position: relative;
     overflow: hidden;
 }
@@ -969,8 +966,8 @@ select.form-control option:checked {
 
 .alert-box {
     padding: 16px;
-    background: rgba(249, 115, 22, 0.05);
-    border: 1px solid rgba(249, 115, 22, 0.2);
+    background: rgba(232, 89, 12, 0.05);
+    border: 1px solid rgba(232, 89, 12, 0.2);
     border-radius: var(--radius-sm);
     color: var(--text-primary);
     margin-bottom: 20px;

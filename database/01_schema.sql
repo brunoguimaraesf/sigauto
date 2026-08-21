@@ -290,13 +290,15 @@ COMMENT ON TABLE mensagem_chatbot IS 'Histórico de conversas com o assistente I
 -- -----------------------------------------------------------------------------
 
 CREATE TABLE recomendacao_ia (
-  id          UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
-  id_os       UUID          REFERENCES ordem_servico(id),
-  id_usuario  UUID          REFERENCES usuario(id),
-  tipo        VARCHAR(60)   NOT NULL,
-  conteudo    TEXT          NOT NULL,
-  confianca   DECIMAL(5,4),
-  criado_em   TIMESTAMPTZ   NOT NULL DEFAULT NOW()
+  id                UUID          PRIMARY KEY DEFAULT gen_random_uuid(),
+  id_os             UUID          REFERENCES ordem_servico(id),
+  id_usuario        UUID          REFERENCES usuario(id),
+  tipo              VARCHAR(60),
+  conteudo          TEXT,
+  confianca         DECIMAL(5,4),
+  dados_analisados  JSONB,
+  recomendacoes     JSONB,
+  criado_em         TIMESTAMPTZ   NOT NULL DEFAULT NOW()
 );
 
 COMMENT ON TABLE recomendacao_ia IS 'Recomendações geradas pela IA para OS ou usuários';

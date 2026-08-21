@@ -64,7 +64,7 @@ export function Header() {
             padding: '8px',
             borderRadius: '50%',
             transition: 'background 0.15s',
-            background: open ? 'rgba(249,115,22,0.1)' : 'transparent',
+            background: open ? 'rgba(232,89,12,0.1)' : 'transparent',
             color: open ? 'var(--neon-orange)' : 'var(--text-secondary)',
           }}
         >
@@ -98,9 +98,9 @@ export function Header() {
             right: 0,
             width: '340px',
             background: '#232323',
-            border: '1px solid rgba(249,115,22,0.2)',
+            border: '1px solid rgba(232,89,12,0.2)',
             borderRadius: 'var(--radius-md)',
-            boxShadow: '0 12px 40px rgba(0,0,0,0.5), 0 0 20px rgba(249,115,22,0.06)',
+            boxShadow: '0 12px 40px rgba(0,0,0,0.5), 0 0 20px rgba(232,89,12,0.06)',
             zIndex: 200,
             overflow: 'hidden',
           }}>

@@ -117,7 +117,7 @@ export function Servicos() {
                 {filteredServicos.map((s) => (
                   <tr key={s.id}>
                     <td style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-sm)', background: 'rgba(255, 77, 0, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--neon-orange)' }}>
+                      <div style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-sm)', background: 'rgba(232, 89, 12, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--neon-orange)' }}>
                         <Wrench size={18} />
                       </div>
                       <div>

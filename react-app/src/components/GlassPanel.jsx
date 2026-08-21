@@ -14,7 +14,7 @@ export function GlassPanel({ children, className = '', style = {}, ...props }) {
 
   const handleMouseEnter = () => {
     if (!panelRef.current) return
-    panelRef.current.style.background = `radial-gradient(800px circle at var(--mouse-x) var(--mouse-y), rgba(255, 77, 0, 0.05), transparent 40%), var(--bg-surface-hover)`
+    panelRef.current.style.background = `radial-gradient(800px circle at var(--mouse-x) var(--mouse-y), rgba(232, 89, 12, 0.05), transparent 40%), var(--bg-surface-hover)`
   }
 
   const handleMouseLeave = () => {

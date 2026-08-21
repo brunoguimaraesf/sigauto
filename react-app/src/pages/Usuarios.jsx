@@ -5,7 +5,7 @@ import { supabase, supabaseDb } from '../supabaseClient'
 
 const PERFIL_ICONS = { gestor: Shield, atendente: User, mecanico: Wrench }
 const PERFIL_COLORS = {
-  gestor: { color: 'var(--neon-orange)', bg: 'rgba(255, 77, 0, 0.08)', border: 'rgba(255, 77, 0, 0.2)' },
+  gestor: { color: 'var(--neon-orange)', bg: 'rgba(232, 89, 12, 0.08)', border: 'rgba(232, 89, 12, 0.2)' },
   atendente: { color: 'var(--electric-blue)', bg: 'rgba(0, 229, 255, 0.08)', border: 'rgba(0, 229, 255, 0.2)' },
   mecanico: { color: 'var(--status-done)', bg: 'rgba(0, 255, 136, 0.08)', border: 'rgba(0, 255, 136, 0.2)' },
 }
@@ -351,7 +351,7 @@ export function Usuarios() {
                   </div>
                 )}
                 {erroForm && (
-                  <div style={{ padding: '10px', background: 'rgba(255, 77, 0, 0.08)', border: '1px solid rgba(255, 77, 0, 0.2)', borderRadius: 'var(--radius-sm)', color: 'var(--neon-orange)', fontSize: '13px' }}>
+                  <div style={{ padding: '10px', background: 'rgba(232, 89, 12, 0.08)', border: '1px solid rgba(232, 89, 12, 0.2)', borderRadius: 'var(--radius-sm)', color: 'var(--neon-orange)', fontSize: '13px' }}>
                     {erroForm}
                   </div>
                 )}

@@ -14,7 +14,7 @@ export function Analytics() {
   if (loading) {
     return (
       <div style={{ padding: '48px', color: 'var(--text-secondary)', textAlign: 'center' }}>
-        <h2>Processando telemetria operacional...</h2>
+        <h2>Carregando relatórios...</h2>
       </div>
     )
   }
@@ -84,7 +84,7 @@ export function Analytics() {
     <div className="dashboard-grid">
       <section className="welcome-section stagger-1">
         <h2>Painel de Relatórios</h2>
-        <p>Telemetria e análise de faturamento, eficiência e dados da frota do SIGAUTO.</p>
+        <p>Análise de faturamento, eficiência e frota do SIGAuto.</p>
       </section>
 
       {/* --- CARDS DE KPIs TÉCNICOS --- */}
@@ -118,7 +118,7 @@ export function Analytics() {
         <GlassPanel className="metric-card stagger-4 highlight-card">
           <div className="metric-header">
             <span className="metric-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-              <Activity size={16} color="var(--neon-orange)" /> Eficiência do Pitlane
+              <Activity size={16} color="var(--neon-orange)" /> Eficiência Operacional
             </span>
             <span className="metric-trend positive">CONCLUÍDO</span>
           </div>
@@ -137,13 +137,13 @@ export function Analytics() {
         {/* Gráfico de Barras de Distribuição de Marcas */}
         <GlassPanel className="panel stagger-5">
           <div className="panel-header" style={{ marginBottom: '24px' }}>
-            <h3><Award size={18} color="var(--neon-orange)" style={{ marginRight: '8px', verticalAlign: 'middle' }} /> Telemetria de Marcas (Frota)</h3>
+            <h3><Award size={18} color="var(--neon-orange)" style={{ marginRight: '8px', verticalAlign: 'middle' }} /> Distribuição por Marca</h3>
           </div>
           
           <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
             {brandDistribution.length === 0 ? (
               <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '24px' }}>
-                Nenhum veículo cadastrado na garagem para gerar telemetria.
+                Nenhum veículo cadastrado para gerar a análise.
               </div>
             ) : (
               brandDistribution.map((item) => (
@@ -156,7 +156,7 @@ export function Analytics() {
                     <div 
                       style={{ 
                         height: '100%', 
-                        background: 'linear-gradient(90deg, var(--neon-orange), #FF2A00)',
+                        background: 'linear-gradient(90deg, var(--neon-orange), #C2410C)',
                         boxShadow: '0 0 8px var(--neon-orange-glow)',
                         width: `${item.percentage}%`,
                         transition: 'width 0.5s ease-out'

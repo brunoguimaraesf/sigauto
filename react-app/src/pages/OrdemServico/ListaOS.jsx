@@ -8,7 +8,7 @@ import { calcOSTotals, formatCurrency } from '../../utils/osFinance'
 const STATUS_COLORS = {
   aberta: { color: 'var(--status-pending)', border: 'rgba(255, 179, 0, 0.2)', bg: 'rgba(255, 179, 0, 0.05)', label: 'Aberta' },
   em_andamento: { color: 'var(--status-progress)', border: 'rgba(0, 229, 255, 0.2)', bg: 'rgba(0, 229, 255, 0.05)', label: 'Em Andamento' },
-  aguardando_peca: { color: '#FF4D00', border: 'rgba(255, 77, 0, 0.2)', bg: 'rgba(255, 77, 0, 0.05)', label: 'Aguard. Peça' },
+  aguardando_peca: { color: '#E8590C', border: 'rgba(232, 89, 12, 0.2)', bg: 'rgba(232, 89, 12, 0.05)', label: 'Aguard. Peça' },
   concluida: { color: 'var(--status-done)', border: 'rgba(0, 255, 136, 0.2)', bg: 'rgba(0, 255, 136, 0.05)', label: 'Concluída' },
   cancelada: { color: 'var(--text-muted)', border: 'rgba(255, 255, 255, 0.1)', bg: 'rgba(255, 255, 255, 0.02)', label: 'Cancelada' },
   // Compat com dados legado
@@ -19,7 +19,7 @@ const STATUS_COLORS = {
 
 const PRIORIDADE_COLORS = {
   urgente: { color: '#ff4d4d', bg: 'rgba(255, 0, 0, 0.08)', label: 'Urgente' },
-  alta: { color: '#FF4D00', bg: 'rgba(255, 77, 0, 0.08)', label: 'Alta' },
+  alta: { color: '#E8590C', bg: 'rgba(232, 89, 12, 0.08)', label: 'Alta' },
   normal: { color: 'var(--electric-blue)', bg: 'rgba(0, 229, 255, 0.08)', label: 'Normal' },
   baixa: { color: 'var(--text-muted)', bg: 'rgba(255, 255, 255, 0.04)', label: 'Baixa' },
 }

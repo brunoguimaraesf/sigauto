@@ -124,7 +124,7 @@ export function ListaEstoque() {
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           {qtdAlertas > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'rgba(255, 77, 0, 0.1)', border: '1px solid rgba(255, 77, 0, 0.3)', borderRadius: '100px', fontSize: '12px', color: 'var(--neon-orange)', fontWeight: '600' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'rgba(232, 89, 12, 0.1)', border: '1px solid rgba(232, 89, 12, 0.3)', borderRadius: '100px', fontSize: '12px', color: 'var(--neon-orange)', fontWeight: '600' }}>
               <Bell size={12} /> {qtdAlertas} {qtdAlertas === 1 ? 'item' : 'itens'} em alerta
             </div>
           )}
@@ -169,7 +169,7 @@ export function ListaEstoque() {
                     <td><span style={{ fontFamily: 'monospace', fontSize: '12px', color: 'var(--text-secondary)' }}>{item.codigo}</span></td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ width: '32px', height: '32px', borderRadius: 'var(--radius-sm)', background: 'rgba(255, 77, 0, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: 'var(--radius-sm)', background: 'rgba(232, 89, 12, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Package size={14} color="var(--neon-orange)" />
                         </div>
                         <div>
@@ -212,7 +212,7 @@ export function ListaEstoque() {
                         <button className="btn-secondary" onClick={() => { setModalMovimentacao(item); setMTipo('entrada'); setMQtd(''); setMMotivo('') }} style={{ padding: '5px 8px', fontSize: '11px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--status-done)', borderColor: 'rgba(0, 255, 136, 0.2)' }}>
                           <TrendingUp size={11} /> Entrada
                         </button>
-                        <button className="btn-secondary" onClick={() => { setModalMovimentacao(item); setMTipo('saida'); setMQtd(''); setMMotivo('') }} style={{ padding: '5px 8px', fontSize: '11px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--neon-orange)', borderColor: 'rgba(255, 77, 0, 0.2)' }}>
+                        <button className="btn-secondary" onClick={() => { setModalMovimentacao(item); setMTipo('saida'); setMQtd(''); setMMotivo('') }} style={{ padding: '5px 8px', fontSize: '11px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--neon-orange)', borderColor: 'rgba(232, 89, 12, 0.2)' }}>
                           <TrendingDown size={11} /> SaÃ­da
                         </button>
                       </div>

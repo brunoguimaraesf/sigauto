@@ -68,7 +68,7 @@ function gerarPDF({ os, cliente, veiculo, totals, descontoValor, valorFinal, for
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(20)
-  doc.setTextColor(249, 115, 22)
+  doc.setTextColor(232, 89, 12)
   doc.text('SIGAUTO', marginX, y + 8)
 
   doc.setFontSize(9)
@@ -81,7 +81,7 @@ function gerarPDF({ os, cliente, veiculo, totals, descontoValor, valorFinal, for
   const dataFormatada = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
   doc.setFontSize(11)
   doc.setFont('helvetica', 'bold')
-  doc.setTextColor(249, 115, 22)
+  doc.setTextColor(232, 89, 12)
   doc.text(osNum, pageW - marginX, y + 8, { align: 'right' })
   doc.setFontSize(8)
   doc.setFont('helvetica', 'normal')
@@ -159,7 +159,7 @@ function gerarPDF({ os, cliente, veiculo, totals, descontoValor, valorFinal, for
   if (os.pecas_itens?.length) {
     doc.setFont('helvetica', 'bold')
     doc.setFontSize(9)
-    doc.setTextColor(249, 115, 22)
+    doc.setTextColor(232, 89, 12)
     doc.text('PEÇAS E PRODUTOS', marginX, y)
     y += 3
 
@@ -175,9 +175,9 @@ function gerarPDF({ os, cliente, veiculo, totals, descontoValor, valorFinal, for
       ]),
       foot: [['', '', 'Subtotal peças', formatCurrency(totals.valorPecas)]],
       styles: { fontSize: 8.5, cellPadding: 3, textColor: [200, 200, 210], fillColor: [22, 22, 34] },
-      headStyles: { fillColor: [50, 30, 10], textColor: [249, 115, 22], fontStyle: 'bold', fontSize: 8 },
-      footStyles: { fillColor: [22, 22, 34], textColor: [249, 115, 22], fontStyle: 'bold' },
-      columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right', textColor: [249, 115, 22] } },
+      headStyles: { fillColor: [50, 30, 10], textColor: [232, 89, 12], fontStyle: 'bold', fontSize: 8 },
+      footStyles: { fillColor: [22, 22, 34], textColor: [232, 89, 12], fontStyle: 'bold' },
+      columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right', textColor: [232, 89, 12] } },
       alternateRowStyles: { fillColor: [26, 26, 38] },
     })
     y = doc.lastAutoTable.finalY + 6
@@ -204,7 +204,7 @@ function gerarPDF({ os, cliente, veiculo, totals, descontoValor, valorFinal, for
     didParseCell: (data) => {
       if (data.row.index === resumoRows.length - 2 && data.section === 'body') {
         data.cell.styles.fontStyle = 'bold'
-        data.cell.styles.textColor = [249, 115, 22]
+        data.cell.styles.textColor = [232, 89, 12]
         data.cell.styles.fontSize = 10
       }
     },
@@ -496,7 +496,7 @@ export function EncerrarOS() {
               </div>
 
               {/* Valor final calculado */}
-              <div style={{ padding: '16px', background: 'rgba(249,115,22,0.06)', border: '1px solid rgba(249,115,22,0.2)', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
+              <div style={{ padding: '16px', background: 'rgba(232,89,12,0.06)', border: '1px solid rgba(232,89,12,0.2)', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>Valor final</div>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: '32px', fontWeight: '700', color: 'var(--neon-orange)' }}>
                   {formatCurrency(valorFinal)}

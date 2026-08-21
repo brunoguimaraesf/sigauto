@@ -107,8 +107,10 @@ export function PainelIA() {
       // Tenta API real, fallback para análise local
       const { iaApi } = await import('../services/api.js')
       const data = await iaApi.analisar()
-      setResultado(data)
-    } catch {
+      // Backend responde { erro, dados: {...} }; fallback local retorna o objeto cru.
+      setResultado(data?.dados ?? data)
+    } catch (e) {
+      console.error('[PainelIA] API de IA falhou — usando análise local. Causa:', e?.status, e?.data?.codigo || e?.message, e)
       // Fallback: análise local com os dados disponíveis
       await new Promise(r => setTimeout(r, 1800))
       const local = gerarRecomendacoesLocais(ordensServico, clientes, veiculos, estoque)
@@ -162,7 +164,7 @@ export function PainelIA() {
       {/* Estado inicial */}
       {!resultado && !analisando && !erro && (
         <GlassPanel className="panel stagger-3" style={{ textAlign: 'center', padding: '64px 48px' }}>
-          <Brain size={48} color="rgba(255, 77, 0, 0.4)" style={{ marginBottom: '20px' }} />
+          <Brain size={48} color="rgba(232, 89, 12, 0.4)" style={{ marginBottom: '20px' }} />
           <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: '12px' }}>Pronto para Analisar</h3>
           <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto 24px' }}>
             Clique em <strong>"Analisar Dados"</strong> para gerar recomendações baseadas nas ordens de serviço,
@@ -205,6 +207,46 @@ export function PainelIA() {
             </GlassPanel>
           )}
 
+          {resultado.metricas_destaque && (
+            <section className="metrics-grid stagger-2">
+              {[
+                { label: 'Ordens de Serviço', valor: resultado.metricas_destaque.total_os ?? '—' },
+                { label: 'Faturamento Estimado', valor: resultado.metricas_destaque.faturamento_estimado != null ? `R$ ${Number(resultado.metricas_destaque.faturamento_estimado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—' },
+                { label: 'Itens Críticos', valor: resultado.metricas_destaque.itens_criticos_estoque ?? '—' },
+                { label: 'Crescimento', valor: resultado.metricas_destaque.taxa_crescimento ?? '—' },
+              ].map((m, i) => (
+                <GlassPanel key={i} className="metric-card">
+                  <div className="metric-header">
+                    <span className="metric-title">{m.label}</span>
+                  </div>
+                  <div className="metric-value" style={{ fontSize: '26px' }}>{m.valor}</div>
+                </GlassPanel>
+              ))}
+            </section>
+          )}
+
+          {resultado.alertas?.length > 0 && (
+            <GlassPanel className="panel stagger-2">
+              <div className="panel-header">
+                <h3><AlertTriangle size={18} color="var(--neon-orange)" style={{ marginRight: '8px', verticalAlign: 'middle' }} /> Alertas</h3>
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+                {resultado.alertas.map((a, i) => {
+                  const cor = a.urgencia === 'critica' ? '#ff4d4d' : a.urgencia === 'alta' ? 'var(--neon-orange)' : a.urgencia === 'media' ? 'var(--status-pending)' : 'var(--text-secondary)'
+                  return (
+                    <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }}>
+                      <AlertTriangle size={16} color={cor} style={{ marginTop: '2px', flexShrink: 0 }} />
+                      <div>
+                        {a.tipo && <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', color: cor, fontWeight: 700, marginBottom: '2px' }}>{a.tipo}</div>}
+                        <div style={{ fontSize: '13px', color: 'var(--text-primary)' }}>{a.mensagem}</div>
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
+            </GlassPanel>
+          )}
+
           {resultado.recomendacoes?.length === 0 ? (
             <GlassPanel className="panel stagger-3" style={{ textAlign: 'center', padding: '48px' }}>
               <p style={{ color: 'var(--text-secondary)' }}>Dados insuficientes para gerar recomendações. Registre mais ordens de serviço e retorne.</p>
@@ -243,10 +285,14 @@ export function PainelIA() {
                           </span>
                         </div>
                         <p style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: '1.6', marginBottom: '8px' }}>{rec.descricao}</p>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Confiança</span>
-                          <ConfidenciaBar valor={rec.confianca || 0.5} />
-                        </div>
+                        {rec.categoria ? (
+                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'capitalize' }}>Categoria: {rec.categoria}</span>
+                        ) : rec.confianca != null ? (
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Confiança</span>
+                            <ConfidenciaBar valor={rec.confianca} />
+                          </div>
+                        ) : null}
                       </div>
                     </div>
                   </GlassPanel>

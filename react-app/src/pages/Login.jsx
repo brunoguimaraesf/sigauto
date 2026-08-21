@@ -90,13 +90,13 @@ export function Login() {
       <div style={{
         position: 'absolute', top: '-20%', right: '-10%',
         width: '600px', height: '600px',
-        background: 'radial-gradient(circle, rgba(249, 115, 22, 0.08) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(232, 89, 12, 0.08) 0%, transparent 70%)',
         pointerEvents: 'none'
       }} />
       <div style={{
         position: 'absolute', bottom: '-20%', left: '10%',
         width: '500px', height: '500px',
-        background: 'radial-gradient(circle, rgba(251, 146, 60, 0.06) 0%, transparent 70%)',
+        background: 'radial-gradient(circle, rgba(232, 89, 12, 0.06) 0%, transparent 70%)',
         pointerEvents: 'none'
       }} />
 
@@ -118,11 +118,11 @@ export function Login() {
           <div style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
             width: '56px', height: '56px',
-            background: 'rgba(249, 115, 22, 0.1)',
-            border: '1px solid rgba(249, 115, 22, 0.3)',
+            background: 'rgba(232, 89, 12, 0.1)',
+            border: '1px solid rgba(232, 89, 12, 0.3)',
             borderRadius: '12px',
             marginBottom: '20px',
-            filter: 'drop-shadow(0 0 12px rgba(249, 115, 22, 0.3))'
+            filter: 'drop-shadow(0 0 12px rgba(232, 89, 12, 0.3))'
           }}>
             <Wrench size={28} color="var(--neon-orange)" />
           </div>
@@ -193,10 +193,10 @@ export function Login() {
           {erro && (
             <div style={{
               padding: '12px 16px',
-              background: 'rgba(249, 115, 22, 0.08)',
-              border: '1px solid rgba(249, 115, 22, 0.25)',
+              background: 'rgba(232, 89, 12, 0.08)',
+              border: '1px solid rgba(232, 89, 12, 0.25)',
               borderRadius: 'var(--radius-sm)',
-              color: '#FB923C',
+              color: '#E8590C',
               fontSize: '13px',
               marginBottom: '20px',
               lineHeight: '1.4'
@@ -239,8 +239,8 @@ export function Login() {
         {/* Contas de demonstração */}
         <div style={{
           marginTop: '28px', padding: '14px 16px',
-          background: 'rgba(251, 146, 60, 0.03)',
-          border: '1px solid rgba(251, 146, 60, 0.12)',
+          background: 'rgba(232, 89, 12, 0.03)',
+          border: '1px solid rgba(232, 89, 12, 0.12)',
           borderRadius: 'var(--radius-sm)'
         }}>
           <p style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px', fontWeight: '600' }}>

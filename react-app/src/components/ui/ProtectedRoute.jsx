@@ -13,7 +13,7 @@ export function ProtectedRoute({ children, requiredRoles }) {
       }}>
         <div style={{
           width: '40px', height: '40px', borderRadius: '50%',
-          border: '3px solid rgba(255, 77, 0, 0.2)',
+          border: '3px solid rgba(232, 89, 12, 0.2)',
           borderTopColor: 'var(--neon-orange)',
           animation: 'spin 0.8s linear infinite'
         }} />

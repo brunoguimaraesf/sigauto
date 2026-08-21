@@ -131,7 +131,7 @@ export function Clientes() {
                 <tr>
                   <th>Nome do Cliente</th>
                   <th>Contato (E-mail / Telefone)</th>
-                  <th>Garagem Associada (Carros)</th>
+                  <th>Veículos</th>
                   <th>Total de Carros</th>
                   <th>Ações</th>
                 </tr>
@@ -144,7 +144,7 @@ export function Clientes() {
                   return (
                     <tr key={c.id}>
                       <td style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(255, 77, 0, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--neon-orange)', fontWeight: 'bold' }}>
+                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'rgba(232, 89, 12, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--neon-orange)', fontWeight: 'bold' }}>
                           {c.nome?.charAt(0) || 'C'}
                         </div>
                         <div>
@@ -173,8 +173,8 @@ export function Clientes() {
                                 key={car.id} 
                                 style={{ 
                                   padding: '2px 8px', 
-                                  background: 'rgba(255, 77, 0, 0.05)', 
-                                  border: '1px solid rgba(255, 77, 0, 0.15)', 
+                                  background: 'rgba(232, 89, 12, 0.05)', 
+                                  border: '1px solid rgba(232, 89, 12, 0.15)', 
                                   borderRadius: 'var(--radius-sm)', 
                                   fontSize: '11px', 
                                   color: 'var(--neon-orange)',

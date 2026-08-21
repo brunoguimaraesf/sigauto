@@ -275,7 +275,7 @@ export function AbrirOS() {
                     <p style={{ fontSize: '12px', color: 'var(--neon-orange)', marginTop: '6px' }}>Nenhum veículo. Use <strong>+ Novo</strong> para cadastrar.</p>
                   )}
                   {veiculoSelecionado && (
-                    <div style={{ marginTop: '8px', padding: '8px 12px', border: '1px solid rgba(249,115,22,0.15)', borderRadius: 'var(--radius-sm)', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    <div style={{ marginTop: '8px', padding: '8px 12px', border: '1px solid rgba(232,89,12,0.15)', borderRadius: 'var(--radius-sm)', fontSize: '12px', color: 'var(--text-secondary)' }}>
                       <strong style={{ color: 'var(--neon-orange)' }}>{veiculoSelecionado.placa}</strong>
                       <span> — {veiculoSelecionado.marca} {veiculoSelecionado.modelo}</span>
                       <span style={{ display: 'block' }}>{veiculoSelecionado.ano} · {veiculoSelecionado.cor}</span>

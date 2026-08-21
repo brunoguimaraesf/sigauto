@@ -11,16 +11,16 @@ export async function analisar(req, res, next) {
     const [resOS, resEstoque, resMovimentacoes] = await Promise.all([
       supabase
         .from('ordem_servico')
-        .select('status, valor_total, valor_mao_obra, data_abertura, data_encerramento, descricao_servico')
+        .select('status, valor_total, valor_servicos, valor_pecas, data_abertura, data_encerramento, descricao')
         .gte('data_abertura', dataLimiteStr),
       supabase
         .from('item_estoque')
-        .select('codigo, descricao, quantidade_atual, quantidade_minima, preco_custo, preco_venda')
+        .select('codigo, nome, descricao, quantidade, qtd_minima, preco_unit')
         .eq('ativo', true),
       supabase
         .from('movimentacao_estoque')
-        .select('tipo, quantidade, preco_unitario, data_movimentacao')
-        .gte('data_movimentacao', dataLimiteStr)
+        .select('tipo, quantidade, motivo, data_hora')
+        .gte('data_hora', dataLimiteStr)
     ])
 
     const ordens = resOS.data || []
@@ -28,9 +28,9 @@ export async function analisar(req, res, next) {
     const movimentacoes = resMovimentacoes.data || []
 
     const totalOS = ordens.length
-    const osEncerradas = ordens.filter(o => o.status === 'encerrada')
+    const osEncerradas = ordens.filter(o => o.status === 'concluida')
     const faturamentoTotal = osEncerradas.reduce((acc, o) => acc + (o.valor_total || 0), 0)
-    const itensAlerta = itensEstoque.filter(i => i.quantidade_atual <= i.quantidade_minima)
+    const itensAlerta = itensEstoque.filter(i => i.quantidade <= i.qtd_minima)
 
     const dadosHistorico = {
       periodo_dias: 90,
@@ -48,11 +48,11 @@ export async function analisar(req, res, next) {
         itens_em_alerta: itensAlerta.length,
         itens_criticos: itensAlerta.map(i => ({
           codigo: i.codigo,
-          descricao: i.descricao,
-          quantidade_atual: i.quantidade_atual,
-          quantidade_minima: i.quantidade_minima
+          nome: i.nome,
+          quantidade: i.quantidade,
+          qtd_minima: i.qtd_minima
         })),
-        valor_total_estoque: itensEstoque.reduce((acc, i) => acc + (i.quantidade_atual * i.preco_custo), 0)
+        valor_total_estoque: itensEstoque.reduce((acc, i) => acc + (i.quantidade * (i.preco_unit || 0)), 0)
       },
       movimentacoes: {
         total: movimentacoes.length,

@@ -76,8 +76,10 @@ export function Chatbot() {
     try {
       const { chatbotApi } = await import('../../services/api.js')
       const data = await chatbotApi.enviarMensagem(pergunta)
-      setMensagens(m => [...m, { id: crypto.randomUUID(), remetente: 'chatbot', conteudo: data.resposta || data.mensagem, criado_em: new Date().toISOString() }])
-    } catch {
+      const resposta = data?.dados?.resposta || data?.resposta || data?.mensagem
+      setMensagens(m => [...m, { id: crypto.randomUUID(), remetente: 'chatbot', conteudo: resposta, criado_em: new Date().toISOString() }])
+    } catch (e) {
+      console.error('[Chatbot] API de IA falhou — usando resposta local. Causa:', e?.status, e?.data?.codigo || e?.message, e)
       const resposta = buscarResposta(pergunta)
       await new Promise(r => setTimeout(r, 600))
       setMensagens(m => [...m, { id: crypto.randomUUID(), remetente: 'chatbot', conteudo: resposta, criado_em: new Date().toISOString() }])
@@ -106,17 +108,17 @@ export function Chatbot() {
           width: '56px', height: '56px', borderRadius: '50%',
           background: aberto
             ? 'rgba(255,255,255,0.08)'
-            : 'linear-gradient(135deg, var(--neon-orange), #FF2A00)',
+            : 'linear-gradient(135deg, var(--neon-orange), #C2410C)',
           boxShadow: aberto
             ? '0 2px 12px rgba(0,0,0,0.3)'
-            : '0 4px 20px rgba(255, 77, 0, 0.5)',
+            : '0 4px 20px rgba(232, 89, 12, 0.5)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           transition: 'all 0.2s ease',
           border: aberto ? '1px solid rgba(255,255,255,0.12)' : 'none',
           cursor: 'pointer',
         }}
-        onMouseEnter={e => { if (!aberto) { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.boxShadow = '0 6px 28px rgba(255, 77, 0, 0.7)' } }}
-        onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = aberto ? '0 2px 12px rgba(0,0,0,0.3)' : '0 4px 20px rgba(255, 77, 0, 0.5)' }}
+        onMouseEnter={e => { if (!aberto) { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.boxShadow = '0 6px 28px rgba(232, 89, 12, 0.7)' } }}
+        onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = aberto ? '0 2px 12px rgba(0,0,0,0.3)' : '0 4px 20px rgba(232, 89, 12, 0.5)' }}
       >
         {aberto
           ? <X size={22} color="var(--text-secondary)" />
@@ -141,9 +143,9 @@ export function Chatbot() {
             width: 'min(880px, 96vw)',
             height: 'min(700px, 88vh)',
             background: '#111114',
-            border: '1px solid rgba(255, 77, 0, 0.18)',
+            border: '1px solid rgba(232, 89, 12, 0.18)',
             borderRadius: '16px',
-            boxShadow: '0 32px 80px rgba(0,0,0,0.8), 0 0 60px rgba(255,77,0,0.07)',
+            boxShadow: '0 32px 80px rgba(0,0,0,0.8), 0 0 60px rgba(232,89,12,0.07)',
             display: 'flex',
             overflow: 'hidden',
             animation: 'scaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -163,8 +165,8 @@ export function Chatbot() {
               <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
                 <div style={{
                   width: '52px', height: '52px', borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(255,77,0,0.15), rgba(255,77,0,0.04))',
-                  border: '1px solid rgba(255, 77, 0, 0.35)',
+                  background: 'radial-gradient(circle, rgba(232,89,12,0.15), rgba(232,89,12,0.04))',
+                  border: '1px solid rgba(232, 89, 12, 0.35)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   marginBottom: '12px',
                 }}>
@@ -193,15 +195,15 @@ export function Chatbot() {
                       style={{
                         width: '100%', textAlign: 'left',
                         padding: '8px 10px',
-                        background: 'rgba(255, 77, 0, 0.04)',
-                        border: '1px solid rgba(255, 77, 0, 0.12)',
+                        background: 'rgba(232, 89, 12, 0.04)',
+                        border: '1px solid rgba(232, 89, 12, 0.12)',
                         borderRadius: '8px', fontSize: '12px',
                         color: 'var(--text-secondary)', cursor: 'pointer',
                         fontFamily: 'var(--font-body)', lineHeight: '1.4',
                         transition: 'all 0.12s',
                       }}
-                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,77,0,0.1)'; e.currentTarget.style.color = 'var(--neon-orange)'; e.currentTarget.style.borderColor = 'rgba(255,77,0,0.3)' }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,77,0,0.04)'; e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'rgba(255,77,0,0.12)' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(232,89,12,0.1)'; e.currentTarget.style.color = 'var(--neon-orange)'; e.currentTarget.style.borderColor = 'rgba(232,89,12,0.3)' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(232,89,12,0.04)'; e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'rgba(232,89,12,0.12)' }}
                     >
                       {r}
                     </button>
@@ -234,7 +236,7 @@ export function Chatbot() {
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
 
               {/* Header do chat */}
-              <div style={{ height: '2px', background: 'linear-gradient(90deg, transparent, rgba(255,77,0,0.3))' }} />
+              <div style={{ height: '2px', background: 'linear-gradient(90deg, transparent, rgba(232,89,12,0.3))' }} />
               <div style={{
                 padding: '14px 20px',
                 borderBottom: '1px solid rgba(255,255,255,0.05)',
@@ -274,9 +276,9 @@ export function Chatbot() {
                     <div style={{
                       width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0, marginTop: '2px',
                       background: msg.remetente === 'usuario'
-                        ? 'linear-gradient(135deg, var(--neon-orange), #FF2A00)'
-                        : 'rgba(255, 77, 0, 0.08)',
-                      border: msg.remetente === 'chatbot' ? '1px solid rgba(255, 77, 0, 0.25)' : 'none',
+                        ? 'linear-gradient(135deg, var(--neon-orange), #C2410C)'
+                        : 'rgba(232, 89, 12, 0.08)',
+                      border: msg.remetente === 'chatbot' ? '1px solid rgba(232, 89, 12, 0.25)' : 'none',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
                       {msg.remetente === 'usuario'
@@ -289,9 +291,9 @@ export function Chatbot() {
                       padding: '12px 16px',
                       borderRadius: msg.remetente === 'usuario' ? '14px 4px 14px 14px' : '4px 14px 14px 14px',
                       background: msg.remetente === 'usuario'
-                        ? 'linear-gradient(135deg, rgba(255, 77, 0, 0.18), rgba(255, 42, 0, 0.12))'
+                        ? 'linear-gradient(135deg, rgba(232, 89, 12, 0.18), rgba(255, 42, 0, 0.12))'
                         : 'rgba(255,255,255,0.04)',
-                      border: `1px solid ${msg.remetente === 'usuario' ? 'rgba(255, 77, 0, 0.2)' : 'rgba(255,255,255,0.06)'}`,
+                      border: `1px solid ${msg.remetente === 'usuario' ? 'rgba(232, 89, 12, 0.2)' : 'rgba(255,255,255,0.06)'}`,
                       fontSize: '14px', lineHeight: '1.6', color: 'var(--text-primary)',
                     }}>
                       <span dangerouslySetInnerHTML={{ __html: renderTexto(msg.conteudo) }} />
@@ -307,7 +309,7 @@ export function Chatbot() {
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                     <div style={{
                       width: '32px', height: '32px', borderRadius: '50%',
-                      background: 'rgba(255, 77, 0, 0.08)', border: '1px solid rgba(255, 77, 0, 0.25)',
+                      background: 'rgba(232, 89, 12, 0.08)', border: '1px solid rgba(232, 89, 12, 0.25)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                     }}>
                       <Bot size={15} color="var(--neon-orange)" />
@@ -361,9 +363,9 @@ export function Chatbot() {
                   style={{
                     width: '44px', height: '44px', borderRadius: '10px',
                     background: input.trim()
-                      ? 'linear-gradient(135deg, var(--neon-orange), #FF2A00)'
+                      ? 'linear-gradient(135deg, var(--neon-orange), #C2410C)'
                       : 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(255, 77, 0, 0.25)',
+                    border: '1px solid rgba(232, 89, 12, 0.25)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     cursor: input.trim() ? 'pointer' : 'not-allowed',
                     flexShrink: 0, transition: 'all 0.15s',
