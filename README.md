@@ -8,7 +8,7 @@ Sistema web completo para gestão de oficinas automotivas de pequeno e médio po
 
 ## Descrição
 
-O SIGAuto digitaliza e centraliza os processos operacionais de uma oficina: abertura e encerramento de ordens de serviço, controle de estoque de peças, cadastro de clientes e veículos, relatórios gerenciais e um painel de recomendações com Inteligência Artificial (Anthropic Claude).
+O SIGAuto digitaliza e centraliza os processos operacionais de uma oficina: abertura e encerramento de ordens de serviço, controle de estoque de peças, cadastro de clientes e veículos, relatórios gerenciais e um painel de recomendações com Inteligência Artificial (Google Gemini).
 
 ---
 
@@ -16,7 +16,7 @@ O SIGAuto digitaliza e centraliza os processos operacionais de uma oficina: aber
 
 - **Node.js** 18 ou superior
 - **Conta no Supabase** (gratuita): [supabase.com](https://supabase.com)
-- **Chave Anthropic** (para chatbot e IA): [console.anthropic.com](https://console.anthropic.com)
+- **Chave Google Gemini** (para chatbot e IA): [aistudio.google.com/apikey](https://aistudio.google.com/apikey)
 - **Git**
 
 ---
@@ -63,7 +63,7 @@ npm run dev
 | `SUPABASE_URL` | URL do seu projeto Supabase |
 | `SUPABASE_SERVICE_ROLE_KEY` | Chave service_role (acesso total ao banco) |
 | `SUPABASE_JWT_SECRET` | JWT Secret (Project Settings > API > JWT Settings) |
-| `ANTHROPIC_API_KEY` | Chave da API Anthropic para o chatbot e IA |
+| `GEMINI_API_KEY` | Chave da API do Google Gemini para o chatbot e IA |
 | `PORT` | Porta da API (padrão: 3001) |
 | `NODE_ENV` | `development` ou `production` |
 | `FRONTEND_URL` | URL do frontend para configuração do CORS |
@@ -137,11 +137,11 @@ Acesse: **http://localhost:5173**
 
 **Frontend:** React 19 + Vite + React Router DOM + Lucide React + Recharts + jsPDF + xlsx
 
-**Backend:** Node.js + Express + Supabase JS (service role) + @anthropic-ai/sdk + Helmet + express-rate-limit
+**Backend:** Node.js + Express + Supabase JS (service role) + @google/generative-ai + Helmet + express-rate-limit
 
 **Banco de dados:** Supabase (PostgreSQL) com Row Level Security (RLS)
 
-**IA:** Anthropic Claude (claude-haiku-4-5 para chatbot, claude-sonnet-4-6 para análise)
+**IA:** Google Gemini (gemini-flash-lite-latest para chatbot e análise)
 
 ---
 
