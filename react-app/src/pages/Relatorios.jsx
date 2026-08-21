@@ -23,7 +23,7 @@ const statusLabel = (status) => ({
   Pendente: 'Aberta',
   'Em Andamento': 'Em andamento',
   'Concluido': 'Concluida',
-  'ConcluÃ­do': 'Concluida',
+  'Concluído': 'Concluida',
 }[status] || status || 'Sem status')
 
 export function Relatorios() {
@@ -64,7 +64,7 @@ export function Relatorios() {
     return { mecanico, atendente }
   }
   const getValorOS = (os) => os.valor_total || os.preco_final || calcOSTotals(os).valorTotal
-  const isConcluida = (os) => os.status === 'concluida' || os.status === 'Concluido' || os.status === 'ConcluÃƒÂ­do'
+  const isConcluida = (os) => os.status === 'concluida' || os.status === 'Concluido' || os.status === 'ConcluÒ­do'
   const formatData = (value) => {
     const d = new Date(value)
     return isNaN(d) ? '-' : d.toLocaleDateString('pt-BR')
@@ -81,7 +81,7 @@ export function Relatorios() {
 
   const gerarDados = () => {
     if (tipoSel === 'faturamento') {
-      const concluidas = osNoPeriodo.filter(os => os.status === 'concluida' || os.status === 'Concluido' || os.status === 'ConcluÃ­do')
+      const concluidas = osNoPeriodo.filter(os => os.status === 'concluida' || os.status === 'Concluido' || os.status === 'Concluído')
       const receita = concluidas.reduce((s, os) => s + getValorOS(os), 0)
       return {
         titulo: 'Faturamento no Periodo',

@@ -183,7 +183,7 @@ export function Veiculos() {
                       <td>{client.nome}</td>
                       <td>{v.servico_atual || <span style={{ color: 'var(--text-muted)' }}>Nenhum ativo</span>}</td>
                       <td>
-                        <span className={`status-badge ${v.status === 'Concluido' || v.status === 'ConcluÃ­do' ? 'status-done' : v.status === 'Em Andamento' ? 'status-progress' : 'status-pending'}`}>
+                        <span className={`status-badge ${v.status === 'Concluido' || v.status === 'Concluído' ? 'status-done' : v.status === 'Em Andamento' ? 'status-progress' : 'status-pending'}`}>
                           {v.status || 'Pendente'}
                         </span>
                       </td>

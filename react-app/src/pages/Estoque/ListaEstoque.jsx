@@ -47,7 +47,7 @@ export function ListaEstoque() {
   const [fCusto, setFCusto] = useState('')
   const [fPreco, setFPreco] = useState('')
 
-  // MovimentaÃ§Ã£o
+  // Movimentação
   const [mTipo, setMTipo] = useState('entrada')
   const [mQtd, setMQtd] = useState('')
   const [mMotivo, setMMotivo] = useState('')
@@ -98,12 +98,12 @@ export function ListaEstoque() {
   const handleMovimentacao = (e) => {
     e.preventDefault()
     const qty = parseInt(mQtd)
-    if (!qty || qty <= 0) { alert('Quantidade invÃ¡lida'); return }
+    if (!qty || qty <= 0) { alert('Quantidade inválida'); return }
     const item = modalMovimentacao
     let novaQtd = item.quantidade
     if (mTipo === 'entrada') novaQtd += qty
     else if (mTipo === 'saida') {
-      if (qty > item.quantidade) { alert('Saldo insuficiente para saÃ­da.'); return }
+      if (qty > item.quantidade) { alert('Saldo insuficiente para saída.'); return }
       novaQtd -= qty
     } else novaQtd = qty
     salvarItens(itens.map(i => i.id === item.id ? { ...i, quantidade: novaQtd } : i))
@@ -120,7 +120,7 @@ export function ListaEstoque() {
       <section className="welcome-section stagger-1" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
         <div>
           <h2>Controle de Estoque</h2>
-          <p>Gerencie peÃ§as, insumos e materiais da oficina.</p>
+          <p>Gerencie peças, insumos e materiais da oficina.</p>
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           {qtdAlertas > 0 && (
@@ -138,7 +138,7 @@ export function ListaEstoque() {
         <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
           <div style={{ flex: 1, minWidth: '200px', position: 'relative' }}>
             <Search size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: 14, top: 13 }} />
-            <input type="text" className="form-control" placeholder="Buscar por nome ou cÃ³digo..." value={busca} onChange={e => setBusca(e.target.value)} style={{ paddingLeft: '40px' }} />
+            <input type="text" className="form-control" placeholder="Buscar por nome ou código..." value={busca} onChange={e => setBusca(e.target.value)} style={{ paddingLeft: '40px' }} />
           </div>
           <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: somenteAlerta ? 'var(--neon-orange)' : 'var(--text-secondary)', fontSize: '13px', fontWeight: '600' }}>
             <input type="checkbox" checked={somenteAlerta} onChange={e => setSomenteAlerta(e.target.checked)} style={{ accentColor: 'var(--neon-orange)' }} />
@@ -153,14 +153,14 @@ export function ListaEstoque() {
             <table className="tech-table">
               <thead>
                 <tr>
-                  <th>CÃ³digo</th>
+                  <th>Código</th>
                   <th>Item</th>
                   <th>Un.</th>
                   <th>Quantidade</th>
-                  <th>MÃ­n.</th>
+                  <th>Mín.</th>
                   <th>Alerta</th>
-                  <th>PreÃ§o Unit.</th>
-                  <th>AÃ§Ãµes</th>
+                  <th>Preço Unit.</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -191,7 +191,7 @@ export function ListaEstoque() {
                     <td>
                       {item.quantidade === 0 ? (
                         <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#ff4d4d', fontSize: '12px', fontWeight: '600' }}>
-                          <AlertTriangle size={12} /> CRÃTICO
+                          <AlertTriangle size={12} /> CRÍTICO
                         </span>
                       ) : temAlerta(item) ? (
                         <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--neon-orange)', fontSize: '12px', fontWeight: '600' }}>
@@ -202,7 +202,7 @@ export function ListaEstoque() {
                       )}
                     </td>
                     <td style={{ fontFamily: 'var(--font-display)', fontWeight: '600', color: 'var(--neon-orange)' }}>
-                      {item.preco_unit ? `R$ ${item.preco_unit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : 'â€”'}
+                      {item.preco_unit ? `R$ ${item.preco_unit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
                     </td>
                     <td>
                       <div style={{ display: 'flex', gap: '4px' }}>
@@ -213,7 +213,7 @@ export function ListaEstoque() {
                           <TrendingUp size={11} /> Entrada
                         </button>
                         <button className="btn-secondary" onClick={() => { setModalMovimentacao(item); setMTipo('saida'); setMQtd(''); setMMotivo('') }} style={{ padding: '5px 8px', fontSize: '11px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--neon-orange)', borderColor: 'rgba(232, 89, 12, 0.2)' }}>
-                          <TrendingDown size={11} /> SaÃ­da
+                          <TrendingDown size={11} /> Saída
                         </button>
                       </div>
                     </td>
@@ -237,7 +237,7 @@ export function ListaEstoque() {
               <div className="modal-body">
                 <div className="form-row">
                   <div className="form-group">
-                    <label>CÃ³digo *</label>
+                    <label>Código *</label>
                     <input type="text" className="form-control" placeholder="Ex: FIL-OLEO-001" value={fCodigo} onChange={e => setFCodigo(e.target.value.toUpperCase())} required />
                   </div>
                   <div className="form-group">
@@ -254,10 +254,10 @@ export function ListaEstoque() {
                 </div>
                 <div className="form-group">
                   <label>Nome do Item *</label>
-                  <input type="text" className="form-control" placeholder="Ex: Filtro de Ã“leo Motor" value={fNome} onChange={e => setFNome(e.target.value)} required />
+                  <input type="text" className="form-control" placeholder="Ex: Filtro de Óleo Motor" value={fNome} onChange={e => setFNome(e.target.value)} required />
                 </div>
                 <div className="form-group">
-                  <label>DescriÃ§Ã£o</label>
+                  <label>Descrição</label>
                   <input type="text" className="form-control" placeholder="Detalhes do item..." value={fDescricao} onChange={e => setFDescricao(e.target.value)} />
                 </div>
                 <div className="form-row">
@@ -307,12 +307,12 @@ export function ListaEstoque() {
         </div>
       )}
 
-      {/* Modal MovimentaÃ§Ã£o */}
+      {/* Modal Movimentação */}
       {modalMovimentacao && (
         <div className="modal-overlay">
           <div className="modal-content" style={{ maxWidth: '420px' }}>
             <div className="modal-header">
-              <h3>MovimentaÃ§Ã£o â€” {modalMovimentacao.nome}</h3>
+              <h3>Movimentação — {modalMovimentacao.nome}</h3>
               <button onClick={() => setModalMovimentacao(null)} style={{ color: 'var(--text-secondary)' }}><X size={20} /></button>
             </div>
             <form onSubmit={handleMovimentacao}>
@@ -322,10 +322,10 @@ export function ListaEstoque() {
                   <div style={{ fontFamily: 'var(--font-display)', fontSize: '32px', fontWeight: '600', color: modalMovimentacao.quantidade === 0 ? '#ff4d4d' : 'var(--text-primary)' }}>{modalMovimentacao.quantidade} {modalMovimentacao.unidade}</div>
                 </div>
                 <div className="form-group">
-                  <label>Tipo de MovimentaÃ§Ã£o</label>
+                  <label>Tipo de Movimentação</label>
                   <select className="form-control" value={mTipo} onChange={e => setMTipo(e.target.value)}>
                     <option value="entrada">Entrada (aumentar saldo)</option>
-                    <option value="saida">SaÃ­da (reduzir saldo)</option>
+                    <option value="saida">Saída (reduzir saldo)</option>
                     <option value="ajuste">Ajuste (definir saldo)</option>
                   </select>
                 </div>
@@ -334,7 +334,7 @@ export function ListaEstoque() {
                   <input type="number" className="form-control" placeholder="0" value={mQtd} onChange={e => setMQtd(e.target.value)} min={1} required style={{ fontSize: '18px', fontWeight: '600' }} />
                 </div>
                 <div className="form-group">
-                  <label>Motivo / ObservaÃ§Ã£o</label>
+                  <label>Motivo / Observação</label>
                   <input type="text" className="form-control" placeholder="Ex: Compra fornecedor, Consumo OS #123..." value={mMotivo} onChange={e => setMMotivo(e.target.value)} />
                 </div>
               </div>
