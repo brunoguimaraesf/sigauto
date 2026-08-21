@@ -4,6 +4,7 @@ import { ProtectedRoute } from './components/ui/ProtectedRoute'
 import { Sidebar } from './components/Sidebar'
 import { Header } from './components/Header'
 import { Chatbot } from './components/ui/Chatbot'
+import { DataProvider } from './hooks/useDatabase'
 
 // Pages
 import { Login } from './pages/Login'
@@ -28,6 +29,7 @@ import { ListaEstoque } from './pages/Estoque/ListaEstoque'
 
 function AppLayout() {
   return (
+    <DataProvider>
     <div className="app-container">
       <Sidebar />
       <main className="main-content">
@@ -79,6 +81,7 @@ function AppLayout() {
       </main>
       <Chatbot />
     </div>
+    </DataProvider>
   )
 }
 

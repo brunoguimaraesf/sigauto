@@ -99,8 +99,8 @@ button {
 .sidebar {
     width: var(--sidebar-width);
     height: 100%;
-    background: rgba(16, 15, 18, 0.92);
-    backdrop-filter: blur(20px);
+    background: rgba(16, 15, 18, 0.94);
+    backdrop-filter: blur(10px);
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
@@ -273,8 +273,8 @@ button {
     border-bottom: 1px solid rgba(255, 255, 255, 0.03);
     position: sticky;
     top: 0;
-    background: rgba(12, 12, 13, 0.9);
-    backdrop-filter: blur(12px);
+    background: rgba(12, 12, 13, 0.92);
+    backdrop-filter: blur(8px);
     z-index: 20;
 }
 
@@ -386,8 +386,8 @@ button {
 /* Glassmorphism utility */
 .glass {
     background: var(--bg-surface);
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
 }

@@ -1,5 +1,7 @@
-import { useEffect, useState } from 'react'
+import { createContext, useContext, useEffect, useState, createElement } from 'react'
 import { supabase, supabaseDb } from '../supabaseClient'
+
+const DataContext = createContext(null)
 
 const newUuid = () => crypto.randomUUID()
 const isUuid = (value) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(value || '')
@@ -83,7 +85,7 @@ const pickOSFields = (os, userId) => ({
   valor_pecas: Number(os.valor_pecas || 0),
 })
 
-export function useDatabase() {
+function useDatabaseState() {
   const [clientes, setClientes] = useState([])
   const [veiculos, setVeiculos] = useState([])
   const [servicos, setServicos] = useState([])
@@ -286,4 +288,18 @@ export function useDatabase() {
     updateOrdemServico,
     deleteOrdemServico,
   }
+}
+
+// Provider que carrega os dados UMA vez e compartilha com todas as páginas.
+// Antes cada página chamava useDatabase() e refazia 6 consultas ao Supabase
+// a cada navegação; agora a navegação é instantânea (dados em cache no contexto).
+export function DataProvider({ children }) {
+  const value = useDatabaseState()
+  return createElement(DataContext.Provider, { value }, children)
+}
+
+export function useDatabase() {
+  const ctx = useContext(DataContext)
+  if (!ctx) throw new Error('useDatabase precisa estar dentro de <DataProvider>')
+  return ctx
 }
