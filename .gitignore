@@ -31,3 +31,6 @@ Thumbs.db
 
 # Ferramentas de agente (bundle de terceiros)
 .agent/.shared/
+
+# Cache da ferramenta impeccable
+.impeccable/
