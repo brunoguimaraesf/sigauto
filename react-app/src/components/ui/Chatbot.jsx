@@ -30,14 +30,16 @@ const RESPOSTAS_LOCAIS = {
 
 function buscarResposta(pergunta) {
   const p = pergunta.toLowerCase()
-  if (p.includes('os') || p.includes('ordem') || p.includes('serviço') || p.includes('abrir')) return RESPOSTAS_LOCAIS['os']
-  if (p.includes('estoque') || p.includes('peça') || p.includes('entrada') || p.includes('saída')) return RESPOSTAS_LOCAIS['estoque']
+  // Tópicos específicos primeiro; "OS" por último e só como palavra
+  // (evita casar dentro de "reabastecidOS", "atendimentOS", etc.)
+  if (p.includes('estoque') || p.includes('peça') || p.includes('peca') || p.includes('reabastec') || p.includes('reposi') || p.includes('entrada') || p.includes('saída') || p.includes('saida')) return RESPOSTAS_LOCAIS['estoque']
   if (p.includes('encerrar') || p.includes('fechar') || p.includes('concluir')) return RESPOSTAS_LOCAIS['encerrar']
   if (p.includes('cliente') || p.includes('inativar')) return RESPOSTAS_LOCAIS['cliente']
   if (p.includes('veiculo') || p.includes('veículo') || p.includes('placa')) return RESPOSTAS_LOCAIS['veiculo']
   if (p.includes('dashboard') || p.includes('painel')) return RESPOSTAS_LOCAIS['dashboard']
   if (p.includes('relatorio') || p.includes('relatório') || p.includes('faturamento')) return RESPOSTAS_LOCAIS['relatorio']
   if (p.includes('usuario') || p.includes('usuário') || p.includes('perfil')) return RESPOSTAS_LOCAIS['usuario']
+  if (/\bo\.?s\.?\b/.test(p) || p.includes('ordem') || p.includes('serviço') || p.includes('servico') || p.includes('abrir')) return RESPOSTAS_LOCAIS['os']
   return 'Não encontrei uma resposta específica para sua dúvida. Para suporte técnico, consulte o manual do sistema ou entre em contato com o administrador. Posso ajudar com dúvidas sobre OS, estoque, clientes, veículos, relatórios e usuários.'
 }
 
