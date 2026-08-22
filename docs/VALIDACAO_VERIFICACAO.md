@@ -17,7 +17,7 @@ TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
 | **ESLint** | Análise estática de código | Configurado (`npm run lint`) |
 | **Vite build** | Verificação de compilação/empacotamento | `npm run build` |
 | **QA assistido em navegador** | Inspeção de telas, console e fluxos | Realizado (evidências em prints) |
-| **Playwright** (ou Cypress) | Testes ponta a ponta (E2E) dos fluxos | Planejado |
+| **Playwright** | Testes ponta a ponta (E2E) dos fluxos | **Implementado — 2 testes E2E** |
 | **Postman/Insomnia** | Testes da API REST (endpoints) | Planejado |
 
 ### 2.1 Testes automatizados (Vitest)
@@ -30,8 +30,11 @@ TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
   - `chatbot.test.js` — roteamento de respostas, incluindo **teste de regressão** de um
     defeito real corrigido (pergunta sobre estoque não deve cair na resposta de OS).
   - **18 testes.**
-- **Total: 36 testes, 100% passando.**
-- **Como executar:** `npm test` dentro de `backend/` e de `react-app/`.
+- **E2E (Playwright)** — `react-app/e2e/login.spec.js`: login do gestor + carregamento
+  do Dashboard, e redirecionamento de rota protegida sem sessão. **2 testes.**
+- **Total: 36 testes unitários + 2 testes E2E, 100% passando.**
+- **Como executar:** `npm test` (unitários, em `backend/` e `react-app/`) e
+  `npm run test:e2e` (E2E em `react-app/`, requer o app rodando).
 
 ## 3. Ferramentas de Validação
 
