@@ -2,14 +2,7 @@ import { useState } from 'react'
 import { GlassPanel } from '../components/GlassPanel'
 import { useDatabase } from '../hooks/useDatabase'
 import { Plus, Search, Trash2, Edit2, CarFront, X } from 'lucide-react'
-
-const normalizarPlaca = (value) => value.toUpperCase().replace(/[^A-Z0-9]/g, '')
-
-const formatarPlaca = (value) => {
-  const raw = normalizarPlaca(value)
-  if (/^[A-Z]{3}[0-9]{4}$/.test(raw)) return `${raw.slice(0, 3)}-${raw.slice(3)}`
-  return raw
-}
+import { normalizarPlaca, formatarPlaca } from '../utils/placa'
 
 export function Veiculos() {
   const { clientes, veiculos, loading, addVeiculo, updateVeiculo, deleteVeiculo } = useDatabase()
