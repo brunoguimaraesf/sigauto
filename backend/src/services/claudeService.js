@@ -6,7 +6,7 @@ const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
 
 // Retenta em erros transitórios do Gemini (503 sobrecarga, 429 rate limit)
 // com backoff exponencial, evitando cair no fallback local por soluços do provedor.
-async function comRetry(fn, tentativas = 3) {
+export async function comRetry(fn, tentativas = 3) {
   for (let i = 0; i < tentativas; i++) {
     try {
       return await fn()

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { GlassPanel } from '../components/GlassPanel'
 import { useDatabase } from '../hooks/useDatabase'
 import { Wrench, Users, CarFront, FileText, ClipboardList, Trash2, CheckCircle, Clock, XCircle, Hourglass } from 'lucide-react'
+import { statusOSLabel, statusOSClasse } from '../utils/os'
 
 export function Dashboard() {
   const {
@@ -84,20 +85,6 @@ export function Dashboard() {
   }
   const maintenanceCount = osStats.emAndamento + osStats.abertas
   
-  const STATUS_LABEL = {
-    aberta: 'Aberta', Pendente: 'Aberta',
-    em_andamento: 'Em Andamento', 'Em Andamento': 'Em Andamento',
-    aguardando_peca: 'Aguard. Peça',
-    concluida: 'Concluída', 'Concluído': 'Concluída',
-    cancelada: 'Cancelada',
-  }
-  const STATUS_CLASS = {
-    aberta: 'status-pending', Pendente: 'status-pending',
-    em_andamento: 'status-progress', 'Em Andamento': 'status-progress',
-    aguardando_peca: 'status-pending',
-    concluida: 'status-done', 'Concluído': 'status-done',
-    cancelada: 'status-pending',
-  }
 
   // Cruzamento de dados de O.S. para exibição na tabela/lista
   const getEnrichedOrders = () => {
@@ -248,8 +235,8 @@ export function Dashboard() {
                         <span style={{ fontFamily: 'var(--font-display)', fontWeight: '600', fontSize: '14px' }}>
                           {os.valorExibido > 0 ? `R$ ${os.valorExibido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
                         </span>
-                        <div className={`status-badge ${STATUS_CLASS[os.status] || 'status-pending'}`}>
-                          {STATUS_LABEL[os.status] || os.status}
+                        <div className={`status-badge ${statusOSClasse(os.status)}`}>
+                          {statusOSLabel(os.status)}
                         </div>
                       </div>
                     </div>
@@ -392,8 +379,8 @@ export function Dashboard() {
                         {os.valorExibido > 0 ? `R$ ${os.valorExibido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
                       </td>
                       <td>
-                        <div className={`status-badge ${STATUS_CLASS[os.status] || 'status-pending'}`}>
-                          {STATUS_LABEL[os.status] || os.status}
+                        <div className={`status-badge ${statusOSClasse(os.status)}`}>
+                          {statusOSLabel(os.status)}
                         </div>
                       </td>
                       <td style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>

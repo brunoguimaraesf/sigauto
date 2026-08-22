@@ -18,3 +18,13 @@ export function calcularSaldo(quantidadeAtual, tipo, quantidade) {
 export function formatarMoeda(valor) {
   return Number(valor || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
 }
+
+// Resumo do inventário: total de itens, quantos em alerta e o valor total.
+export function resumoEstoque(itens = []) {
+  const emAlerta = itens.filter(itemEmAlerta).length
+  const valorTotal = itens.reduce(
+    (acc, i) => acc + (Number(i.quantidade) || 0) * (Number(i.preco_unit) || 0),
+    0,
+  )
+  return { total: itens.length, emAlerta, valorTotal: Number(valorTotal.toFixed(2)) }
+}
