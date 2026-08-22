@@ -5,7 +5,9 @@ import react from '@vitejs/plugin-react'
 export default defineConfig({
   plugins: [react()],
   test: {
-    // Testes unitários (Vitest) ficam em src/. A pasta e2e/ é do Playwright.
+    // Ambiente padrão node (rápido) para os testes de função pura.
+    // Os testes de componente declaram jsdom via "// @vitest-environment jsdom".
+    setupFiles: ['./src/test/setup.js'],
     exclude: [...configDefaults.exclude, 'e2e/**'],
   },
 })

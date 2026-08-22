@@ -13,28 +13,32 @@ TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
 
 | Ferramenta | Uso | Situação |
 |---|---|---|
-| **Vitest** | Testes unitários (frontend e backend) | **Implementado — 55 testes** |
+| **Vitest** | Testes unitários e de componente (frontend e backend) | **Implementado — 67 testes** |
+| **React Testing Library** | Testes de componente React (renderização isolada) | **Implementado** |
+| **Supertest** | Testes de integração da API Express | **Implementado** |
 | **ESLint** | Análise estática de código | Configurado (`npm run lint`) |
 | **Vite build** | Verificação de compilação/empacotamento | `npm run build` |
 | **QA assistido em navegador** | Inspeção de telas, console e fluxos | Realizado (evidências em prints) |
-| **Playwright** | Testes ponta a ponta (E2E) dos fluxos | **Implementado — 8 testes E2E** |
+| **Playwright** | Testes ponta a ponta (E2E) dos fluxos | **Implementado — 11 testes E2E** |
 | **Postman/Insomnia** | Testes da API REST (endpoints) | Planejado |
 
 ### 2.1 Testes automatizados (Vitest)
 
-- **Backend (23 testes)** — `backend/src/utils/validators.test.js` (CPF, CNPJ, placa,
-  e-mail, senha) e `backend/src/services/comRetry.test.js` (retry da IA em erros
-  transitórios 503/429, com timers falsos).
-- **Frontend (32 testes)** — `react-app/src/utils/*.test.js`:
-  - `placa.test.js` — normalização, formatação e validação de placa.
-  - `estoque.test.js` — alerta de reposição, cálculo de saldo, formatação monetária, resumo do estoque.
-  - `chatbot.test.js` — roteamento de respostas por tópico, incluindo **teste de regressão**
-    de um defeito real corrigido (pergunta sobre estoque não deve cair na resposta de OS).
-  - `os.test.js` — mapeamento de status de OS para rótulo e classe visual.
-- **E2E (Playwright) — 8 testes** — `react-app/e2e/`:
-  - `login.spec.js` — login do gestor + Dashboard com dados, rota protegida redireciona, login inválido mostra erro.
-  - `navegacao.spec.js` — navegação por Clientes, Veículos, Estoque, Relatórios e abertura do chatbot.
-- **Total: 55 testes unitários + 8 testes E2E = 63 testes, 100% passando.**
+- **Backend (29 testes)**:
+  - `validators.test.js` — CPF, CNPJ, placa, e-mail, senha.
+  - `comRetry.test.js` — retry da IA em erros transitórios 503/429 (com timers falsos).
+  - `app.integration.test.js` (Supertest) — `/health`, rota 404, bloqueio 401 sem token,
+    token inválido e o rate limit dedicado das rotas de IA.
+- **Frontend (38 testes)**:
+  - Funções puras (`utils/*.test.js`) — placa, estoque (alerta/saldo/moeda/resumo),
+    chatbot (roteamento, com **teste de regressão** de defeito real) e status de OS.
+  - **Componente (React Testing Library)** — `GlassPanel.test.jsx` e `Servicos.test.jsx`
+    (lista, estado vazio, carregando e filtro de busca) com o hook de dados mockado.
+- **E2E (Playwright) — 11 testes** — `react-app/e2e/`:
+  - `login.spec.js` — login (ok/inválido) e redirecionamento de rota protegida.
+  - `navegacao.spec.js` — Clientes, Veículos, Estoque, Relatórios e chatbot.
+  - `fluxos.spec.js` — busca de clientes, modal de novo cliente e dependência cliente→veículo na nova O.S.
+- **Total: 67 testes unitários/integração/componente + 11 E2E = 78 testes, 100% passando.**
 - **Como executar:** `npm test` (unitários, em `backend/` e `react-app/`) e
   `npm run test:e2e` (E2E em `react-app/`, requer o app rodando).
 
@@ -81,4 +85,4 @@ cd backend && npm test
 cd react-app && npm test
 ```
 
-Saída esperada: 36 testes aprovados (18 backend + 18 frontend).
+Saída esperada: 78 testes aprovados (29 backend + 38 frontend + 11 E2E).

@@ -118,7 +118,7 @@ const PORT = process.env.PORT || 3001
 
 // Na Vercel o app é importado como função serverless (sem servidor persistente).
 // Localmente e em hosts tradicionais (Render), sobe o servidor normalmente.
-if (!process.env.VERCEL) {
+if (!process.env.VERCEL && !process.env.VITEST) {
   app.listen(PORT, () => {
     console.log(`[SIGAuto] Servidor iniciado na porta ${PORT} (${process.env.NODE_ENV || 'development'})`)
     console.log(`[SIGAuto] API disponível em http://localhost:${PORT}/api/v1`)
