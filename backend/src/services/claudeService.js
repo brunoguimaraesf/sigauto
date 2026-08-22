@@ -32,7 +32,8 @@ Adapte suas respostas ao nível de acesso do usuário.${contexto ? `\n\nDADOS AT
 
   const model = genAI.getGenerativeModel({
     model: 'gemini-flash-lite-latest',
-    systemInstruction: systemPrompt
+    systemInstruction: systemPrompt,
+    generationConfig: { maxOutputTokens: 800 }
   })
 
   const chatHistory = historico.slice(-10).map(m => ({

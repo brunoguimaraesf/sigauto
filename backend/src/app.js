@@ -63,6 +63,22 @@ const apiRateLimiter = rateLimit({
   }
 })
 
+// Rate limiter mais restrito para rotas de IA (cada chamada consome cota do Gemini).
+// Observação: em serverless (Vercel), o store em memória não persiste entre
+// invocações — a garantia real contra abuso é o teto de cota/orçamento na
+// chave do Gemini (Google Cloud). Este limite é defesa em profundidade.
+const iaRateLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minuto
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    erro: true,
+    codigo: 'RATE_LIMIT_IA',
+    mensagem: 'Muitas requisições à IA em pouco tempo. Aguarde um momento.'
+  }
+})
+
 app.use('/api/v1', apiRateLimiter)
 
 // Rotas
@@ -73,8 +89,8 @@ app.use('/api/v1/os', osRoutes)
 app.use('/api/v1/estoque', estoqueRoutes)
 app.use('/api/v1/movimentacoes', movimentacaoRoutes)
 app.use('/api/v1/relatorios', relatorioRoutes)
-app.use('/api/v1/chatbot', chatbotRoutes)
-app.use('/api/v1/ia', iaRoutes)
+app.use('/api/v1/chatbot', iaRateLimiter, chatbotRoutes)
+app.use('/api/v1/ia', iaRateLimiter, iaRoutes)
 app.use('/api/v1/usuarios', usuarioRoutes)
 
 // Health check
