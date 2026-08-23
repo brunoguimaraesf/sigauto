@@ -163,8 +163,8 @@ BEGIN
       CASE WHEN v_st = 'concluida' THEN v_data + (floor(random()*5)+1 || ' days')::interval ELSE NULL END,
       (20000 + floor(random()*180000))::int,
       v_serv + v_pecv, v_serv, v_pecv,
-      jsonb_build_array(jsonb_build_object('nome', split_part(v_svc,'|',1), 'quantidade', 1, 'valor', split_part(v_svc,'|',2)::numeric)),
-      jsonb_build_array(jsonb_build_object('nome', split_part(v_pec,'|',1), 'quantidade', 1 + floor(random()*3)::int, 'valor', split_part(v_pec,'|',2)::numeric)),
+      jsonb_build_array(jsonb_build_object('descricao', split_part(v_svc,'|',1), 'quantidade', 1, 'valor_unitario', split_part(v_svc,'|',2)::numeric)),
+      jsonb_build_array(jsonb_build_object('descricao', split_part(v_pec,'|',1), 'quantidade', 1 + floor(random()*3)::int, 'valor_unitario', split_part(v_pec,'|',2)::numeric)),
       CASE WHEN v_st = 'concluida' THEN pgto_p[1 + floor(random()*array_length(pgto_p,1))::int] ELSE NULL END
     );
   END LOOP;
