@@ -24,9 +24,13 @@ app.set('trust proxy', 1)
 // Security headers
 app.use(helmet())
 
-// CORS
+// CORS — normaliza a origem (remove caminho/barra final) para casar com o
+// header Origin do navegador, que é sempre só esquema + domínio.
+let corsOrigin = process.env.FRONTEND_URL || 'http://localhost:5173'
+try { corsOrigin = new URL(corsOrigin).origin } catch { /* mantém o valor original */ }
+
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:5173',
+  origin: corsOrigin,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization'],
   credentials: true
