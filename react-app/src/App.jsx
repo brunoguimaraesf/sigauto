@@ -17,6 +17,7 @@ import { Historico } from './pages/Historico'
 import { Relatorios } from './pages/Relatorios'
 import { PainelIA } from './pages/PainelIA'
 import { Usuarios } from './pages/Usuarios'
+import { Funcionarios } from './pages/Funcionarios'
 
 // OS Pages
 import { ListaOS } from './pages/OrdemServico/ListaOS'
@@ -71,6 +72,9 @@ function AppLayout() {
 
           {/* Painel IA - gestor apenas */}
           <Route path="/painel-ia" element={<ProtectedRoute requiredRoles={['gestor']}><PainelIA /></ProtectedRoute>} />
+
+          {/* Funcionários - gestor apenas */}
+          <Route path="/funcionarios" element={<ProtectedRoute requiredRoles={['gestor']}><Funcionarios /></ProtectedRoute>} />
 
           {/* Usuários - gestor apenas */}
           <Route path="/usuarios" element={<ProtectedRoute requiredRoles={['gestor']}><Usuarios /></ProtectedRoute>} />

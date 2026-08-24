@@ -57,3 +57,19 @@ export const calcOSCommissions = (os, mecanico, atendente) => {
 }
 
 export const getEstoqueCatalog = () => []
+
+// Resolve o mecanico e o atendente (funcionarios) de uma OS.
+// Prioriza id_mecanico/id_atendente (FK -> funcionario); como fallback para OS
+// antigas (sem esses campos), usa o funcionario vinculado ao id_usuario.
+export const resolveEquipe = (os, funcionarios = []) => {
+  const byId = (fid) => funcionarios.find(f => f.id === fid)
+  const byUsuario = (uid) => funcionarios.find(f => f.id_usuario === uid)
+  const responsavel = byUsuario(os?.id_usuario)
+  let mecanico = byId(os?.id_mecanico) || (responsavel?.cargo === 'mecanico' ? responsavel : null)
+  let atendente = byId(os?.id_atendente) || (responsavel && responsavel.cargo !== 'mecanico' ? responsavel : null)
+  if (mecanico?.id && mecanico.id === atendente?.id) {
+    if (mecanico.cargo === 'mecanico') atendente = null
+    else mecanico = null
+  }
+  return { mecanico, atendente }
+}

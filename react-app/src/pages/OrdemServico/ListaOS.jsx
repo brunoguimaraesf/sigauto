@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { GlassPanel } from '../../components/GlassPanel'
 import { Plus, Search, Filter, Eye, CheckCircle } from 'lucide-react'
 import { useDatabase } from '../../hooks/useDatabase'
-import { calcOSTotals, formatCurrency } from '../../utils/osFinance'
+import { calcOSTotals, formatCurrency, resolveEquipe } from '../../utils/osFinance'
 
 const STATUS_COLORS = {
   aberta: { color: 'var(--status-pending)', border: 'rgba(255, 179, 0, 0.2)', bg: 'rgba(255, 179, 0, 0.05)', label: 'Aberta' },
@@ -26,7 +26,7 @@ const PRIORIDADE_COLORS = {
 
 export function ListaOS() {
   const navigate = useNavigate()
-  const { clientes, veiculos, usuarios, ordensServico, loading } = useDatabase()
+  const { clientes, veiculos, funcionarios, ordensServico, loading } = useDatabase()
   const [busca, setBusca] = useState('')
   const [filtroStatus, setFiltroStatus] = useState('Todos')
 
@@ -34,13 +34,7 @@ export function ListaOS() {
     return ordensServico.map(os => {
       const veiculo = veiculos.find(v => v.id === os.veiculo_id || v.id === os.id_veiculo) || {}
       const cliente = clientes.find(c => c.id === os.cliente_id || c.id === veiculo.id_cliente || c.id === veiculo.cliente_id) || {}
-      const responsavel = usuarios.find(u => u.id === os.id_usuario)
-      let mecanico = usuarios.find(u => u.id === os.id_mecanico) || (responsavel?.perfil === 'mecanico' ? responsavel : null)
-      let atendente = usuarios.find(u => u.id === os.id_atendente) || (responsavel && responsavel.perfil !== 'mecanico' ? responsavel : null)
-      if (mecanico?.id && mecanico.id === atendente?.id) {
-        if (mecanico.perfil === 'mecanico') atendente = null
-        else mecanico = null
-      }
+      const { mecanico, atendente } = resolveEquipe(os, funcionarios)
       const totals = calcOSTotals(os)
       return {
         ...os,
