@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, CarFront, Users, Wrench, BarChart3, FileText, Package, Brain, UserCog, History, LogOut } from 'lucide-react'
+import { LayoutDashboard, CarFront, Users, Wrench, BarChart3, FileText, Package, Brain, UserCog, HardHat, History, LogOut } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabaseDb } from '../supabaseClient'
 
@@ -74,6 +74,7 @@ export function Sidebar() {
           <>
             <li className="sidebar-item"><NavLink to="/relatorios" className={nc}><BarChart3 size={20} /> Relatorios</NavLink></li>
             <li className="sidebar-item"><NavLink to="/painel-ia" className={nc}><Brain size={20} /> Painel IA</NavLink></li>
+            <li className="sidebar-item"><NavLink to="/funcionarios" className={nc}><HardHat size={20} /> Funcionarios</NavLink></li>
             <li className="sidebar-item"><NavLink to="/usuarios" className={nc}><UserCog size={20} /> Usuarios</NavLink></li>
           </>
         )}

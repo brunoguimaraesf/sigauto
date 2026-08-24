@@ -12,7 +12,7 @@ const emptyVeiculo = { placa: '', marca: '', modelo: '', ano: '', cor: '', km_at
 
 export function AbrirOS() {
   const navigate = useNavigate()
-  const { clientes, veiculos, usuarios, currentUserId, addCliente, addVeiculo, addOrdemServico } = useDatabase()
+  const { clientes, veiculos, funcionarios, currentUserId, addCliente, addVeiculo, addOrdemServico } = useDatabase()
 
   const [clienteId, setClienteId] = useState('')
   const [veiculoId, setVeiculoId] = useState('')
@@ -30,11 +30,11 @@ export function AbrirOS() {
   const [submitting, setSubmitting] = useState(false)
   const [successModal, setSuccessModal] = useState(null)
 
-  const mecanicos = useMemo(() => usuarios.filter(u => u.perfil === 'mecanico'), [usuarios])
-  const atendentes = useMemo(() => usuarios.filter(u => u.perfil === 'atendente' || u.perfil === 'gestor'), [usuarios])
-  const usuarioAtual = usuarios.find(u => u.id === currentUserId)
-  const atendentePadrao = usuarioAtual?.perfil === 'atendente' || usuarioAtual?.perfil === 'gestor'
-    ? usuarioAtual
+  const mecanicos = useMemo(() => funcionarios.filter(f => f.cargo === 'mecanico'), [funcionarios])
+  const atendentes = useMemo(() => funcionarios.filter(f => f.cargo === 'atendente' || f.cargo === 'gestor'), [funcionarios])
+  const funcionarioAtual = funcionarios.find(f => f.id_usuario === currentUserId)
+  const atendentePadrao = funcionarioAtual && funcionarioAtual.cargo !== 'mecanico'
+    ? funcionarioAtual
     : atendentes[0]
   const atendenteSelecionadoId = atendenteId || atendentePadrao?.id || ''
 
@@ -142,7 +142,9 @@ export function AbrirOS() {
         veiculo_id: veiculoFinal.id,
         id_veiculo: veiculoFinal.id,
         cliente_id: clienteFinal.id,
-        id_usuario: mecanicoId || atendenteSelecionadoId || currentUserId || null,
+        id_usuario: currentUserId || null,
+        id_mecanico: mecanicoId || null,
+        id_atendente: atendenteSelecionadoId || null,
         descricao,
         diagnostico: '',
         servicos_executados: '',

@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { GlassPanel } from '../components/GlassPanel'
 import { useDatabase } from '../hooks/useDatabase'
 import { BarChart3, TrendingUp, Package, Users, Wrench, Download, Percent } from 'lucide-react'
-import { calcOSCommissions, calcOSTotals, formatCurrency } from '../utils/osFinance'
+import { calcOSCommissions, calcOSTotals, formatCurrency, resolveEquipe } from '../utils/osFinance'
 import { supabaseDb } from '../supabaseClient'
 
 const TIPOS = [
@@ -27,7 +27,7 @@ const statusLabel = (status) => ({
 }[status] || status || 'Sem status')
 
 export function Relatorios() {
-  const { clientes, veiculos, usuarios, ordensServico, servicos } = useDatabase()
+  const { clientes, veiculos, funcionarios, ordensServico, servicos } = useDatabase()
   const [estoque, setEstoque] = useState([])
   const [tipoSel, setTipoSel] = useState('faturamento')
   const [dataInicio, setDataInicio] = useState(() => {
@@ -51,18 +51,7 @@ export function Relatorios() {
     const v = getVeiculo(os)
     return clientes.find(c => c.id === (os.cliente_id || v.cliente_id || v.id_cliente)) || {}
   }
-  const getResponsaveisOS = (os) => {
-    const responsavel = usuarios.find(u => u.id === os.id_usuario)
-    let mecanico = usuarios.find(u => u.id === os.id_mecanico) || (responsavel?.perfil === 'mecanico' ? responsavel : null)
-    let atendente = usuarios.find(u => u.id === os.id_atendente) || (responsavel && responsavel.perfil !== 'mecanico' ? responsavel : null)
-
-    if (mecanico?.id && mecanico.id === atendente?.id) {
-      if (mecanico.perfil === 'mecanico') atendente = null
-      else mecanico = null
-    }
-
-    return { mecanico, atendente }
-  }
+  const getResponsaveisOS = (os) => resolveEquipe(os, funcionarios)
   const getValorOS = (os) => os.valor_total || os.preco_final || calcOSTotals(os).valorTotal
   const isConcluida = (os) => os.status === 'concluida' || os.status === 'Concluido' || os.status === 'ConcluÒ­do'
   const formatData = (value) => {

@@ -4,7 +4,7 @@ import { ArrowLeft, CheckCircle, Package, Plus, Search, Trash2, Wrench, X } from
 import { GlassPanel } from '../../components/GlassPanel'
 import { useDatabase } from '../../hooks/useDatabase'
 import { supabaseDb } from '../../supabaseClient'
-import { calcOSCommissions, calcOSTotals, formatCurrency, getLineTotal, toMoney } from '../../utils/osFinance'
+import { calcOSCommissions, calcOSTotals, formatCurrency, getLineTotal, resolveEquipe, toMoney } from '../../utils/osFinance'
 
 function SummaryChip({ label, value, tone }) {
   return (
@@ -18,7 +18,7 @@ function SummaryChip({ label, value, tone }) {
 export function AtualizarOS() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { clientes, veiculos, usuarios, servicos: catalogoServicos, ordensServico, updateOrdemServico } = useDatabase()
+  const { clientes, veiculos, funcionarios, servicos: catalogoServicos, ordensServico, updateOrdemServico } = useDatabase()
 
   const os = ordensServico.find(o => o.id === id)
   const veiculo = veiculos.find(v => v.id === (os?.veiculo_id || os?.id_veiculo)) || {}
@@ -39,32 +39,26 @@ export function AtualizarOS() {
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     if (!os) return
-    const responsavel = usuarios.find(u => u.id === os.id_usuario)
+    const { mecanico, atendente } = resolveEquipe(os, funcionarios)
     setDiagnostico(os.diagnostico || '')
     setStatus(os.status || 'aberta')
     setObservacoes(os.observacoes || '')
     setFormaPagamento(os.forma_pagamento || 'a_definir')
-    const nextMecanicoId = os.id_mecanico || (responsavel?.perfil === 'mecanico' ? os.id_usuario : '') || ''
-    const nextAtendenteId = os.id_atendente || (responsavel && responsavel.perfil !== 'mecanico' ? os.id_usuario : '') || ''
-    setMecanicoId(nextMecanicoId === nextAtendenteId && responsavel?.perfil !== 'mecanico' ? '' : nextMecanicoId)
-    setAtendenteId(nextMecanicoId === nextAtendenteId && responsavel?.perfil === 'mecanico' ? '' : nextAtendenteId)
+    setMecanicoId(mecanico?.id || '')
+    setAtendenteId(atendente?.id || '')
     setServicosItens(os.servicos_itens || [])
     setPecasItens(os.pecas_itens || [])
-  }, [os, usuarios])
+  }, [os, funcionarios])
   /* eslint-enable react-hooks/set-state-in-effect */
   const [buscaModal, setBuscaModal] = useState('')
   const [selecionadosModal, setSelecionadosModal] = useState([])
   const [saved, setSaved] = useState(false)
 
   const totals = calcOSTotals({ servicos_itens: servicosItens, pecas_itens: pecasItens })
-  const mecanicos = usuarios.filter(u => u.perfil === 'mecanico')
-  const atendentes = usuarios.filter(u => u.perfil === 'atendente' || u.perfil === 'gestor')
-  let mecanicoSelecionado = usuarios.find(u => u.id === mecanicoId)
-  let atendenteSelecionado = usuarios.find(u => u.id === atendenteId)
-  if (mecanicoSelecionado?.id && mecanicoSelecionado.id === atendenteSelecionado?.id) {
-    if (mecanicoSelecionado.perfil === 'mecanico') atendenteSelecionado = null
-    else mecanicoSelecionado = null
-  }
+  const mecanicos = funcionarios.filter(f => f.cargo === 'mecanico')
+  const atendentes = funcionarios.filter(f => f.cargo === 'atendente' || f.cargo === 'gestor')
+  const mecanicoSelecionado = funcionarios.find(f => f.id === mecanicoId)
+  const atendenteSelecionado = funcionarios.find(f => f.id === atendenteId)
   const encerrada = os?.status === 'concluida' || os?.status === 'Concluído'
   const cancelada = os?.status === 'cancelada'
   const bloqueada = encerrada || cancelada
@@ -102,7 +96,8 @@ export function AtualizarOS() {
     )
     updateOrdemServico(id, {
       diagnostico,
-      id_usuario: mecanicoId || atendenteId || null,
+      id_mecanico: mecanicoId || null,
+      id_atendente: atendenteId || null,
       servicos_executados: nextServicos.map(item => item.descricao).join('; '),
       servicos_itens: nextServicos,
       pecas_itens: nextPecas,

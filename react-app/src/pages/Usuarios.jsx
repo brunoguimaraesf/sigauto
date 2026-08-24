@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { GlassPanel } from '../components/GlassPanel'
-import { Plus, Edit2, UserX, X, Shield, User, Wrench, Search, RefreshCw, Percent } from 'lucide-react'
+import { Plus, Edit2, UserX, X, Shield, User, Wrench, Search, RefreshCw } from 'lucide-react'
 import { supabase, supabaseDb } from '../supabaseClient'
 
 const PERFIL_ICONS = { gestor: Shield, atendente: User, mecanico: Wrench }
@@ -22,12 +22,8 @@ export function Usuarios() {
   const [fPerfil, setFPerfil] = useState('atendente')
   const [fTelefone, setFTelefone] = useState('')
   const [fSenha, setFSenha] = useState('')
-  const [fComissaoPercentual, setFComissaoPercentual] = useState('0')
-  const [fComissaoServicos, setFComissaoServicos] = useState(false)
-  const [fComissaoPecas, setFComissaoPecas] = useState(false)
   const [salvando, setSalvando] = useState(false)
   const [erroForm, setErroForm] = useState('')
-  const perfilComComissao = fPerfil === 'mecanico' || fPerfil === 'atendente'
 
   const carregarUsuarios = async () => {
     setCarregando(true)
@@ -58,9 +54,6 @@ export function Usuarios() {
     setFPerfil('atendente')
     setFTelefone('')
     setFSenha('')
-    setFComissaoPercentual('0')
-    setFComissaoServicos(false)
-    setFComissaoPecas(false)
     setErroForm('')
     setModalAberto(true)
   }
@@ -72,24 +65,15 @@ export function Usuarios() {
     setFPerfil(u.perfil || 'atendente')
     setFTelefone(u.telefone || '')
     setFSenha('')
-    setFComissaoPercentual(String(u.comissao_percentual || 0))
-    setFComissaoServicos(Boolean(u.comissao_sobre_servicos))
-    setFComissaoPecas(Boolean(u.comissao_sobre_pecas))
     setErroForm('')
     setModalAberto(true)
   }
 
-  const montarPayloadUsuario = () => {
-    const percentual = Math.min(100, Math.max(0, Number(fComissaoPercentual) || 0))
-    return {
-      nome: fNome,
-      perfil: fPerfil,
-      telefone: fTelefone || null,
-      comissao_percentual: perfilComComissao ? percentual : 0,
-      comissao_sobre_servicos: perfilComComissao ? fComissaoServicos : false,
-      comissao_sobre_pecas: perfilComComissao ? fComissaoPecas : false,
-    }
-  }
+  const montarPayloadUsuario = () => ({
+    nome: fNome,
+    perfil: fPerfil,
+    telefone: fTelefone || null,
+  })
 
   const handleSubmit = async (e) => {
     e.preventDefault()
@@ -98,17 +82,8 @@ export function Usuarios() {
 
     try {
       if (editandoId) {
-        const payload = montarPayloadUsuario()
-        // Separar campos base dos campos de comissão para tolerar schema antigo
-        const { comissao_percentual, comissao_sobre_servicos, comissao_sobre_pecas, ...basePayload } = payload
-        const { error } = await supabaseDb.from('usuario').update(basePayload).eq('id', editandoId)
+        const { error } = await supabaseDb.from('usuario').update(montarPayloadUsuario()).eq('id', editandoId)
         if (error) throw error
-        // Comissão separada — ignora silenciosamente se colunas não existirem
-        const { error: comissaoError } = await supabaseDb
-          .from('usuario')
-          .update({ comissao_percentual, comissao_sobre_servicos, comissao_sobre_pecas })
-          .eq('id', editandoId)
-        if (comissaoError) console.warn('Colunas de comissão ausentes:', comissaoError)
       } else {
         if (!fSenha || fSenha.length < 8) {
           throw new Error('A senha deve ter pelo menos 8 caracteres.')
@@ -136,18 +111,9 @@ export function Usuarios() {
 
         const id = data?.user?.id
         if (id) {
-          // Inserir primeiro sem comissão (colunas podem não existir ainda)
           const basePayload = { id, email: fEmail, nome: fNome, perfil: fPerfil, telefone: fTelefone || null, ativo: true }
           const { error: usuarioError } = await supabaseDb.from('usuario').upsert(basePayload)
           if (usuarioError) throw usuarioError
-
-          // Tentar adicionar campos de comissão separadamente (ignora erro se colunas não existirem)
-          const comissaoPayload = montarPayloadUsuario()
-          const { error: comissaoError } = await supabaseDb
-            .from('usuario')
-            .update({ comissao_percentual: comissaoPayload.comissao_percentual, comissao_sobre_servicos: comissaoPayload.comissao_sobre_servicos, comissao_sobre_pecas: comissaoPayload.comissao_sobre_pecas })
-            .eq('id', id)
-          if (comissaoError) console.warn('Colunas de comissão não encontradas na tabela usuario. Execute o SQL de migração.', comissaoError)
         }
       }
 
@@ -213,7 +179,6 @@ export function Usuarios() {
                   <th>E-mail</th>
                   <th>Telefone</th>
                   <th>Perfil</th>
-                  <th>Comissao</th>
                   <th>Status</th>
                   <th>Acoes</th>
                 </tr>
@@ -238,19 +203,6 @@ export function Usuarios() {
                         <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 10px', borderRadius: '100px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: pc.color, background: pc.bg, border: `1px solid ${pc.border}` }}>
                           <PerfilIcon size={11} /> {u.perfil}
                         </span>
-                      </td>
-                      <td style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                        {(u.perfil === 'atendente' || u.perfil === 'mecanico') && Number(u.comissao_percentual || 0) > 0 ? (
-                          <>
-                            <strong style={{ color: 'var(--text-primary)' }}>{Number(u.comissao_percentual || 0).toLocaleString('pt-BR')}%</strong>
-                            <span style={{ display: 'block', marginTop: '2px' }}>
-                              {[
-                                u.comissao_sobre_servicos ? 'servicos' : null,
-                                u.comissao_sobre_pecas ? 'pecas/produtos' : null,
-                              ].filter(Boolean).join(' + ') || 'sem base'}
-                            </span>
-                          </>
-                        ) : '-'}
                       </td>
                       <td>
                         <span style={{ padding: '4px 10px', borderRadius: '100px', fontSize: '11px', fontWeight: '600', color: u.ativo ? 'var(--status-done)' : 'var(--text-muted)', background: u.ativo ? 'rgba(0, 255, 136, 0.06)' : 'rgba(255,255,255,0.02)', border: `1px solid ${u.ativo ? 'rgba(0, 255, 136, 0.2)' : 'rgba(255,255,255,0.06)'}` }}>
@@ -317,39 +269,9 @@ export function Usuarios() {
                     </div>
                   )}
                 </div>
-                {perfilComComissao && (
-                  <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '14px', marginBottom: '14px', background: 'rgba(255,255,255,0.02)' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
-                      <Percent size={15} /> Comissao
-                    </div>
-                    <div className="form-row">
-                      <div className="form-group">
-                        <label>Percentual (%)</label>
-                        <input
-                          type="number"
-                          className="form-control"
-                          value={fComissaoPercentual}
-                          onChange={e => setFComissaoPercentual(e.target.value)}
-                          min="0"
-                          max="100"
-                          step="0.01"
-                          placeholder="Ex: 5"
-                        />
-                      </div>
-                      <div className="form-group">
-                        <label>Base de calculo</label>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '13px', marginTop: '8px' }}>
-                          <input type="checkbox" checked={fComissaoServicos} onChange={e => setFComissaoServicos(e.target.checked)} />
-                          Servicos
-                        </label>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '13px', marginTop: '8px' }}>
-                          <input type="checkbox" checked={fComissaoPecas} onChange={e => setFComissaoPecas(e.target.checked)} />
-                          Pecas e produtos
-                        </label>
-                      </div>
-                    </div>
-                  </div>
-                )}
+                <div className="alert-box" style={{ marginBottom: '12px', fontSize: '12px' }}>
+                  A <strong>comissão</strong> agora é configurada em <strong>Funcionários</strong>, vinculada ao colaborador.
+                </div>
                 {erroForm && (
                   <div style={{ padding: '10px', background: 'rgba(232, 89, 12, 0.08)', border: '1px solid rgba(232, 89, 12, 0.2)', borderRadius: 'var(--radius-sm)', color: 'var(--neon-orange)', fontSize: '13px' }}>
                     {erroForm}
