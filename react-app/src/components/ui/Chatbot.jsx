@@ -46,13 +46,19 @@ export function Chatbot() {
     if (!pergunta) return
     setInput('')
 
+    // Historico = apenas a conversa visivel desta sessao (exclui a saudacao
+    // inicial). Isso mantem o contexto do Gemini alinhado ao que o usuario ve.
+    const historicoSessao = mensagens
+      .filter(m => m.id !== 'init')
+      .map(m => ({ remetente: m.remetente, conteudo: m.conteudo }))
+
     const msgUser = { id: crypto.randomUUID(), remetente: 'usuario', conteudo: pergunta, criado_em: new Date().toISOString() }
     setMensagens(m => [...m, msgUser])
     setEnviando(true)
 
     try {
       const { chatbotApi } = await import('../../services/api.js')
-      const data = await chatbotApi.enviarMensagem(pergunta)
+      const data = await chatbotApi.enviarMensagem(pergunta, historicoSessao)
       const resposta = data?.dados?.resposta || data?.resposta || data?.mensagem
       setMensagens(m => [...m, { id: crypto.randomUUID(), remetente: 'chatbot', conteudo: resposta, criado_em: new Date().toISOString() }])
     } catch (e) {
@@ -69,8 +75,21 @@ export function Chatbot() {
     setMensagens([SAUDACAO])
   }
 
-  const renderTexto = (texto) =>
-    texto.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+  // Formata a resposta com seguranca: escapa HTML primeiro (evita XSS na
+  // insercao via dangerouslySetInnerHTML) e depois aplica negrito, listas e
+  // quebras de linha.
+  const renderTexto = (texto) => {
+    const escapar = (s) => String(s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+    const inline = (s) => escapar(s).replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+    return String(texto || '')
+      .split('\n')
+      .map(linha => {
+        const item = linha.match(/^\s*[-*]\s+(.*)/)
+        return item ? `&nbsp;&nbsp;•&nbsp;${inline(item[1])}` : inline(linha)
+      })
+      .join('<br>')
+  }
 
   const totalMsgs = mensagens.length - 1
 
