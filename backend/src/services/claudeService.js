@@ -19,6 +19,33 @@ export async function comRetry(fn, tentativas = 3) {
   }
 }
 
+// Estrutura real de telas e fluxos do SIGAuto. Sem isto o modelo não tem em que
+// se apoiar para responder "como faço X?" e inventa caminhos de menu plausíveis
+// (ex.: um menu "Financeiro", que não existe). Mantenha em sincronia com o
+// Sidebar (react-app/src/components/Sidebar.jsx) e as rotas do App.jsx.
+const MAPA_DO_SISTEMA = `MENUS REAIS (lateral esquerda), com quem enxerga cada um:
+- Dashboard — gestor, atendente
+- Ordens de Servico — todos os perfis
+- Historico — todos os perfis
+- Clientes — gestor, atendente
+- Veiculos — gestor, atendente
+- Servicos — gestor, atendente
+- Estoque — gestor, atendente (mostra um contador de itens em alerta ao lado do nome)
+- Relatorios — apenas gestor
+- Painel IA — apenas gestor
+- Funcionarios — apenas gestor
+- Usuarios — apenas gestor
+
+FLUXOS PRINCIPAIS:
+- Abrir OS: menu "Ordens de Servico" > botao de nova OS. Informe a placa (o sistema busca o veiculo e o cliente), preencha a queixa e confirme. O numero da OS e gerado automaticamente. Restrito a gestor e atendente.
+- Atualizar OS: menu "Ordens de Servico" > clique na OS desejada. Ali se lancam servicos e pecas e se muda o status. Todos os perfis.
+- Encerrar OS: abra a OS e use a acao de encerrar; informe valor final e forma de pagamento. Restrito a gestor e atendente.
+- Entrada/saida de peca: menu "Estoque" > localize o item > acao de entrada ou saida > informe quantidade e motivo.
+- Cadastrar cliente ou veiculo: menus "Clientes" e "Veiculos". No cadastro de veiculo, ao digitar a placa o sistema tenta identificar o modelo automaticamente.
+- Inativar cliente: menu "Clientes" > localize o cliente > acao de inativar. O sistema verifica se ha OS abertas antes de permitir.
+- Ver relatorios: menu "Relatorios" (apenas gestor), com filtro por periodo e exportacao.
+- Gerar recomendacoes de IA: menu "Painel IA" (apenas gestor) > botao "Analisar Dados".`
+
 export async function responderChatbot(pergunta, perfilUsuario, historico = [], contexto = null) {
   const systemPrompt = `Você é um assistente virtual do SIGAuto, um sistema de gestão para oficinas mecânicas.
 Seu nome é AutoBot. Ajude os usuários com dúvidas sobre o sistema E responda perguntas analíticas sobre os dados da oficina (rankings, médias, totais, faturamento, estoque).
@@ -30,7 +57,12 @@ O perfil do usuário atual é: ${perfilUsuario}.
 - gestor: tem acesso total ao sistema
 - atendente: gerencia clientes, veículos e OS
 - mecanico: visualiza e atualiza OS atribuídas
-Adapte suas respostas ao nível de acesso do usuário.${contexto ? `\n\nDADOS ATUAIS DA OFICINA (JSON, use para responder com precisão):\n${JSON.stringify(contexto)}` : ''}`
+Adapte suas respostas ao nível de acesso do usuário.
+
+Ao explicar COMO fazer algo no sistema, use exclusivamente os nomes de menu e os passos do MAPA DO SISTEMA abaixo. NUNCA invente nomes de telas, menus ou botões: se o caminho não estiver no mapa, diga que não sabe e sugira o menu mais próximo que exista. Se a tela não for visível para o perfil ${perfilUsuario}, avise que o acesso é restrito em vez de ensinar o caminho.
+
+MAPA DO SISTEMA:
+${MAPA_DO_SISTEMA}${contexto ? `\n\nDADOS ATUAIS DA OFICINA (JSON, use para responder com precisão):\n${JSON.stringify(contexto)}` : ''}`
 
   const model = genAI.getGenerativeModel({
     model: 'gemini-flash-lite-latest',
