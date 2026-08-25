@@ -37,11 +37,18 @@ SIGAUTO/
 
 1. Crie um novo projeto em [app.supabase.com](https://app.supabase.com)
 2. Acesse **SQL Editor** no painel
-3. Execute os scripts **na ordem**:
-   - `database/01_schema.sql` — Criação das tabelas e tipos
-   - `database/02_rls_policies.sql` — Políticas de segurança (RLS)
-   - `database/03_functions.sql` — Funções e procedures
-   - `database/04_seed_data.sql` — Dados de exemplo
+3. Execute os scripts **na ordem** (SQL Editor):
+   - `01_schema.sql` — Tabelas e tipos base
+   - `02_rls_policies.sql` — Políticas de segurança (RLS)
+   - `03_functions.sql` — Funções e procedures
+   - `04_seed_data.sql` — Dados iniciais
+   - `05_os_finance_columns.sql` — Campos financeiros da OS
+   - `06_servico_catalogo.sql` — Catálogo de serviços
+   - `07_fix_rls_recursion.sql` — Ajuste de RLS
+   - `08_comissoes_os.sql` — Comissões (legado)
+   - `09_fix_recomendacao_ia.sql` — Ajuste da tabela de recomendações da IA
+   - `10_seed_demo.sql` — Massa de dados de demonstração
+   - `11_normalizacao_relacional.sql` — **Normalização do modelo**: cria a entidade `funcionario` e as tabelas `os_servico`/`os_peca` (substituem a comissão em `usuario` e os campos JSON da OS), com backfill e ajuste de RLS. A "Fase 2" (drop das colunas antigas) fica comentada no fim — rode só após validar a aplicação.
 4. Anote a **URL** e as **chaves** (anon e service_role) em **Project Settings > API**
 
 ---
@@ -142,6 +149,27 @@ Acesse: **http://localhost:5173**
 **Banco de dados:** Supabase (PostgreSQL) com Row Level Security (RLS)
 
 **IA:** Google Gemini (gemini-flash-lite-latest para chatbot e análise)
+
+**Testes:** Vitest + React Testing Library (frontend), Supertest (API) e Playwright (E2E)
+
+**Deploy:** Vercel (frontend e backend como função serverless)
+
+---
+
+## Testes
+
+```bash
+# Frontend (unitários + componente)
+cd react-app && npx vitest run
+
+# Frontend (E2E — sobe o Vite automaticamente)
+cd react-app && npx playwright test
+
+# Backend (unitários + integração da API)
+cd backend && npx vitest run
+```
+
+Cobertura atual: **47** testes de frontend + **29** de backend + **11** E2E.
 
 ---
 
