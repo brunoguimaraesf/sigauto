@@ -1,7 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { GlassPanel } from '../components/GlassPanel'
-import { Plus, Edit2, UserX, X, Shield, User, Wrench, Search, Percent } from 'lucide-react'
+import { Plus, Edit2, UserX, X, Shield, User, Wrench, Search, Percent, RefreshCw } from 'lucide-react'
 import { useDatabase } from '../hooks/useDatabase'
+import { supabaseDb } from '../supabaseClient'
 
 const CARGO_ICONS = { gestor: Shield, atendente: User, mecanico: Wrench }
 const CARGO_COLORS = {
@@ -10,27 +11,42 @@ const CARGO_COLORS = {
   mecanico: { color: 'var(--status-done)', bg: 'rgba(0, 255, 136, 0.08)', border: 'rgba(0, 255, 136, 0.2)' },
 }
 
+const isUuid = (v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v || '')
 const emptyForm = {
   nome: '', cargo: 'mecanico', comissao_percentual: '0',
   comissao_sobre_servicos: false, comissao_sobre_pecas: false, id_usuario: '',
 }
 
 export function Funcionarios() {
-  const { funcionarios, usuarios, addFuncionario, updateFuncionario, deleteFuncionario } = useDatabase()
+  // usuarios (para vincular login) e reload da lista compartilhada do app
+  const { usuarios, reloadDatabase } = useDatabase()
+  // A comissao so e legivel na tabela funcionario por gestor/proprio (RLS);
+  // por isso esta tela busca a tabela completa direto, e nao a view publica.
+  const [funcionarios, setFuncionarios] = useState([])
+  const [carregando, setCarregando] = useState(true)
   const [modalAberto, setModalAberto] = useState(false)
   const [editandoId, setEditandoId] = useState(null)
   const [busca, setBusca] = useState('')
   const [form, setForm] = useState(emptyForm)
   const [erroForm, setErroForm] = useState('')
+  const [salvando, setSalvando] = useState(false)
 
   const setF = (campo, valor) => setForm(f => ({ ...f, [campo]: valor }))
 
-  const abrirNovo = () => {
-    setEditandoId(null)
-    setForm(emptyForm)
-    setErroForm('')
-    setModalAberto(true)
+  const carregar = async () => {
+    setCarregando(true)
+    const { data, error } = await supabaseDb.from('funcionario').select('*').order('nome')
+    if (error) { console.error('Erro ao carregar funcionarios:', error); setFuncionarios([]) }
+    else setFuncionarios(data || [])
+    setCarregando(false)
   }
+
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    carregar()
+  }, [])
+
+  const abrirNovo = () => { setEditandoId(null); setForm(emptyForm); setErroForm(''); setModalAberto(true) }
 
   const abrirEditar = (f) => {
     setEditandoId(f.id)
@@ -46,31 +62,36 @@ export function Funcionarios() {
     setModalAberto(true)
   }
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!form.nome.trim()) {
-      setErroForm('Informe o nome do funcionário.')
-      return
-    }
+    if (!form.nome.trim()) { setErroForm('Informe o nome do funcionário.'); return }
+    setSalvando(true)
     const payload = {
       nome: form.nome.trim(),
       cargo: form.cargo,
       comissao_percentual: Math.min(100, Math.max(0, Number(form.comissao_percentual) || 0)),
       comissao_sobre_servicos: form.comissao_sobre_servicos,
       comissao_sobre_pecas: form.comissao_sobre_pecas,
-      id_usuario: form.id_usuario || null,
+      id_usuario: isUuid(form.id_usuario) ? form.id_usuario : null,
     }
-    if (editandoId) updateFuncionario(editandoId, payload)
-    else addFuncionario(payload)
+    const resp = editandoId
+      ? await supabaseDb.from('funcionario').update(payload).eq('id', editandoId)
+      : await supabaseDb.from('funcionario').insert(payload)
+    setSalvando(false)
+    if (resp.error) { setErroForm(resp.error.message || 'Não foi possível salvar.'); return }
     setModalAberto(false)
+    await carregar()
+    reloadDatabase()
   }
 
-  const handleInativar = (id) => {
+  const handleInativar = async (id) => {
     if (!confirm('Deseja inativar este funcionário?')) return
-    deleteFuncionario(id)
+    const { error } = await supabaseDb.from('funcionario').update({ ativo: false }).eq('id', id)
+    if (error) { alert('Não foi possível inativar.'); return }
+    await carregar()
+    reloadDatabase()
   }
 
-  // Usuarios ainda nao vinculados a nenhum funcionario (para o select do modal)
   const usuariosDisponiveis = usuarios.filter(u =>
     !funcionarios.some(f => f.id_usuario === u.id && f.id !== editandoId)
   )
@@ -87,9 +108,14 @@ export function Funcionarios() {
           <h2>Funcionarios</h2>
           <p>Colaboradores da oficina e suas regras de comissao.</p>
         </div>
-        <button className="btn-primary" onClick={abrirNovo} style={{ borderRadius: 'var(--radius-sm)', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <Plus size={16} /> Novo Funcionario
-        </button>
+        <div style={{ display: 'flex', gap: '8px' }}>
+          <button className="btn-secondary" onClick={carregar} style={{ borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <RefreshCw size={16} /> Atualizar
+          </button>
+          <button className="btn-primary" onClick={abrirNovo} style={{ borderRadius: 'var(--radius-sm)', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Plus size={16} /> Novo Funcionario
+          </button>
+        </div>
       </section>
 
       <GlassPanel className="panel stagger-2">
@@ -99,7 +125,9 @@ export function Funcionarios() {
         </div>
 
         <div className="tech-table-container">
-          {filtrados.length === 0 ? (
+          {carregando ? (
+            <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-secondary)' }}>Carregando funcionarios...</div>
+          ) : filtrados.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-secondary)' }}>Nenhum funcionario cadastrado.</div>
           ) : (
             <table className="tech-table">
@@ -150,9 +178,11 @@ export function Funcionarios() {
                           <button className="btn-secondary" onClick={() => abrirEditar(f)} style={{ padding: '5px 10px', fontSize: '12px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '4px' }}>
                             <Edit2 size={11} /> Editar
                           </button>
-                          <button className="btn-danger" onClick={() => handleInativar(f.id)} style={{ padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px' }}>
-                            <UserX size={11} /> Inativar
-                          </button>
+                          {f.ativo !== false && (
+                            <button className="btn-danger" onClick={() => handleInativar(f.id)} style={{ padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px' }}>
+                              <UserX size={11} /> Inativar
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -226,7 +256,7 @@ export function Funcionarios() {
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn-secondary" onClick={() => setModalAberto(false)}>Cancelar</button>
-                <button type="submit" className="btn-primary">{editandoId ? 'Salvar Alteracoes' : 'Criar Funcionario'}</button>
+                <button type="submit" className="btn-primary" disabled={salvando}>{salvando ? 'Salvando...' : editandoId ? 'Salvar Alteracoes' : 'Criar Funcionario'}</button>
               </div>
             </form>
           </div>
