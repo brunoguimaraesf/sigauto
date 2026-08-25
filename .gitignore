@@ -6,6 +6,9 @@ dist/
 dist-ssr/
 build/
 
+# Cobertura de testes
+coverage/
+
 # Variáveis de ambiente (contêm chaves secretas)
 .env
 .env.local

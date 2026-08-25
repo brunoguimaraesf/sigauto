@@ -176,7 +176,10 @@ function useDatabaseState() {
         supabaseDb.from('ordem_servico').select('*, os_servico(*), os_peca(*)').order('data_abertura', { ascending: false }),
         supabaseDb.from('servico_catalogo').select('*').eq('ativo', true).order('nome'),
         supabaseDb.from('usuario').select('*').eq('ativo', true).order('nome'),
-        supabaseDb.from('funcionario').select('*').eq('ativo', true).order('nome'),
+        // Lista geral pela view publica (sem comissao) — usada em dropdowns e
+        // na resolucao de nomes. Comissao so nas telas de gestor (Relatorios,
+        // Funcionarios), que consultam a tabela funcionario diretamente.
+        supabaseDb.from('funcionario_publico').select('*').eq('ativo', true).order('nome'),
       ])
 
       if (clientesRes.error) throw clientesRes.error
@@ -191,13 +194,21 @@ function useDatabaseState() {
         osData = retry.data
       }
 
+      // Fallback para bancos ainda sem a view funcionario_publico (pre-12):
+      // le da tabela funcionario direto (permissivo ate o hardening rodar).
+      let funcData = funcionariosRes.error ? [] : (funcionariosRes.data || [])
+      if (funcionariosRes.error) {
+        const retry = await supabaseDb.from('funcionario').select('id, nome, cargo, id_usuario, ativo').eq('ativo', true).order('nome')
+        if (!retry.error) funcData = retry.data || []
+      }
+
       const next = {
         clientes: (clientesRes.data || []).map(mapClienteFromDb),
         veiculos: (veiculosRes.data || []).map(mapVeiculoFromDb),
         ordensServico: (osData || []).map(mapOSFromDb),
         servicos: servicosRes.error ? [] : (servicosRes.data || []),
         usuarios: usuariosRes.error ? [] : (usuariosRes.data || []),
-        funcionarios: funcionariosRes.error ? [] : (funcionariosRes.data || []),
+        funcionarios: funcData,
       }
       setCurrentUserId(sessionData?.user?.id || usuariosRes.data?.[0]?.id || null)
       setSupabaseConnected(true)

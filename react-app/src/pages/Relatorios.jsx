@@ -27,8 +27,11 @@ const statusLabel = (status) => ({
 }[status] || status || 'Sem status')
 
 export function Relatorios() {
-  const { clientes, veiculos, funcionarios, ordensServico, servicos } = useDatabase()
+  const { clientes, veiculos, ordensServico, servicos } = useDatabase()
   const [estoque, setEstoque] = useState([])
+  // Relatorio de comissoes precisa dos campos de comissao, que so o gestor le na
+  // tabela funcionario (a lista geral do app vem da view publica, sem comissao).
+  const [funcionarios, setFuncionarios] = useState([])
   const [tipoSel, setTipoSel] = useState('faturamento')
   const [dataInicio, setDataInicio] = useState(() => {
     const d = new Date()
@@ -60,12 +63,17 @@ export function Relatorios() {
   }
 
   useEffect(() => {
-    async function carregarEstoque() {
-      const { data, error } = await supabaseDb.from('item_estoque').select('*').eq('ativo', true).order('nome')
-      if (!error) setEstoque(data || [])
-      else console.error('Erro ao carregar estoque do Supabase:', error)
+    async function carregar() {
+      const [est, fun] = await Promise.all([
+        supabaseDb.from('item_estoque').select('*').eq('ativo', true).order('nome'),
+        supabaseDb.from('funcionario').select('*').eq('ativo', true).order('nome'),
+      ])
+      if (!est.error) setEstoque(est.data || [])
+      else console.error('Erro ao carregar estoque do Supabase:', est.error)
+      if (!fun.error) setFuncionarios(fun.data || [])
+      else console.error('Erro ao carregar funcionarios do Supabase:', fun.error)
     }
-    carregarEstoque()
+    carregar()
   }, [])
 
   const gerarDados = () => {

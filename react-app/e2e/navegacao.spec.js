@@ -32,6 +32,11 @@ test('navega até Relatórios', async ({ page }) => {
   await expect(page.getByRole('heading', { name: /Relat/ })).toBeVisible()
 })
 
+test('navega até Funcionarios', async ({ page }) => {
+  await page.getByRole('link', { name: 'Funcionarios', exact: true }).click()
+  await expect(page.getByRole('heading', { name: /Funcionarios/ })).toBeVisible()
+})
+
 test('abre o assistente (chatbot)', async ({ page }) => {
   await page.getByRole('button', { name: 'Abrir assistente' }).click()
   await expect(page.getByText(/Assistente SIGAuto/i)).toBeVisible()
