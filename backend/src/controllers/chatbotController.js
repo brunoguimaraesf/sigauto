@@ -67,7 +67,7 @@ async function montarContextoOficina() {
 
 export async function mensagem(req, res, next) {
   try {
-    const { pergunta } = req.body
+    const { pergunta, historico: historicoSessao } = req.body
 
     if (!pergunta || !pergunta.trim()) {
       return res.status(400).json({
@@ -77,14 +77,24 @@ export async function mensagem(req, res, next) {
       })
     }
 
-    const { data: historico } = await supabase
-      .from('mensagem_chatbot')
-      .select('remetente, conteudo')
-      .eq('id_usuario', req.user.id)
-      .order('criado_em', { ascending: false })
-      .limit(10)
-
-    const historicoOrdenado = (historico || []).reverse()
+    // Preferimos o histórico da SESSÃO visível enviado pelo frontend — assim o
+    // contexto do assistente casa com o que o usuário vê e não vaza conversas
+    // antigas. Só caímos no histórico persistido se o frontend não enviar nada.
+    let historicoOrdenado
+    if (Array.isArray(historicoSessao)) {
+      historicoOrdenado = historicoSessao
+        .filter(m => m && m.conteudo && (m.remetente === 'usuario' || m.remetente === 'chatbot'))
+        .slice(-10)
+        .map(m => ({ remetente: m.remetente, conteudo: String(m.conteudo).slice(0, 4000) }))
+    } else {
+      const { data: historico } = await supabase
+        .from('mensagem_chatbot')
+        .select('remetente, conteudo')
+        .eq('id_usuario', req.user.id)
+        .order('criado_em', { ascending: false })
+        .limit(10)
+      historicoOrdenado = (historico || []).reverse()
+    }
 
     const contexto = await montarContextoOficina()
 

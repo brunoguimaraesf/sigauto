@@ -101,7 +101,9 @@ export const relatoriosApi = {
 }
 
 export const chatbotApi = {
-  enviarMensagem: (pergunta) => api.post('/chatbot/mensagem', { pergunta }),
+  // historico = mensagens da sessao visivel [{ remetente, conteudo }] para o
+  // contexto casar com o que o usuario ve (evita vazamento de conversas antigas).
+  enviarMensagem: (pergunta, historico = []) => api.post('/chatbot/mensagem', { pergunta, historico }),
   historico: () => api.get('/chatbot/historico'),
 }
 
