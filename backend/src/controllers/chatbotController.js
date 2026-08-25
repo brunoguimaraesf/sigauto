@@ -1,9 +1,11 @@
 import { supabase } from '../services/supabaseClient.js'
 import { responderChatbot } from '../services/claudeService.js'
+import { filtrarContextoPorPerfil } from '../utils/contextoPorPerfil.js'
 
 // Coleta e pré-agrega os dados da oficina para o chatbot responder perguntas
 // analíticas (ranking de clientes, ticket médio, faturamento, estoque em alerta).
-// Roda com service role (ignora RLS) — dados sempre visíveis ao assistente.
+// Roda com service role (ignora RLS), portanto monta a visão completa da oficina:
+// o recorte por perfil é aplicado depois, em filtrarContextoPorPerfil.
 async function montarContextoOficina() {
   try {
     const [clientesRes, veiculosRes, osRes, estoqueRes, servicosRes] = await Promise.all([
@@ -96,7 +98,12 @@ export async function mensagem(req, res, next) {
       historicoOrdenado = (historico || []).reverse()
     }
 
-    const contexto = await montarContextoOficina()
+    // O contexto completo nunca chega ao modelo: o que sai daqui é o recorte
+    // permitido ao perfil de quem perguntou.
+    const contexto = filtrarContextoPorPerfil(
+      await montarContextoOficina(),
+      req.user.perfil
+    )
 
     const resposta = await responderChatbot(
       pergunta.trim(),
