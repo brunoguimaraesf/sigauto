@@ -123,7 +123,8 @@ export function PainelIA() {
   const ConfidenciaBar = ({ valor }) => (
     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
       <div style={{ flex: 1, height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${(valor * 100).toFixed(0)}%`, background: 'var(--neon-orange)', transition: 'width 0.5s ease' }} />
+        {/* Anima scaleX, nao width: transform nao forca relayout a cada frame. */}
+        <div style={{ height: '100%', width: '100%', transformOrigin: 'left', transform: `scaleX(${valor})`, background: 'var(--neon-orange)', transition: 'transform 0.5s ease' }} />
       </div>
       <span style={{ fontSize: '11px', color: 'var(--text-secondary)', minWidth: '40px' }}>{(valor * 100).toFixed(0)}%</span>
     </div>
@@ -210,10 +211,12 @@ export function PainelIA() {
           {resultado.metricas_destaque && (
             <section className="metrics-grid stagger-2">
               {[
-                { label: 'Ordens de Serviço', valor: resultado.metricas_destaque.total_os ?? '—' },
-                { label: 'Faturamento Estimado', valor: resultado.metricas_destaque.faturamento_estimado != null ? `R$ ${Number(resultado.metricas_destaque.faturamento_estimado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—' },
+                // Rótulos explicitam a janela de 90 dias: o faturamento aqui conta
+                // só OS concluídas no período, então não bate com o total do Dashboard.
+                { label: 'Ordens de Serviço (90d)', valor: resultado.metricas_destaque.total_os ?? '—' },
+                { label: 'Faturamento Concluído (90d)', valor: resultado.metricas_destaque.faturamento_estimado != null ? `R$ ${Number(resultado.metricas_destaque.faturamento_estimado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—' },
                 { label: 'Itens Críticos', valor: resultado.metricas_destaque.itens_criticos_estoque ?? '—' },
-                { label: 'Crescimento', valor: resultado.metricas_destaque.taxa_crescimento ?? '—' },
+                { label: 'Crescimento (vs. 90d ant.)', valor: resultado.metricas_destaque.taxa_crescimento ?? '—' },
               ].map((m, i) => (
                 <GlassPanel key={i} className="metric-card">
                   <div className="metric-header">
