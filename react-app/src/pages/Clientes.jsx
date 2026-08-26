@@ -3,6 +3,12 @@ import { GlassPanel } from '../components/GlassPanel'
 import { useDatabase } from '../hooks/useDatabase'
 import { Plus, Search, Trash2, Edit2, X, Car } from 'lucide-react'
 import { maskCpfCnpj, maskTelefone } from '../utils/masks'
+import { UFS, maskCep, cepValido, buscarCep, formatarEndereco } from '../utils/endereco'
+
+const enderecoEmBranco = {
+  cep: '', logradouro: '', numero: '', complemento: '',
+  bairro: '', cidade: '', uf: '', ponto_referencia: '',
+}
 
 export function Clientes() {
   const {
@@ -24,10 +30,38 @@ export function Clientes() {
   const [telefone, setTelefone] = useState('')
   const [cpfCnpj, setCpfCnpj] = useState('')
   const [tipoPessoa, setTipoPessoa] = useState('fisica')
-  const [endereco, setEndereco] = useState('')
+  const [endereco, setEndereco] = useState(enderecoEmBranco)
+  // Texto livre do cadastro antigo. Continua visivel enquanto o cliente nao
+  // tiver endereco estruturado, para nao sumir com o que ja estava la.
+  const [enderecoLegado, setEnderecoLegado] = useState('')
+  const [buscandoCep, setBuscandoCep] = useState(false)
+  const [erroCep, setErroCep] = useState('')
 
   // Filtro de busca
   const [searchFilter, setSearchFilter] = useState('')
+
+  const setCampoEndereco = (campo, valor) => setEndereco(e => ({ ...e, [campo]: valor }))
+
+  // Preenche logradouro/bairro/cidade/UF pelo CEP. Se o ViaCEP nao responder, o
+  // aviso e discreto e os campos seguem editaveis: digitar na mao sempre vale.
+  const handleBuscarCep = async (valor) => {
+    setErroCep('')
+    if (!cepValido(valor)) return
+    setBuscandoCep(true)
+    const achado = await buscarCep(valor)
+    setBuscandoCep(false)
+    if (!achado) {
+      setErroCep('CEP nao encontrado. Preencha manualmente.')
+      return
+    }
+    setEndereco(e => ({
+      ...e,
+      logradouro: achado.logradouro || e.logradouro,
+      bairro: achado.bairro || e.bairro,
+      cidade: achado.cidade || e.cidade,
+      uf: achado.uf || e.uf,
+    }))
+  }
 
   // Modal para criar
   const handleOpenAdd = () => {
@@ -37,7 +71,9 @@ export function Clientes() {
     setTelefone('')
     setCpfCnpj('')
     setTipoPessoa('fisica')
-    setEndereco('')
+    setEndereco(enderecoEmBranco)
+    setEnderecoLegado('')
+    setErroCep('')
     setModalOpen(true)
   }
 
@@ -49,7 +85,9 @@ export function Clientes() {
     setTelefone(c.telefone || '')
     setCpfCnpj(c.cpf_cnpj || '')
     setTipoPessoa(c.tipo_pessoa || 'fisica')
-    setEndereco(c.endereco || '')
+    setEndereco({ ...enderecoEmBranco, ...(c.endereco_estruturado || {}) })
+    setEnderecoLegado(c.endereco || '')
+    setErroCep('')
     setModalOpen(true)
   }
 
@@ -63,7 +101,8 @@ export function Clientes() {
       telefone,
       cpf_cnpj: cpfCnpj,
       tipo_pessoa: tipoPessoa,
-      endereco
+      endereco: enderecoLegado,
+      endereco_estruturado: endereco
     }
 
     if (editingId) {
@@ -75,14 +114,15 @@ export function Clientes() {
     setModalOpen(false)
   }
 
-  // Filtro reativo por nome, e-mail ou telefone
+  // Filtro reativo por nome, e-mail, telefone, documento ou endereco — este
+  // ultimo agora alcanca bairro, cidade e CEP, que o texto livre nao permitia.
   const filteredClientes = clientes.filter(c => {
     const term = searchFilter.toLowerCase()
     return (c.nome || '').toLowerCase().includes(term) ||
            (c.email || '').toLowerCase().includes(term) ||
            (c.telefone || '').includes(term) ||
            (c.cpf_cnpj || '').includes(term) ||
-           (c.endereco || '').toLowerCase().includes(term)
+           formatarEndereco(c.endereco_estruturado, c.endereco).toLowerCase().includes(term)
   })
 
   return (
@@ -157,9 +197,9 @@ export function Clientes() {
                       <td>
                         <span style={{ display: 'block', fontSize: '13px', color: 'var(--text-primary)' }}>{c.telefone}</span>
                         <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{c.email}</span>
-                        {c.endereco && (
+                        {formatarEndereco(c.endereco_estruturado, c.endereco) && (
                           <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
-                            {c.endereco}
+                            {formatarEndereco(c.endereco_estruturado, c.endereco)}
                           </span>
                         )}
                       </td>
@@ -300,13 +340,95 @@ export function Clientes() {
 
                 <div className="form-group">
                   <label>Endereço</label>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: '12px' }}>
+                    <div>
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="CEP"
+                        inputMode="numeric"
+                        value={maskCep(endereco.cep)}
+                        onChange={(e) => {
+                          const valor = maskCep(e.target.value)
+                          setCampoEndereco('cep', valor)
+                          if (cepValido(valor)) handleBuscarCep(valor)
+                        }}
+                        onBlur={(e) => handleBuscarCep(e.target.value)}
+                      />
+                      {buscandoCep && (
+                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Buscando…</span>
+                      )}
+                      {erroCep && (
+                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{erroCep}</span>
+                      )}
+                    </div>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Logradouro"
+                      value={endereco.logradouro}
+                      onChange={(e) => setCampoEndereco('logradouro', e.target.value)}
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr 1fr', gap: '12px', marginTop: '12px' }}>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Número"
+                      value={endereco.numero}
+                      onChange={(e) => setCampoEndereco('numero', e.target.value)}
+                    />
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Complemento"
+                      value={endereco.complemento}
+                      onChange={(e) => setCampoEndereco('complemento', e.target.value)}
+                    />
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Bairro"
+                      value={endereco.bairro}
+                      onChange={(e) => setCampoEndereco('bairro', e.target.value)}
+                    />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px', gap: '12px', marginTop: '12px' }}>
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="Cidade"
+                      value={endereco.cidade}
+                      onChange={(e) => setCampoEndereco('cidade', e.target.value)}
+                    />
+                    <select
+                      className="form-control"
+                      value={endereco.uf}
+                      onChange={(e) => setCampoEndereco('uf', e.target.value)}
+                      aria-label="UF"
+                    >
+                      <option value="">UF</option>
+                      {UFS.map(uf => <option key={uf} value={uf}>{uf}</option>)}
+                    </select>
+                  </div>
+
                   <input
                     type="text"
                     className="form-control"
-                    placeholder="Rua, número, bairro, cidade"
-                    value={endereco}
-                    onChange={(e) => setEndereco(e.target.value)}
+                    placeholder="Ponto de referência"
+                    style={{ marginTop: '12px' }}
+                    value={endereco.ponto_referencia}
+                    onChange={(e) => setCampoEndereco('ponto_referencia', e.target.value)}
                   />
+
+                  {enderecoLegado && (
+                    <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>
+                      Cadastro anterior: {enderecoLegado}
+                    </span>
+                  )}
                 </div>
               </div>
 

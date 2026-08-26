@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useState, createElement } from 'react'
 import { supabase, supabaseDb } from '../supabaseClient'
+import { somenteDigitos, enderecoVazio } from '../utils/endereco'
 
 const DataContext = createContext(null)
 
@@ -11,9 +12,33 @@ const toInteger = (value) => {
   return Number.isInteger(number) ? number : null
 }
 
+// O endereco mora na tabela `endereco` (1:1 com cliente). O PostgREST devolve
+// objeto quando reconhece a relacao como 1:1 pelo UNIQUE, mas array quando a
+// deteccao falha — aceitamos os dois para nao depender disso.
+const mapEnderecoFromDb = (raw) => {
+  const e = Array.isArray(raw) ? raw[0] : raw
+  if (!e) return null
+  return { ...e, cep: e.cep || '', uf: e.uf || '' }
+}
+
 const mapClienteFromDb = (c) => ({
   ...c,
   tipo_pessoa: c.tipo_pessoa || 'fisica',
+  // `endereco` (string) continua sendo o campo legado de texto livre;
+  // `endereco_estruturado` e a entidade nova.
+  endereco_estruturado: mapEnderecoFromDb(c.endereco_estruturado),
+})
+
+const normalizeEnderecoForDb = (idCliente, e = {}) => ({
+  id_cliente: idCliente,
+  cep: somenteDigitos(e.cep).slice(0, 8) || null,
+  logradouro: e.logradouro?.trim() || null,
+  numero: e.numero?.trim() || null,
+  complemento: e.complemento?.trim() || null,
+  bairro: e.bairro?.trim() || null,
+  cidade: e.cidade?.trim() || null,
+  uf: e.uf ? e.uf.toUpperCase().trim().slice(0, 2) : null,
+  ponto_referencia: e.ponto_referencia?.trim() || null,
 })
 
 const mapVeiculoFromDb = (v) => ({
@@ -171,7 +196,9 @@ function useDatabaseState() {
     try {
       const [{ data: sessionData }, clientesRes, veiculosRes, osRes, servicosRes, usuariosRes, funcionariosRes] = await Promise.all([
         supabase.auth.getUser(),
-        supabaseDb.from('cliente').select('*').eq('ativo', true).order('nome'),
+        // Alias no embed porque `endereco` colide com a coluna legada de mesmo
+        // nome em cliente.
+        supabaseDb.from('cliente').select('*, endereco_estruturado:endereco(*)').eq('ativo', true).order('nome'),
         supabaseDb.from('veiculo').select('*').eq('ativo', true).order('placa'),
         supabaseDb.from('ordem_servico').select('*, os_servico(*), os_peca(*)').order('data_abertura', { ascending: false }),
         supabaseDb.from('servico_catalogo').select('*').eq('ativo', true).order('nome'),
@@ -182,7 +209,14 @@ function useDatabaseState() {
         supabaseDb.from('funcionario_publico').select('*').eq('ativo', true).order('nome'),
       ])
 
-      if (clientesRes.error) throw clientesRes.error
+      // Fallback para bancos ainda sem a tabela endereco (pre-13): repete sem o
+      // embed, e o cliente cai no campo de texto livre.
+      let clientesData = clientesRes.data
+      if (clientesRes.error) {
+        const retry = await supabaseDb.from('cliente').select('*').eq('ativo', true).order('nome')
+        if (retry.error) throw clientesRes.error
+        clientesData = retry.data
+      }
       if (veiculosRes.error) throw veiculosRes.error
 
       // Fallback para bancos ainda sem as tabelas os_servico/os_peca (pre-migracao):
@@ -203,7 +237,7 @@ function useDatabaseState() {
       }
 
       const next = {
-        clientes: (clientesRes.data || []).map(mapClienteFromDb),
+        clientes: (clientesData || []).map(mapClienteFromDb),
         veiculos: (veiculosRes.data || []).map(mapVeiculoFromDb),
         ordensServico: (osData || []).map(mapOSFromDb),
         servicos: servicosRes.error ? [] : (servicosRes.data || []),
@@ -228,13 +262,27 @@ function useDatabaseState() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
+  // Endereco em branco nao vira linha vazia na tabela: apaga a que existir.
+  // Assim "limpar o endereco" e uma operacao possivel pela tela.
+  const salvarEnderecoCliente = async (idCliente, endereco) => {
+    if (!isUuid(idCliente) || endereco === undefined) return
+
+    const consulta = enderecoVazio(endereco)
+      ? supabaseDb.from('endereco').delete().eq('id_cliente', idCliente)
+      : supabaseDb.from('endereco').upsert(normalizeEnderecoForDb(idCliente, endereco), { onConflict: 'id_cliente' })
+
+    const { error } = await consulta
+    if (error) console.error('Erro ao salvar endereco do cliente:', error)
+  }
+
   const addCliente = (newC) => {
     const localCliente = { ...newC, id: isUuid(newC.id) ? newC.id : newUuid() }
     salvarState({ clientes: [...clientes, localCliente] })
 
-    supabaseDb.from('cliente').insert(normalizeClienteForDb(localCliente)).select().single().then(({ data, error }) => {
+    supabaseDb.from('cliente').insert(normalizeClienteForDb(localCliente)).select().single().then(async ({ data, error }) => {
       if (error) { console.error('Erro ao salvar cliente no Supabase:', error); return }
-      const saved = mapClienteFromDb(data)
+      await salvarEnderecoCliente(data.id, localCliente.endereco_estruturado)
+      const saved = { ...mapClienteFromDb(data), endereco_estruturado: localCliente.endereco_estruturado ?? null }
       salvarState({ clientes: [saved, ...clientes.filter(c => c.id !== localCliente.id)] })
     })
 
@@ -247,6 +295,7 @@ function useDatabaseState() {
     supabaseDb.from('cliente').update(normalizeClienteForDb({ ...clientes.find(c => c.id === id), ...updatedC })).eq('id', id).then(({ error }) => {
       if (error) console.error('Erro ao atualizar cliente no Supabase:', error)
     })
+    salvarEnderecoCliente(id, updatedC.endereco_estruturado)
   }
 
   const deleteCliente = (id) => {

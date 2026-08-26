@@ -1,9 +1,10 @@
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { ArrowLeft, Car, CheckCircle, User, Wrench } from 'lucide-react'
+import { ArrowLeft, Car, CheckCircle, Search, User, Wrench } from 'lucide-react'
 import { GlassPanel } from '../../components/GlassPanel'
 import { useDatabase } from '../../hooks/useDatabase'
 import { maskCpfCnpj, maskTelefone, maskPlaca } from '../../utils/masks'
+import { filtrarClientesPorTermo, descreverResultado } from '../../utils/clienteBusca'
 
 const CONSUMIDOR_ID = 'cliente-consumidor'
 
@@ -15,6 +16,7 @@ export function AbrirOS() {
   const { clientes, veiculos, funcionarios, currentUserId, addCliente, addVeiculo, addOrdemServico } = useDatabase()
 
   const [clienteId, setClienteId] = useState('')
+  const [buscaCliente, setBuscaCliente] = useState('')
   const [veiculoId, setVeiculoId] = useState('')
   const [novoCliente, setNovoCliente] = useState(false)
   const [novoVeiculo, setNovoVeiculo] = useState(false)
@@ -51,6 +53,13 @@ export function AbrirOS() {
     }
     return [base, ...clientes.filter(c => c.id !== base.id && c.nome?.toLowerCase() !== 'consumidor')]
   }, [clientes])
+
+  // No balcao o atendente costuma ter a placa ou o documento em maos, e nao o
+  // nome exato como foi cadastrado — por isso a busca cobre os tres.
+  const resultadosBusca = useMemo(
+    () => filtrarClientesPorTermo(clientesComConsumidor, veiculos, buscaCliente, 8),
+    [clientesComConsumidor, veiculos, buscaCliente]
+  )
 
   const clienteSelecionado = clientesComConsumidor.find(c => c.id === clienteId)
   const veiculosDoCliente = veiculos.filter(v => {
@@ -230,15 +239,73 @@ export function AbrirOS() {
 
               {!novoCliente ? (
                 <>
-                  <select className="form-control" value={clienteId} onChange={e => { setClienteId(e.target.value); setVeiculoId('') }} required>
-                    <option value="">Selecione o cliente...</option>
-                    {clientesComConsumidor.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
-                  </select>
-                  {clienteSelecionado && (
-                    <div style={{ marginTop: '8px', padding: '8px 12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      <strong style={{ color: 'var(--text-primary)' }}>{clienteSelecionado.nome}</strong>
-                      <span style={{ display: 'block' }}>{clienteSelecionado.telefone || '—'}</span>
+                  {clienteSelecionado ? (
+                    <div style={{ padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                      <div>
+                        <strong style={{ color: 'var(--text-primary)' }}>{clienteSelecionado.nome}</strong>
+                        <span style={{ display: 'block' }}>{clienteSelecionado.telefone || '—'}</span>
+                      </div>
+                      <button
+                        type="button"
+                        className="btn-link"
+                        style={{ fontSize: '11px', whiteSpace: 'nowrap' }}
+                        onClick={() => { setClienteId(''); setVeiculoId(''); setBuscaCliente('') }}
+                      >
+                        Trocar
+                      </button>
                     </div>
+                  ) : (
+                    <>
+                      <div style={{ position: 'relative' }}>
+                        <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+                        <input
+                          type="text"
+                          className="form-control"
+                          style={{ paddingLeft: '32px' }}
+                          placeholder="Buscar por nome, CPF/CNPJ ou placa"
+                          value={buscaCliente}
+                          onChange={e => setBuscaCliente(e.target.value)}
+                          aria-label="Buscar cliente por nome, CPF, CNPJ ou placa"
+                        />
+                      </div>
+
+                      {buscaCliente.trim() && resultadosBusca.length === 0 && (
+                        <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                          Nenhum cliente encontrado. Use <strong>+ Novo</strong> para cadastrar.
+                        </div>
+                      )}
+
+                      {resultadosBusca.length > 0 && (
+                        <ul style={{ listStyle: 'none', margin: '8px 0 0', padding: 0, border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+                          {resultadosBusca.map(resultado => (
+                            <li key={resultado.cliente.id}>
+                              <button
+                                type="button"
+                                onClick={() => { setClienteId(resultado.cliente.id); setVeiculoId(''); setBuscaCliente('') }}
+                                style={{ width: '100%', textAlign: 'left', padding: '8px 12px', background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-color)', cursor: 'pointer', color: 'var(--text-primary)', fontSize: '13px' }}
+                              >
+                                {resultado.cliente.nome}
+                                <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                                  {descreverResultado(resultado)}
+                                </span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+
+                      {/* Venda de balcao sem cadastro: atalho para o cliente generico. */}
+                      {!buscaCliente.trim() && (
+                        <button
+                          type="button"
+                          className="btn-link"
+                          style={{ fontSize: '11px', marginTop: '8px' }}
+                          onClick={() => { setClienteId(CONSUMIDOR_ID); setVeiculoId('') }}
+                        >
+                          Usar &quot;Consumidor&quot;
+                        </button>
+                      )}
+                    </>
                   )}
                 </>
               ) : (
