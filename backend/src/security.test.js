@@ -31,14 +31,11 @@ describe('Seguranca — headers (Helmet)', () => {
 })
 
 describe('Seguranca — matriz de autenticacao (sem token = 401)', () => {
+  // Superficie reduzida: o backend so expoe auth, chatbot e IA. O CRUD de dados
+  // vai direto ao Supabase (RLS).
   const rotasProtegidas = [
-    '/api/v1/clientes',
-    '/api/v1/veiculos',
-    '/api/v1/os',
-    '/api/v1/estoque',
-    '/api/v1/movimentacoes',
-    '/api/v1/relatorios/faturamento',
-    '/api/v1/usuarios',
+    '/api/v1/chatbot/historico',
+    '/api/v1/ia/recomendacoes',
   ]
 
   it.each(rotasProtegidas)('GET %s sem token responde 401 TOKEN_AUSENTE', async (rota) => {
@@ -48,14 +45,25 @@ describe('Seguranca — matriz de autenticacao (sem token = 401)', () => {
   })
 
   it('token malformado responde 401 TOKEN_INVALIDO', async () => {
-    const res = await request(app).get('/api/v1/clientes').set('Authorization', 'Bearer xxx')
+    const res = await request(app).get('/api/v1/chatbot/historico').set('Authorization', 'Bearer xxx')
     expect(res.status).toBe(401)
     expect(res.body.codigo).toBe('TOKEN_INVALIDO')
   })
 
   it('header Authorization sem "Bearer" tambem é rejeitado', async () => {
-    const res = await request(app).get('/api/v1/clientes').set('Authorization', 'xxx')
+    const res = await request(app).get('/api/v1/chatbot/historico').set('Authorization', 'xxx')
     expect(res.status).toBe(401)
+  })
+})
+
+describe('Seguranca — superficie reduzida (rotas CRUD legadas removidas)', () => {
+  // As antigas rotas de dados rodavam com service_role (bypass de RLS) e foram
+  // removidas; agora respondem 404, nao existem mais.
+  const rotasRemovidas = ['/api/v1/clientes', '/api/v1/veiculos', '/api/v1/os', '/api/v1/estoque', '/api/v1/usuarios']
+
+  it.each(rotasRemovidas)('GET %s nao existe mais (404)', async (rota) => {
+    const res = await request(app).get(rota).set('Authorization', 'Bearer xxx')
+    expect(res.status).toBe(404)
   })
 })
 

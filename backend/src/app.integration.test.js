@@ -35,14 +35,14 @@ describe('API — health e roteamento', () => {
 
 describe('API — autenticação', () => {
   it('rota protegida sem token responde 401 TOKEN_AUSENTE', async () => {
-    const res = await request(app).get('/api/v1/clientes')
+    const res = await request(app).get('/api/v1/chatbot/historico')
     expect(res.status).toBe(401)
     expect(res.body.codigo).toBe('TOKEN_AUSENTE')
   })
 
   it('token inválido responde 401 TOKEN_INVALIDO', async () => {
     const res = await request(app)
-      .get('/api/v1/clientes')
+      .get('/api/v1/chatbot/historico')
       .set('Authorization', 'Bearer token-qualquer')
     expect(res.status).toBe(401)
     expect(res.body.codigo).toBe('TOKEN_INVALIDO')

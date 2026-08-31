@@ -4,6 +4,7 @@ import { useDatabase } from '../hooks/useDatabase'
 import { Plus, Search, Trash2, Edit2, X, Car } from 'lucide-react'
 import { maskCpfCnpj, maskTelefone } from '../utils/masks'
 import { UFS, maskCep, cepValido, buscarCep, formatarEndereco } from '../utils/endereco'
+import { validarCpfCnpj, validarEmail } from '../utils/validacao'
 
 const enderecoEmBranco = {
   cep: '', logradouro: '', numero: '', complemento: '',
@@ -94,6 +95,15 @@ export function Clientes() {
   // Submissão do formulário (Criar/Editar)
   const handleSubmit = (e) => {
     e.preventDefault()
+
+    // Validação de formato no próprio caminho de escrita (o app grava direto no
+    // Supabase). Campos opcionais só são checados quando preenchidos.
+    if (!nome.trim()) { alert('Informe o nome do cliente.'); return }
+    if (cpfCnpj.trim() && !validarCpfCnpj(cpfCnpj, tipoPessoa)) {
+      alert(`${tipoPessoa === 'juridica' ? 'CNPJ' : 'CPF'} inválido. Confira o número informado.`)
+      return
+    }
+    if (email.trim() && !validarEmail(email)) { alert('E-mail inválido.'); return }
 
     const payload = {
       nome,
