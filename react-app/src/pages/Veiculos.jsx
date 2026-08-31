@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { GlassPanel } from '../components/GlassPanel'
 import { useDatabase } from '../hooks/useDatabase'
 import { Plus, Search, Trash2, Edit2, CarFront, X } from 'lucide-react'
-import { normalizarPlaca, formatarPlaca } from '../utils/placa'
+import { normalizarPlaca, formatarPlaca, placaValida } from '../utils/placa'
 
 export function Veiculos() {
   const { clientes, veiculos, loading, addVeiculo, updateVeiculo, deleteVeiculo } = useDatabase()
@@ -60,8 +60,8 @@ export function Veiculos() {
     }
 
     const placaNormalizada = normalizarPlaca(placa)
-    if (placaNormalizada.length !== 7) {
-      alert('Informe uma placa valida com 7 caracteres.')
+    if (!placaValida(placa)) {
+      alert('Placa inválida. Use o formato Mercosul (ABC1D23) ou antigo (ABC-1234).')
       return
     }
 

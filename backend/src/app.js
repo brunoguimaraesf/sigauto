@@ -5,15 +5,8 @@ import helmet from 'helmet'
 import rateLimit from 'express-rate-limit'
 
 import authRoutes from './routes/authRoutes.js'
-import clienteRoutes from './routes/clienteRoutes.js'
-import veiculoRoutes from './routes/veiculoRoutes.js'
-import osRoutes from './routes/osRoutes.js'
-import estoqueRoutes from './routes/estoqueRoutes.js'
-import movimentacaoRoutes from './routes/movimentacaoRoutes.js'
-import relatorioRoutes from './routes/relatorioRoutes.js'
 import chatbotRoutes from './routes/chatbotRoutes.js'
 import iaRoutes from './routes/iaRoutes.js'
-import usuarioRoutes from './routes/usuarioRoutes.js'
 import { errorHandler } from './middleware/errorHandler.js'
 
 const app = express()
@@ -85,17 +78,14 @@ const iaRateLimiter = rateLimit({
 
 app.use('/api/v1', apiRateLimiter)
 
-// Rotas
+// Rotas. O frontend fala DIRETO com o Supabase (chave anon + RLS) para todo o
+// CRUD de dados; por isso o backend expõe apenas o que o cliente realmente usa:
+// autenticação, chatbot e IA. As antigas rotas CRUD (clientes, veiculos, os,
+// estoque, etc.) foram removidas: elas rodavam com service_role (ignorando o
+// RLS) e, sem checagem de dono, eram uma superfície de IDOR/bypass do RLS.
 app.use('/api/v1/auth', loginRateLimiter, authRoutes)
-app.use('/api/v1/clientes', clienteRoutes)
-app.use('/api/v1/veiculos', veiculoRoutes)
-app.use('/api/v1/os', osRoutes)
-app.use('/api/v1/estoque', estoqueRoutes)
-app.use('/api/v1/movimentacoes', movimentacaoRoutes)
-app.use('/api/v1/relatorios', relatorioRoutes)
 app.use('/api/v1/chatbot', iaRateLimiter, chatbotRoutes)
 app.use('/api/v1/ia', iaRateLimiter, iaRoutes)
-app.use('/api/v1/usuarios', usuarioRoutes)
 
 // Health check
 app.get('/health', (req, res) => {
