@@ -22,20 +22,23 @@ async function montarContextoOficina() {
     const estoque = estoqueRes.data || []
     const servicos = servicosRes.data || []
 
-    const veiculoParaCliente = Object.fromEntries(veiculos.map(v => [v.id, v.id_cliente]))
-    const nomePorCliente = Object.fromEntries(clientes.map(c => [c.id, c.nome]))
+    // Map em vez de objeto literal: as chaves vêm do banco, e um Map não herda
+    // do Object.prototype (sem risco de prototype pollution por chave dinâmica).
+    const veiculoParaCliente = new Map(veiculos.map(v => [v.id, v.id_cliente]))
+    const nomePorCliente = new Map(clientes.map(c => [c.id, c.nome]))
 
     // Agrega OS por cliente (via veículo)
-    const agg = {}
+    const agg = new Map()
     for (const os of ordens) {
-      const cid = veiculoParaCliente[os.id_veiculo]
+      const cid = veiculoParaCliente.get(os.id_veiculo)
       if (!cid) continue
-      if (!agg[cid]) agg[cid] = { nome: nomePorCliente[cid] || 'Desconhecido', qtd_os: 0, total_gasto: 0 }
-      agg[cid].qtd_os += 1
-      agg[cid].total_gasto += Number(os.valor_total || 0)
+      if (!agg.has(cid)) agg.set(cid, { nome: nomePorCliente.get(cid) || 'Desconhecido', qtd_os: 0, total_gasto: 0 })
+      const item = agg.get(cid)
+      item.qtd_os += 1
+      item.total_gasto += Number(os.valor_total || 0)
     }
 
-    const rankingClientes = Object.values(agg)
+    const rankingClientes = [...agg.values()]
       .map(c => ({
         nome: c.nome,
         qtd_os: c.qtd_os,
