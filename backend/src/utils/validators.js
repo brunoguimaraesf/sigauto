@@ -5,16 +5,16 @@ export function validarCPF(cpf) {
   if (/^(\d)\1+$/.test(limpo)) return false
 
   let soma = 0
-  for (let i = 0; i < 9; i++) soma += parseInt(limpo[i]) * (10 - i)
+  for (let i = 0; i < 9; i++) soma += parseInt(limpo.charAt(i)) * (10 - i)
   let resto = (soma * 10) % 11
   if (resto === 10 || resto === 11) resto = 0
-  if (resto !== parseInt(limpo[9])) return false
+  if (resto !== parseInt(limpo.charAt(9))) return false
 
   soma = 0
-  for (let i = 0; i < 10; i++) soma += parseInt(limpo[i]) * (11 - i)
+  for (let i = 0; i < 10; i++) soma += parseInt(limpo.charAt(i)) * (11 - i)
   resto = (soma * 10) % 11
   if (resto === 10 || resto === 11) resto = 0
-  if (resto !== parseInt(limpo[10])) return false
+  if (resto !== parseInt(limpo.charAt(10))) return false
 
   return true
 }
@@ -29,15 +29,15 @@ export function validarCNPJ(cnpj) {
     let soma = 0
     let pos = tamanho - 7
     for (let i = tamanho; i >= 1; i--) {
-      soma += parseInt(cnpjStr[tamanho - i]) * pos--
+      soma += parseInt(cnpjStr.charAt(tamanho - i)) * pos--
       if (pos < 2) pos = 9
     }
     const resultado = soma % 11 < 2 ? 0 : 11 - (soma % 11)
     return resultado
   }
 
-  if (calcDigito(limpo, 12) !== parseInt(limpo[12])) return false
-  if (calcDigito(limpo, 13) !== parseInt(limpo[13])) return false
+  if (calcDigito(limpo, 12) !== parseInt(limpo.charAt(12))) return false
+  if (calcDigito(limpo, 13) !== parseInt(limpo.charAt(13))) return false
 
   return true
 }

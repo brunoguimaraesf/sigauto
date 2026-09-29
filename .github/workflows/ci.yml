@@ -26,7 +26,7 @@ jobs:
       - run: npm test
 
   backend:
-    name: Backend (testes)
+    name: Backend (lint + testes)
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -39,6 +39,7 @@ jobs:
           cache: npm
           cache-dependency-path: backend/package-lock.json
       - run: npm ci
+      - run: npm run lint
       - run: npm test
 
   # E2E (Playwright) roda sob demanda: precisa de um Supabase de teste
