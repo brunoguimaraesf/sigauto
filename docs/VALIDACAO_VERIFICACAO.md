@@ -135,8 +135,8 @@ A divergência está registrada em [`DER.md`](DER.md), seção de divergências 
 > treinamento de modelo — as recomendações são geradas a partir dos dados reais da
 > oficina enviados como contexto, o que torna o caso de uso plenamente executável.
 >
-> A numeração de RF foi conferida contra [REQUISITOS.md](REQUISITOS.md), importado do
-> DERS: **RF12 é "Gerar recomendações da IA" e RF13 é "Manter serviços"** — os dois
+> A numeração de RF foi conferida contra a especificação de requisitos:
+> **RF12 é "Gerar recomendações da IA" e RF13 é "Manter serviços"** — os dois
 > estavam invertidos nas linhas do UC10 e do UC13, e foram corrigidos. As linhas de
 > **RF14** (manter usuários) e **RF15** (manter funcionários) faltavam e foram incluídas.
 

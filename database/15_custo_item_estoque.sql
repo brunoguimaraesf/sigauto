@@ -1,6 +1,6 @@
 -- =============================================================================
 -- 15_custo_item_estoque.sql
--- Descricao: Acrescenta `item_estoque.custo`, que o DERS exige desde o RF09 mas
+-- Descricao: Acrescenta `item_estoque.custo`, exigido desde o RF09 mas
 --   nunca existiu no banco.
 --
 --   O RF09 (Quadro 13 - campos da tela) especifica "Custo unitario (R$)" e

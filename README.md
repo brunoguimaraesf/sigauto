@@ -28,7 +28,7 @@ SIGAUTO/
 ├── react-app/       ← Frontend (React + Vite)
 ├── backend/         ← API (Node.js + Express): auth, chatbot e IA
 ├── database/        ← Scripts SQL (Supabase), 01 → 15
-├── docs/            ← DERS (.docx), especificação, modelo de dados e plano de V&V
+├── docs/            ← Modelo de dados e plano de V&V
 ├── CLAUDE.md        ← Guia para agentes de IA (= AGENTS.md)
 └── README.md
 ```
@@ -40,10 +40,7 @@ SIGAUTO/
 | [`docs/DER.md`](docs/DER.md) | Modelo entidade-relacionamento, em Mermaid, extraído de `database/` |
 | [`docs/VALIDACAO_VERIFICACAO.md`](docs/VALIDACAO_VERIFICACAO.md) | Plano de V&V e matriz de rastreabilidade UC → RF → implementação → teste |
 
-O **DERS** (Documento de Especificação de Requisitos de Software), entrega
-acadêmica do TFC, e a especificação em Markdown gerada a partir dele não são
-versionados: ficam na máquina de desenvolvimento e são entregues pelo sistema
-da faculdade.
+
 
 ---
 

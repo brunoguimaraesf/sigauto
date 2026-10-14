@@ -89,7 +89,7 @@ export async function comRetry(fn, tentativas = 3, prazo = Infinity) {
   }
 }
 
-// Modelos em ordem de preferência. O primeiro é o que o DERS fixa na restrição
+// Modelos em ordem de preferência. O primeiro é o fixado na restrição
 // 2.2; o segundo só entra quando ele está indisponível. Esta troca de modelo é
 // a ÚNICA contingência do sistema: não existe resposta local de substituição —
 // se os dois modelos falharem, a tela diz que a IA está indisponível (ver a
