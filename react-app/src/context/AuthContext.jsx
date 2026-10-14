@@ -2,7 +2,9 @@
 import { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
 
-const AuthContext = createContext(null)
+// Exportado para quem precisa do perfil sem exigir o provider (telas testadas
+// isoladamente): `useAuth` continua lancando quando o provider falta.
+export const AuthContext = createContext(null)
 
 // Contas demo para uso sem Supabase configurado
 const DEMO_USERS = {
@@ -50,12 +52,18 @@ export function AuthProvider({ children }) {
         return data.perfil
       }
     } catch {
-      // Sem perfil no banco — usa perfil padrão para demo
-      setPerfil('gestor')
-      return 'gestor'
+      // Falha ao ler o perfil: sem perfil, nao "gestor". O padrao antigo era
+      // fail-open — erro de rede, linha ausente em `usuario` ou conta inativa
+      // davam privilegio de gestor na interface. O banco sempre recusou (o RLS
+      // decide por `fn_perfil_usuario_atual()`, que exige `ativo = true`), mas
+      // a tela abria as rotas de gestor e, na de estoque, mandava `custo` no
+      // payload com o formulario vazio — apagando o custo real.
+      setPerfil(null)
+      return null
     }
-    setPerfil('gestor')
-    return 'gestor'
+    // Linha ausente ou `ativo = false` caem aqui: mesmo tratamento.
+    setPerfil(null)
+    return null
   }
 
   useEffect(() => {
