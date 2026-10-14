@@ -1,0 +1,285 @@
+import { GoogleGenerativeAI } from '@google/generative-ai'
+import dotenv from 'dotenv'
+dotenv.config()
+
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
+
+// Teto de tempo POR CHAMADA ao provedor. Generoso de propósito: a análise do
+// painel pede 2000 tokens de saída sobre 90 dias de dados e passa dos 10 s sem
+// nada de errado. Um teto apertado (4 s) aborta a chamada boa antes de ela
+// responder — o erro deixa de ser "a IA caiu" e passa a ser "nós desistimos".
+export const TIMEOUT_CHAMADA_MS = 15000
+
+// Teto de tempo TOTAL da operação, somando tentativas, trocas de modelo e
+// backoff. É o que garante que o pior caso cabe no `maxDuration: 30` do
+// vercel.json: sem orçamento total, 6 chamadas × 15 s davam 90 s e a plataforma
+// matava a função no meio — o usuário esperava o teto inteiro e nada era
+// persistido. Cada tentativa recebe o MENOR entre o teto por chamada e o que
+// resta do orçamento, então o total não escapa.
+//
+// 20 s, e não 30 s: a chamada ao modelo não é a função inteira. Antes dela o
+// controller monta o contexto da oficina com várias consultas ao Supabase, e
+// depois dela persiste a conversa. Os 10 s de folga são para essas pontas.
+export const ORCAMENTO_IA_MS = 20000
+
+// Códigos HTTP que vale retentar: limite de taxa (429), erro interno (500) e
+// sobrecarga (503). O 400, 401 e 404 ficam de fora de propósito: falhariam
+// igual na tentativa seguinte e no modelo seguinte.
+const STATUS_TRANSITORIOS = new Set([429, 500, 503])
+
+// Erro do provedor que vale retentar. Definição única, usada tanto pelo retry
+// quanto pela troca de modelo.
+//
+// A classificação é por `status` quando ele existe — `GoogleGenerativeAIFetchError`
+// expõe o código HTTP, e é a fonte confiável. Só quando não há status é que a
+// mensagem é lida, e aí o código tem de estar ANCORADO (entre colchetes, como no
+// formato do SDK `[503 Service Unavailable]`, ou no início do texto). Varrer a
+// mensagem inteira classificava errado em duas direções:
+//   - falso positivo: "401 API key not valid (quota 503)" é falha permanente de
+//     credencial, e era retentada 6 vezes por causa do 503 solto no fim;
+//   - falso negativo: erro de transporte ("fetch failed", ECONNRESET) não traz
+//     código algum no texto, e NÃO era retentado — justamente o soluço de rede
+//     que esta camada existe para absorver.
+export function ehTransitorio(e) {
+  if (typeof e?.status === 'number') return STATUS_TRANSITORIOS.has(e.status)
+
+  // Só texto é interpretado. `message` de outro tipo não é coagido: um
+  // `{ message: 503 }` virava "503" por coerção e passava por transitório, o que
+  // é adivinhação — sem status e sem texto, não há o que classificar.
+  const mensagem = typeof e?.message === 'string' ? e.message : ''
+  const entreColchetes = mensagem.match(/\[(\d{3})[\s\]]/)
+  if (entreColchetes) return STATUS_TRANSITORIOS.has(Number(entreColchetes[1]))
+
+  const noInicio = mensagem.match(/^\s*(\d{3})\b/)
+  if (noInicio) return STATUS_TRANSITORIOS.has(Number(noInicio[1]))
+
+  // `aborted`/`AbortError` entra aqui: é o timeout da PRÓPRIA chamada estourando
+  // (o SDK implementa `requestOptions.timeout` com AbortController). Tempo
+  // esgotado é a condição retentável canônica — sem isto, a primeira chamada
+  // lenta derrubava a operação inteira sem nenhuma retentativa e sem tentar o
+  // segundo modelo, que é o oposto do que a camada existe para fazer.
+  if (e?.name === 'AbortError') return true
+
+  return /high demand|overloaded|rate limit|fetch failed|socket hang up|network error|aborted|timed? ?out|ECONNRESET|ETIMEDOUT|EAI_AGAIN/i.test(mensagem)
+}
+
+// Retenta em erros transitórios do Gemini (503 sobrecarga, 429 rate limit)
+// com backoff exponencial, para que um soluço do provedor não vire erro na tela.
+// `prazo` é o instante (epoch ms) em que a operação toda tem de ter terminado.
+// `fn` recebe o teto que PODE usar nesta tentativa: o menor entre o teto por
+// chamada e o que resta do orçamento.
+export async function comRetry(fn, tentativas = 3, prazo = Infinity) {
+  let ultimoErro
+  for (let i = 0; i < tentativas; i++) {
+    const restante = prazo - Date.now()
+    if (restante <= 0) {
+      throw ultimoErro ?? new Error('Tempo esgotado antes de a IA responder')
+    }
+    try {
+      return await fn(Math.min(TIMEOUT_CHAMADA_MS, restante))
+    } catch (e) {
+      ultimoErro = e
+      if (!ehTransitorio(e) || i === tentativas - 1) throw e
+      const espera = 800 * 2 ** i // 0.8s, 1.6s
+      // Não dormir além do orçamento: esperar para então desistir é tempo que o
+      // usuário paga sem receber nada em troca.
+      if (prazo - Date.now() <= espera) throw e
+      await new Promise(r => setTimeout(r, espera))
+    }
+  }
+}
+
+// Modelos em ordem de preferência. O primeiro é o que o DERS fixa na restrição
+// 2.2; o segundo só entra quando ele está indisponível. Esta troca de modelo é
+// a ÚNICA contingência do sistema: não existe resposta local de substituição —
+// se os dois modelos falharem, a tela diz que a IA está indisponível (ver a
+// divergência registrada em docs/DER.md).
+//
+// Medição inicial em 13/10/2026 (4 chamadas por modelo):
+//   gemini-flash-lite-latest  200 200 200 200   4/4   <- primário
+//   gemini-3.5-flash-lite     200 503 200 200   3/4
+//   gemini-3.1-flash-lite     503 200 503 200   2/4
+//   gemini-flash-latest       503 503 503 503   0/4
+// Nova medição real após timeouts em produção, ainda em 13/10/2026:
+//   gemini-flash-lite-latest  200 em 16,9 s
+//   gemini-3.5-flash-lite     timeout em 30 s
+//   gemini-3.1-flash-lite     200 em 4,15 s       <- alternativo atual
+//
+// NÃO use `gemini-2.5-flash-lite` nem `gemini-2.5-flash`: respondem 404 "no
+// longer available to new users", embora ainda apareçam no ListModels. Ao
+// trocar de modelo, teste com uma chamada real — a lista de modelos mente.
+export const MODELOS = ['gemini-flash-lite-latest', 'gemini-3.1-flash-lite']
+
+// Tenta cada modelo (com retry próprio) e só troca de modelo em erro
+// transitório — um 401 ou um 400 falharia igual no modelo seguinte.
+//
+// Pior caso: 3 tentativas × 2 modelos = 6 chamadas, com 4,8 s de BACKOFF puro
+// (0,8 s + 1,6 s por modelo) MAIS as 6 idas e voltas ao provedor. É por isso que
+// cada chamada tem `TIMEOUT_CHAMADA_MS`: sem o teto, o total não é limitado por
+// nada e estoura o tempo da função serverless.
+export async function comModeloAlternativo(fn, modelos = MODELOS, orcamentoMs = ORCAMENTO_IA_MS) {
+  // Lista vazia era um buraco silencioso: o laço não iterava, a função caía fora
+  // sem `return` nem `throw`, devolvia `undefined`, e quem chamasse estouraria
+  // num `TypeError` sem relação com a causa.
+  if (!modelos?.length) throw new Error('Nenhum modelo de IA configurado')
+
+  const prazo = Date.now() + orcamentoMs
+
+  // `entries()` em vez de índice entre colchetes: o plugin de segurança do
+  // ESLint trata acesso indexado por variável como sink de object injection, e
+  // o backend está em zero avisos.
+  for (const [i, modelo] of modelos.entries()) {
+    const ehUltimo = i === modelos.length - 1
+    // O primário conserva o teto normal de 15 s. Dividir igualmente os 20 s
+    // dava apenas 10 s para cada modelo e abortava respostas válidas observadas
+    // em produção. Como o orçamento global é de 20 s, ainda restam até 5 s para
+    // o alternativo quando o primário realmente consome todo o teto; se ele
+    // falhar rápido (429/500/503), o alternativo herda quase os 20 s completos.
+    const agora = Date.now()
+    const prazoModelo = ehUltimo
+      ? prazo
+      : Math.min(prazo, agora + TIMEOUT_CHAMADA_MS)
+    try {
+      return await comRetry((timeout) => fn(modelo, timeout), 3, prazoModelo)
+    } catch (e) {
+      // Sem orçamento restante não há por que tentar o modelo seguinte: a
+      // chamada seria abortada no berço.
+      if (!ehTransitorio(e) || ehUltimo || Date.now() >= prazo) throw e
+      console.warn(`[IA] ${modelo} indisponível (${e.message}); tentando ${modelos.at(i + 1)}`)
+    }
+  }
+}
+
+// Estrutura real de telas e fluxos do SIGAuto. Sem isto o modelo não tem em que
+// se apoiar para responder "como faço X?" e inventa caminhos de menu plausíveis
+// (ex.: um menu "Financeiro", que não existe). Mantenha em sincronia com o
+// Sidebar (react-app/src/components/Sidebar.jsx) e as rotas do App.jsx.
+const MAPA_DO_SISTEMA = `MENUS REAIS (lateral esquerda), com quem enxerga cada um:
+- Dashboard — gestor, atendente
+- Ordens de Servico — todos os perfis
+- Historico — todos os perfis
+- Clientes — gestor, atendente
+- Veiculos — gestor, atendente
+- Servicos — gestor, atendente
+- Estoque — gestor, atendente (mostra um contador de itens em alerta ao lado do nome)
+- Relatorios — apenas gestor
+- Painel IA — apenas gestor
+- Funcionarios — apenas gestor
+- Usuarios — apenas gestor
+
+FLUXOS PRINCIPAIS:
+- Abrir OS: menu "Ordens de Servico" > botao de nova OS. Informe a placa (o sistema busca o veiculo e o cliente), preencha a queixa e confirme. O numero da OS e gerado automaticamente. Restrito a gestor e atendente.
+- Atualizar OS: menu "Ordens de Servico" > clique na OS desejada. Ali se lancam servicos e pecas e se muda o status. Todos os perfis.
+- Encerrar OS: abra a OS e use a acao de encerrar; informe valor final e forma de pagamento. Restrito a gestor e atendente.
+- Entrada/saida de peca: menu "Estoque" > localize o item > acao de entrada ou saida > informe quantidade e motivo.
+- Cadastrar cliente ou veiculo: menus "Clientes" e "Veiculos". No cadastro de veiculo, ao digitar a placa o sistema tenta identificar o modelo automaticamente.
+- Inativar cliente: menu "Clientes" > localize o cliente > acao de inativar. O sistema verifica se ha OS abertas antes de permitir.
+- Ver relatorios: menu "Relatorios" (apenas gestor), com filtro por periodo e exportacao.
+- Gerar recomendacoes de IA: menu "Painel IA" (apenas gestor) > botao "Analisar Dados".`
+
+export async function responderChatbot(pergunta, perfilUsuario, historico = [], contexto = null) {
+  const systemPrompt = `Você é um assistente virtual do SIGAuto, um sistema de gestão para oficinas mecânicas.
+Seu nome é AutoBot. Ajude os usuários com dúvidas sobre o sistema E responda perguntas analíticas sobre os dados da oficina (rankings, médias, totais, faturamento, estoque).
+Seja conciso, profissional e amigável. Responda sempre em português brasileiro.
+Se o usuário apenas cumprimentar (ex.: "boa noite", "oi"), responda com uma saudação curta e ofereça ajuda — NÃO repita respostas ou cálculos de mensagens anteriores.
+Formatação: use parágrafos curtos separados por uma linha em branco; quando listar passos ou itens, use marcadores começando com "- " (um por linha); use **negrito** apenas em termos-chave ou valores. Evite blocos longos de texto corrido.
+Quando a pergunta puder ser respondida pelos DADOS ATUAIS abaixo, responda com o número/nome concreto — NÃO apenas diga onde encontrar no app. Nunca invente valores: se os dados não tiverem a resposta, diga que ainda não há registros suficientes.
+As chaves analises_financeiras e analises_operacionais já contêm cálculos determinísticos feitos pela API. Use esses valores diretamente; não recalcule, não estime e informe o período e o critério indicados. Se a pergunta não informar período, use todo_historico, conforme o critério do JSON.
+O JSON de DADOS ATUAIS já vem recortado pelas permissões do perfil. Se ele trouxer a chave "dados_restritos_para_este_perfil", esses assuntos NÃO estão liberados para este usuário: responda que a informação é restrita ao perfil gestor. Nesse caso não estime, não deduza o valor a partir de outros números do JSON e não diga que faltam registros — o dado existe, o acesso é que não.
+O perfil do usuário atual é: ${perfilUsuario}.
+- gestor: tem acesso total ao sistema
+- atendente: gerencia clientes, veículos e OS
+- mecanico: visualiza e atualiza OS atribuídas
+Adapte suas respostas ao nível de acesso do usuário.
+
+Ao explicar COMO fazer algo no sistema, use exclusivamente os nomes de menu e os passos do MAPA DO SISTEMA abaixo. NUNCA invente nomes de telas, menus ou botões: se o caminho não estiver no mapa, diga que não sabe e sugira o menu mais próximo que exista. Se a tela não for visível para o perfil ${perfilUsuario}, avise que o acesso é restrito em vez de ensinar o caminho.
+
+MAPA DO SISTEMA:
+${MAPA_DO_SISTEMA}${contexto ? `\n\nDADOS ATUAIS DA OFICINA (JSON, use para responder com precisão):\n${JSON.stringify(contexto)}` : ''}`
+
+  const chatHistory = historico.slice(-10).map(m => ({
+    role: m.remetente === 'usuario' ? 'user' : 'model',
+    parts: [{ text: m.conteudo }]
+  }))
+  // O Gemini exige que o histórico comece com uma mensagem 'user'.
+  // Remove qualquer mensagem 'model' (assistente) do início da janela.
+  while (chatHistory.length && chatHistory[0].role !== 'user') chatHistory.shift()
+
+  // O modelo e a sessão de chat nascem DENTRO do callback: cada tentativa pode
+  // usar um modelo diferente, e uma sessão iniciada com um modelo não se
+  // reaproveita no outro. Começar a sessão do zero a cada tentativa também
+  // evita herdar o estado de um `sendMessage` que falhou no meio.
+  const result = await comModeloAlternativo(async (nomeModelo, timeout) => {
+    const model = genAI.getGenerativeModel({
+      model: nomeModelo,
+      systemInstruction: systemPrompt,
+      generationConfig: { maxOutputTokens: 800 }
+    }, { timeout })
+    return model.startChat({ history: chatHistory }).sendMessage(pergunta)
+  })
+
+  // Resposta vazia com HTTP 200 é um caminho REAL, não hipótese: se o candidato
+  // termina em MAX_TOKENS sem nenhuma `part.text` — plausível com este system
+  // prompt grande e `maxOutputTokens: 800` —, o SDK não lança (`badFinishReasons`
+  // cobre só RECITATION, SAFETY e LANGUAGE) e `text()` devolve string vazia.
+  // Sem esta checagem o controller responderia 200 com `resposta: ''` e a tela
+  // mostraria uma bolha em branco, indistinguível de assistente quebrado.
+  const texto = result.response.text()
+  if (!texto?.trim()) throw new Error('A IA retornou uma resposta vazia')
+  return texto
+}
+
+export async function gerarRecomendacoesIA(dadosHistorico) {
+  const systemPrompt = `Você é um analista de dados especializado em oficinas mecânicas.
+Analise os dados históricos fornecidos e retorne recomendações de negócio em formato JSON.
+Retorne APENAS um JSON válido com a seguinte estrutura:
+{
+  "resumo": "string com resumo executivo",
+  "recomendacoes": [
+    {
+      "titulo": "string",
+      "descricao": "string",
+      "prioridade": "alta|media|baixa",
+      "categoria": "estoque|atendimento|financeiro|operacional"
+    }
+  ],
+  "alertas": [
+    {
+      "tipo": "string",
+      "mensagem": "string",
+      "urgencia": "critica|alta|media|baixa"
+    }
+  ],
+  "metricas_destaque": {
+    "total_os": number,
+    "faturamento_estimado": number,
+    "itens_criticos_estoque": number,
+    "taxa_crescimento": "string"
+  }
+}
+Não inclua texto fora do JSON. Responda sempre em português brasileiro.`
+
+  // Mesma contingência do chatbot: o modelo nasce dentro do callback para que a
+  // troca de modelo funcione.
+  const result = await comModeloAlternativo(async (nomeModelo, timeout) => {
+    const model = genAI.getGenerativeModel({
+      model: nomeModelo,
+      systemInstruction: systemPrompt,
+      generationConfig: { maxOutputTokens: 2000 }
+    }, { timeout })
+    return model.generateContent(
+      `Analise estes dados históricos dos últimos 90 dias e gere recomendações:\n\n${JSON.stringify(dadosHistorico, null, 2)}`
+    )
+  })
+
+  const texto = result.response.text()
+  try {
+    const jsonMatch = texto.match(/\{[\s\S]*\}/)
+    if (jsonMatch) {
+      return JSON.parse(jsonMatch[0])
+    }
+    return JSON.parse(texto)
+  } catch {
+    throw new Error('Falha ao interpretar resposta da IA: JSON inválido')
+  }
+}

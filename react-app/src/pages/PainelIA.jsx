@@ -1,8 +1,7 @@
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { GlassPanel } from '../components/GlassPanel'
 import { useDatabase } from '../hooks/useDatabase'
-import { Brain, AlertTriangle, TrendingUp, Package, Users, Zap, RefreshCw } from 'lucide-react'
-import { supabaseDb } from '../supabaseClient'
+import { Brain, AlertTriangle, CloudOff, TrendingUp, Package, Users, Zap, RefreshCw } from 'lucide-react'
 
 const TIPO_ICONS = {
   estoque_critico: Package,
@@ -17,118 +16,44 @@ const PRIORIDADE_COLORS = {
   baixa: { color: 'var(--text-secondary)', bg: 'rgba(255,255,255,0.02)', border: 'var(--border-color)' },
 }
 
-function gerarRecomendacoesLocais(ordensServico, clientes, veiculos, estoque) {
-  const recomendacoes = []
-
-  // Estoque crítico
-  const criticos = estoque.filter(i => i.ativo && i.quantidade <= i.qtd_minima)
-  if (criticos.length > 0) {
-    recomendacoes.push({
-      tipo: 'estoque_critico',
-      titulo: `${criticos.length} ${criticos.length === 1 ? 'item' : 'itens'} com estoque baixo`,
-      descricao: `Os seguintes itens precisam de reposição: ${criticos.map(i => i.nome).join(', ')}.`,
-      confianca: 0.97,
-      prioridade: criticos.some(i => i.quantidade === 0) ? 'alta' : 'media'
-    })
-  }
-
-  // OS pendentes
-  const pendentes = ordensServico.filter(os => os.status === 'aberta' || os.status === 'Pendente' || os.status === 'em_andamento' || os.status === 'Em Andamento')
-  if (pendentes.length > 3) {
-    recomendacoes.push({
-      tipo: 'manutencao_preventiva',
-      titulo: `${pendentes.length} ordens de serviço em aberto`,
-      descricao: `Há ${pendentes.length} OS abertas ou em andamento. Considere priorizar as urgentes para reduzir o tempo médio de atendimento.`,
-      confianca: 0.88,
-      prioridade: pendentes.length > 8 ? 'alta' : 'media'
-    })
-  }
-
-  // Clientes frequentes
-  const contagem = {}
-  ordensServico.forEach(os => {
-    const v = veiculos.find(v => v.id === (os.veiculo_id || os.id_veiculo)) || {}
-    const c = clientes.find(c => c.id === (os.cliente_id || v.cliente_id || v.id_cliente))
-    if (c) contagem[c.nome] = (contagem[c.nome] || 0) + 1
-  })
-  const top = Object.entries(contagem).sort((a, b) => b[1] - a[1]).slice(0, 3)
-  if (top.length > 0) {
-    recomendacoes.push({
-      tipo: 'cliente_recorrente',
-      titulo: 'Clientes de alto valor identificados',
-      descricao: `Clientes mais frequentes: ${top.map(([n, c]) => `${n} (${c} OS)`).join(', ')}. Considere um programa de fidelidade ou contato proativo.`,
-      confianca: 0.82,
-      prioridade: 'baixa'
-    })
-  }
-
-  // Receita
-  const valorTotal = ordensServico.reduce((s, os) => s + (os.valor_total || os.preco_final || 0), 0)
-  if (ordensServico.length > 0) {
-    recomendacoes.push({
-      tipo: 'anomalia_valor',
-      titulo: 'Análise de faturamento',
-      descricao: `Faturamento total registrado: R$ ${valorTotal.toLocaleString('pt-BR', { minimumFractionDigits: 2 })} em ${ordensServico.length} OS. Ticket médio: R$ ${(valorTotal / ordensServico.length).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}.`,
-      confianca: 0.75,
-      prioridade: 'baixa'
-    })
-  }
-
-  return {
-    recomendacoes,
-    resumo: `Análise baseada em ${ordensServico.length} ordens de serviço, ${clientes.length} clientes e ${estoque.filter(i => i.ativo).length} itens de estoque. ${criticos.length > 0 ? `Atenção: ${criticos.length} itens precisam de reposição.` : 'Estoque em nível satisfatório.'}`
-  }
-}
+// Mensagem única de indisponibilidade. Não existe análise local de substituição:
+// número calculado por regra fixa e número vindo do modelo não têm a mesma
+// origem, e exibir um no lugar do outro é pior que não exibir painel.
+export const MSG_IA_INDISPONIVEL =
+  'A IA está indisponível no momento. Nenhuma análise foi gerada — nenhum número desta tela foi estimado localmente. Tente novamente em alguns instantes.'
 
 export function PainelIA() {
   const { clientes, veiculos, ordensServico } = useDatabase()
-  const [estoque, setEstoque] = useState([])
   const [analisando, setAnalisando] = useState(false)
   const [resultado, setResultado] = useState(null)
+  // `erro` deixou de ser estado morto: agora é o único caminho de falha da tela,
+  // e é ele que mostra a indisponibilidade da IA.
   const [erro, setErro] = useState('')
-
-  useEffect(() => {
-    supabaseDb
-      .from('item_estoque')
-      .select('*')
-      .eq('ativo', true)
-      .order('nome')
-      .then(({ data, error }) => {
-        if (error) console.error('Erro ao carregar estoque do Supabase:', error)
-        else setEstoque(data || [])
-      })
-  }, [])
 
   const handleAnalisar = async () => {
     setAnalisando(true)
     setErro('')
     setResultado(null)
     try {
-      // Tenta API real, fallback para análise local
       const { iaApi } = await import('../services/api.js')
       const data = await iaApi.analisar()
-      // Backend responde { erro, dados: {...} }; fallback local retorna o objeto cru.
-      setResultado(data?.dados ?? data)
+      // O backend responde { erro: false, dados: {...} }. Um 200 sem `dados`
+      // tornava `resultado` truthy com um objeto vazio: todos os blocos internos
+      // são condicionais, então a tela ficava em branco, sem resultado e sem
+      // aviso. Exigir a forma mínima joga esse caso para o `catch`.
+      const analise = data?.dados ?? data
+      if (!analise || typeof analise !== 'object'
+        || (!analise.resumo && !analise.recomendacoes && !analise.metricas_destaque)) {
+        throw new Error('análise vazia da IA')
+      }
+      setResultado(analise)
     } catch (e) {
-      console.error('[PainelIA] API de IA falhou — usando análise local. Causa:', e?.status, e?.data?.codigo || e?.message, e)
-      // Fallback: análise local com os dados disponíveis
-      await new Promise(r => setTimeout(r, 1800))
-      const local = gerarRecomendacoesLocais(ordensServico, clientes, veiculos, estoque)
-      setResultado(local)
+      console.error('[PainelIA] IA indisponível. Causa:', e?.status, e?.data?.codigo || e?.message, e)
+      setErro(MSG_IA_INDISPONIVEL)
     } finally {
       setAnalisando(false)
     }
   }
-
-  const ConfidenciaBar = ({ valor }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginTop: '8px' }}>
-      <div style={{ flex: 1, height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
-        {/* Anima scaleX, nao width: transform nao forca relayout a cada frame. */}
-        <div style={{ height: '100%', width: '100%', transformOrigin: 'left', transform: `scaleX(${valor})`, background: 'var(--neon-orange)', transition: 'transform 0.5s ease' }} />
-      </div>
-      <span style={{ fontSize: '11px', color: 'var(--text-secondary)', minWidth: '40px' }}>{(valor * 100).toFixed(0)}%</span>
-    </div>
-  )
 
   return (
     <div className="dashboard-grid">
@@ -161,6 +86,37 @@ export function PainelIA() {
         <strong>⚠️ Aviso Importante:</strong> As recomendações geradas pela IA têm <strong>caráter exclusivamente consultivo</strong>.
         Nenhuma ação será executada automaticamente. O gestor é responsável por avaliar e decidir sobre cada recomendação apresentada.
       </div>
+
+      {/* IA indisponível.
+          `role="status"` (que já implica aria-live="polite") faz o aviso ser
+          anunciado por leitor de tela: ele aparece depois de um await, e sem
+          região viva o usuário clica, espera e não recebe nada.
+          A barra de acento à esquerda e o padding compacto distinguem este aviso
+          TRANSITÓRIO da `.alert-box` permanente logo acima — duas tarjas laranja
+          idênticas empilhadas ensinam o usuário a ignorar as duas. */}
+      {erro && !analisando && (
+        <GlassPanel
+          role="status"
+          className="stagger-2"
+          style={{
+            padding: '16px',
+            borderLeft: '3px solid var(--neon-orange)',
+            background: 'rgba(232, 89, 12, 0.06)',
+          }}
+        >
+          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
+            <CloudOff size={18} color="var(--neon-orange)" style={{ marginTop: '2px', flexShrink: 0 }} />
+            <div>
+              <h3 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
+                IA indisponível
+              </h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: '1.6', maxWidth: '68ch' }}>
+                {erro}
+              </p>
+            </div>
+          </div>
+        </GlassPanel>
+      )}
 
       {/* Estado inicial */}
       {!resultado && !analisando && !erro && (
@@ -288,14 +244,13 @@ export function PainelIA() {
                           </span>
                         </div>
                         <p style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: '1.6', marginBottom: '8px' }}>{rec.descricao}</p>
-                        {rec.categoria ? (
+                        {/* A barra de "confiança" saiu junto com a análise local: os
+                            percentuais (97%, 88%, 82%, 75%) eram literais escritos no
+                            código, e precisão decimal lê como medição. O modelo não
+                            devolve `confianca` — devolve `categoria`. */}
+                        {rec.categoria && (
                           <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'capitalize' }}>Categoria: {rec.categoria}</span>
-                        ) : rec.confianca != null ? (
-                          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                            <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Confiança</span>
-                            <ConfidenciaBar valor={rec.confianca} />
-                          </div>
-                        ) : null}
+                        )}
                       </div>
                     </div>
                   </GlassPanel>

@@ -15,6 +15,15 @@ const CONTEXTO_COMPLETO = {
   ],
   estoque_em_alerta: [{ nome: 'Filtro de oleo', quantidade: 1, qtd_minima: 5 }],
   servicos_catalogo: [{ nome: 'Troca de oleo', preco: 120 }],
+  analises_financeiras: {
+    ultimos_3_meses: { faturamento: 887766.55 },
+  },
+  analises_operacionais: {
+    todo_historico: {
+      modelos_com_mais_entradas: [{ nome: 'MODELO_CANARIO', quantidade_entradas: 9 }],
+      pecas_com_maior_saida: [{ nome: 'PECA_CANARIO', quantidade_saida: 12 }],
+    },
+  },
 }
 
 // Serializa o contexto como ele chega ao modelo: se um valor sensível aparecer
@@ -29,6 +38,8 @@ describe('filtrarContextoPorPerfil — o chatbot não entrega o que a tela não 
     expect(ctx.totais.ticket_medio_geral).toBe(1047.18)
     expect(ctx.ranking_clientes[0].total_gasto).toBe(6495)
     expect(ctx.estoque_em_alerta).toHaveLength(1)
+    expect(ctx.analises_financeiras.ultimos_3_meses.faturamento).toBe(887766.55)
+    expect(ctx.analises_operacionais.todo_historico.modelos_com_mais_entradas[0].nome).toBe('MODELO_CANARIO')
     expect(ctx.dados_restritos_para_este_perfil).toBeUndefined()
   })
 
@@ -42,15 +53,19 @@ describe('filtrarContextoPorPerfil — o chatbot não entrega o que a tela não 
     expect(ctx.totais.clientes).toBe(12)
     expect(ctx.estoque_em_alerta).toHaveLength(1)
     expect(ctx.servicos_catalogo).toHaveLength(1)
+    expect(ctx.analises_financeiras).toBeUndefined()
+    expect(ctx.analises_operacionais).toBeUndefined()
   })
 
   it('mecanico só recebe a contagem de OS', () => {
     const ctx = filtrarContextoPorPerfil(CONTEXTO_COMPLETO, 'mecanico')
 
-    expect(ctx.totais).toEqual({ ordens_servico: 63 })
+    expect(ctx.totais).toEqual({})
     expect(ctx.ranking_clientes).toBeUndefined()
     expect(ctx.estoque_em_alerta).toBeUndefined()
     expect(ctx.servicos_catalogo).toBeUndefined()
+    expect(ctx.analises_financeiras).toBeUndefined()
+    expect(ctx.analises_operacionais).toBeUndefined()
   })
 
   it('nenhum valor financeiro sobrevive à serialização para atendente e mecanico', () => {
@@ -61,6 +76,9 @@ describe('filtrarContextoPorPerfil — o chatbot não entrega o que a tela não 
       expect(json).not.toContain('1047.18')   // ticket medio geral
       expect(json).not.toContain('6495')      // gasto do maior cliente
       expect(json).not.toContain('5055')
+      expect(json).not.toContain('887766.55')
+      expect(json).not.toContain('MODELO_CANARIO')
+      expect(json).not.toContain('PECA_CANARIO')
     }
   })
 

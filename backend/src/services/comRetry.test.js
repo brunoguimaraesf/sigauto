@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest'
-import { comRetry } from './claudeService.js'
+import { comRetry } from './iaService.js'
 
 describe('comRetry (retry da IA em erros transitórios)', () => {
   it('retorna o resultado quando a função sucede de primeira', async () => {

@@ -1,5 +1,5 @@
 import { supabase } from '../services/supabaseClient.js'
-import { gerarRecomendacoesIA } from '../services/claudeService.js'
+import { gerarRecomendacoesIA } from '../services/iaService.js'
 
 export async function analisar(req, res, next) {
   try {

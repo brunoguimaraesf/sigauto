@@ -11,95 +11,54 @@ async function getHeaders() {
   return headers
 }
 
+// Teto de tempo do lado do cliente. Sem ele, uma função serverless pendurada
+// deixa a tela "Analisando..." para sempre: o `fetch` não tem timeout próprio.
+// 35 s dá folga sobre o `maxDuration: 30` do backend, então o erro que chega é o
+// da API quando ela responde, e o abort só atua quando ela não responde nada.
+const TIMEOUT_REQUISICAO_MS = 35000
+
 async function request(method, path, body) {
   const headers = await getHeaders()
-  const res = await fetch(`${API_URL}${path}`, {
-    method,
-    headers,
-    body: body ? JSON.stringify(body) : undefined
-  })
-  const data = await res.json()
+  const controller = new AbortController()
+  const timer = setTimeout(() => controller.abort(), TIMEOUT_REQUISICAO_MS)
+
+  let res
+  try {
+    res = await fetch(`${API_URL}${path}`, {
+      method,
+      headers,
+      body: body ? JSON.stringify(body) : undefined,
+      signal: controller.signal,
+    })
+  } finally {
+    clearTimeout(timer)
+  }
+
+  // Um 504 da plataforma responde HTML, não JSON: sem este tratamento o
+  // `res.json()` lançava um SyntaxError que não dizia nada sobre a causa.
+  let data
+  try {
+    data = await res.json()
+  } catch {
+    throw Object.assign(new Error('Resposta inválida do servidor'), { status: res.status })
+  }
+
   if (!res.ok) throw Object.assign(new Error(data.mensagem || 'Erro na requisição'), { status: res.status, data })
   return data
 }
 
+// Só GET e POST: são os únicos verbos que as rotas sobreviventes (auth, chatbot
+// e ia) usam. `put`, `patch` e `delete` existiam para o CRUD que saiu do backend.
 export const api = {
   get: (path) => request('GET', path),
   post: (path, body) => request('POST', path, body),
-  put: (path, body) => request('PUT', path, body),
-  patch: (path, body) => request('PATCH', path, body),
-  delete: (path) => request('DELETE', path),
 }
 
-// Helpers específicos por módulo
-export const clientesApi = {
-  listar: (params = {}) => {
-    const qs = new URLSearchParams(params).toString()
-    return api.get(`/clientes${qs ? '?' + qs : ''}`)
-  },
-  detalhe: (id) => api.get(`/clientes/${id}`),
-  criar: (data) => api.post('/clientes', data),
-  atualizar: (id, data) => api.put(`/clientes/${id}`, data),
-  inativar: (id) => api.patch(`/clientes/${id}/inativar`),
-}
-
-export const veiculosApi = {
-  listar: (params = {}) => {
-    const qs = new URLSearchParams(params).toString()
-    return api.get(`/veiculos${qs ? '?' + qs : ''}`)
-  },
-  detalhe: (id) => api.get(`/veiculos/${id}`),
-  criar: (data) => api.post('/veiculos', data),
-  atualizar: (id, data) => api.put(`/veiculos/${id}`, data),
-  inativar: (id) => api.patch(`/veiculos/${id}/inativar`),
-}
-
-export const osApi = {
-  listar: (params = {}) => {
-    const qs = new URLSearchParams(params).toString()
-    return api.get(`/ordens-servico${qs ? '?' + qs : ''}`)
-  },
-  detalhe: (id) => api.get(`/ordens-servico/${id}`),
-  abrir: (data) => api.post('/ordens-servico', data),
-  atualizar: (id, data) => api.put(`/ordens-servico/${id}`, data),
-  encerrar: (id, data) => api.patch(`/ordens-servico/${id}/encerrar`, data),
-  cancelar: (id) => api.patch(`/ordens-servico/${id}/cancelar`),
-}
-
-export const estoqueApi = {
-  listar: (params = {}) => {
-    const qs = new URLSearchParams(params).toString()
-    return api.get(`/estoque${qs ? '?' + qs : ''}`)
-  },
-  detalhe: (id) => api.get(`/estoque/${id}`),
-  criar: (data) => api.post('/estoque', data),
-  atualizar: (id, data) => api.put(`/estoque/${id}`, data),
-  inativar: (id) => api.patch(`/estoque/${id}/inativar`),
-  entrada: (id, data) => api.post(`/estoque/${id}/entrada`, data),
-  saida: (id, data) => api.post(`/estoque/${id}/saida`, data),
-}
-
-export const movimentacoesApi = {
-  listar: (params = {}) => {
-    const qs = new URLSearchParams(params).toString()
-    return api.get(`/movimentacoes${qs ? '?' + qs : ''}`)
-  },
-}
-
-export const relatoriosApi = {
-  atendimentos: (params) => {
-    const qs = new URLSearchParams(params).toString()
-    return api.get(`/relatorios/atendimentos?${qs}`)
-  },
-  faturamento: (params) => {
-    const qs = new URLSearchParams(params).toString()
-    return api.get(`/relatorios/faturamento?${qs}`)
-  },
-  estoque: () => api.get('/relatorios/estoque'),
-  servicosFrequentes: () => api.get('/relatorios/servicos-frequentes'),
-  clientesFrequentes: () => api.get('/relatorios/clientes-frequentes'),
-}
-
+// Helpers por módulo. Só existem para as rotas que o backend realmente serve:
+// chatbot e IA. Os helpers de clientes, veículos, OS, estoque, movimentações,
+// relatórios e usuários foram removidos — apontavam para rotas de CRUD que não
+// existem mais (o frontend fala direto com o Supabase sob RLS), nenhum deles era
+// importado em lugar nenhum, e manter o helper sugere que a rota existe.
 export const chatbotApi = {
   // historico = mensagens da sessao visivel [{ remetente, conteudo }] para o
   // contexto casar com o que o usuario ve (evita vazamento de conversas antigas).
@@ -110,11 +69,4 @@ export const chatbotApi = {
 export const iaApi = {
   analisar: () => api.post('/ia/analisar'),
   recomendacoes: () => api.get('/ia/recomendacoes'),
-}
-
-export const usuariosApi = {
-  listar: () => api.get('/usuarios'),
-  criar: (data) => api.post('/usuarios', data),
-  atualizar: (id, data) => api.put(`/usuarios/${id}`, data),
-  inativar: (id) => api.patch(`/usuarios/${id}/inativar`),
 }

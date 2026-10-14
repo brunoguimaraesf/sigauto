@@ -48,7 +48,7 @@ const METRICAS_DO_MODELO = {
   taxa_crescimento: '+4200%',
 }
 
-vi.mock('../services/claudeService.js', () => ({
+vi.mock('../services/iaService.js', () => ({
   gerarRecomendacoesIA: vi.fn(async () => ({
     resumo: 'resumo qualquer',
     recomendacoes: [],
