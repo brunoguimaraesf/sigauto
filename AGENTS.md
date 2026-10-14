@@ -21,8 +21,8 @@ Antes de implementar, consulte — nesta ordem de autoridade:
 
 | Arquivo | O que é | Fonte |
 |---|---|---|
-| [`docs/Desenvolvimento_DERS_BrunoGabrielGuimaraes.docx`](docs/Desenvolvimento_DERS_BrunoGabrielGuimaraes.docx) | O **DERS**, entrega acadêmica do TFC. Versionado no repo | **A fonte dos requisitos.** É este arquivo que você edita no Word |
-| [`docs/REQUISITOS.md`](docs/REQUISITOS.md) | A especificação: **RF01–RF15** com critérios de aceite e campos de tela, **RN01–RN50** (regras de negócio), restrições obrigatórias, glossário, **escopo incluído e excluído**, RNF | **Gerado — não edite à mão.** Derivado do `.docx` acima |
+| `docs/Desenvolvimento_DERS_BrunoGabrielGuimaraes.docx` | O **DERS**, entrega acadêmica do TFC. **Local, fora do Git** (`.gitignore`): é binário de 9,6 MB e a entrega vai pelo sistema da faculdade | **A fonte dos requisitos.** É este arquivo que você edita no Word |
+| `docs/REQUISITOS.md` | A especificação: **RF01–RF15** com critérios de aceite e campos de tela, **RN01–RN50** (regras de negócio), restrições obrigatórias, glossário, **escopo incluído e excluído**, RNF | **Gerado — não edite à mão, e não versionado.** Derivado do `.docx` acima |
 | [`docs/DER.md`](docs/DER.md) | O modelo de dados real, em Mermaid | **`database/*.sql`.** Se o DERS e o schema divergirem, o schema ganha — divergências listadas lá |
 | [`docs/VALIDACAO_VERIFICACAO.md`](docs/VALIDACAO_VERIFICACAO.md) | Plano de V&V e a matriz de rastreabilidade UC → RF → implementação → teste | **O código e as suítes.** Só rodando os testes se sabe quantos são |
 
@@ -35,7 +35,9 @@ python docs/importar-ders.py
 
 O script lê a cópia de `docs/` por padrão, avisa se algum RF01–RF15 ou RN01–RN50 desapareceu, e refaz as imagens em `docs/img/`. É idempotente: rodar duas vezes não muda o arquivo, então o diff mostra só o que você alterou no Word.
 
-Edição feita direto no `REQUISITOS.md` é perdida na próxima importação. E editar uma cópia do `.docx` fora do repo (em `Downloads`, por exemplo) deixa a alteração fora do versionamento — o script avisa se detectar isso.
+Edição feita direto no `REQUISITOS.md` é perdida na próxima importação.
+
+**O material do DERS não vai para o Git.** `.gitignore` exclui o `.docx`, o `REQUISITOS.md`, o `docs/img/`, o `docs/importar-ders.py` e o `docs/superpowers/`: são a entrega acadêmica e artefatos derivados dela, não código. Quem clonar o repositório não os terá — guarde cópia própria do `.docx`, porque o Git deixou de ser o backup dele. Versionados em `docs/` ficam só o [`DER.md`](docs/DER.md) e o [`VALIDACAO_VERIFICACAO.md`](docs/VALIDACAO_VERIFICACAO.md).
 
 Três coisas que esses documentos evitam, e que custam caro:
 

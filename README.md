@@ -37,10 +37,13 @@ SIGAUTO/
 
 | Arquivo | Conteúdo |
 |---|---|
-| [`docs/Desenvolvimento_DERS_BrunoGabrielGuimaraes.docx`](docs/Desenvolvimento_DERS_BrunoGabrielGuimaraes.docx) | O **DERS** — Documento de Especificação de Requisitos de Software, entrega acadêmica do TFC. **É a fonte dos requisitos:** é este arquivo que se edita |
-| [`docs/REQUISITOS.md`](docs/REQUISITOS.md) | A especificação em Markdown: RF01–RF15 com critérios de aceite, RN01–RN50, restrições, glossário, escopo incluído e excluído, RNF. **Gerado** do `.docx` por `python docs/importar-ders.py` — não edite à mão |
 | [`docs/DER.md`](docs/DER.md) | Modelo entidade-relacionamento, em Mermaid, extraído de `database/` |
 | [`docs/VALIDACAO_VERIFICACAO.md`](docs/VALIDACAO_VERIFICACAO.md) | Plano de V&V e matriz de rastreabilidade UC → RF → implementação → teste |
+
+O **DERS** (Documento de Especificação de Requisitos de Software), entrega
+acadêmica do TFC, e a especificação em Markdown gerada a partir dele não são
+versionados: ficam na máquina de desenvolvimento e são entregues pelo sistema
+da faculdade.
 
 ---
 
