@@ -9,7 +9,7 @@ OWNER: claude
 HANDOFF_AT: —
 ATUALIZADO_EM: 2026-10-14
 BRANCH: correcao/remove-fallback-ia-e-hardening
-ULTIMO_COMMIT: c173712
+ULTIMO_COMMIT: e9182ac (+1 desta atualizacao)
 ```
 
 ## Regra de convivência
@@ -103,8 +103,9 @@ SQL da `19` validado por parser (`pglast`), **não executado em banco nenhum**.
 4. Promover as contas de demonstração: elas não ganham mais perfil automático.
 5. Avaliar uma migração `20` para os endurecimentos restantes (H1, H3–H7 do
    primeiro laudo, dentro das 16 e 18).
-6. Commit: nada foi commitado nesta sessão (o projeto pede commit só quando
-   pedido). A árvore tem 60 arquivos alterados, boa parte de trabalho anterior.
+6. Abrir o PR: a branch `correcao/remove-fallback-ia-e-hardening` já está no
+   remoto, com seis commits (IA sem fallback, oficina + PDF da O.S., migrações
+   15–17, migração 19 + frontend, documentação, vigia de handoff).
 
 ## Vigia de handoff (`scripts/`)
 
