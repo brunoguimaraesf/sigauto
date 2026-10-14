@@ -41,7 +41,7 @@ Thumbs.db
 # Artefatos locais do gstack (QA, relatorios)
 .gstack/
 
-# Temporario do importador do DERS (docs/importar-ders.py)
+# Temporarios de scripts auxiliares locais
 docs/.img-tmp/
 
 # Vigia de handoff: estado local, logs e pid
@@ -49,11 +49,8 @@ scripts/logs/
 scripts/.watcher-estado.json
 scripts/.watcher.pid
 
-# Material do DERS: entrega academica e artefatos derivados dele.
-# Ficam no disco (CLAUDE.md descreve o fluxo de importacao), fora do Git:
-# o .docx tem 9,6 MB, as imagens sao extraidas dele e o REQUISITOS.md e gerado.
-docs/Desenvolvimento_DERS*.docx
-docs/REQUISITOS.md
-docs/img/
-docs/importar-ders.py
-docs/superpowers/
+# Em docs/ versionamos apenas o modelo de dados e o plano de V&V. O resto da
+# pasta e material de consulta local, que nao faz parte do projeto.
+docs/*
+!docs/DER.md
+!docs/VALIDACAO_VERIFICACAO.md

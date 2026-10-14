@@ -1,9 +1,8 @@
 # Modelo de dados (DER) — SIGAuto
 
-> **Fonte:** os scripts de `database/` (01 → 18), lidos como DDL. **Não** é uma
-> transcrição da Figura 26 do DERS: quando o diagrama do documento e o schema
-> divergirem, **o schema é a verdade**, e a divergência está registrada na última
-> seção deste arquivo.
+> **Fonte:** os scripts de `database/` (01 → 19), lidos como DDL. **Não** é uma
+> transcrição do diagrama da especificação: quando os dois divergirem, **o schema
+> é a verdade**, e a divergência está registrada na última seção deste arquivo.
 >
 > Mexeu no schema? Acrescente a migração (`database/18_configuracao_oficina.sql`) e **atualize este
 > arquivo no mesmo commit**.
@@ -262,7 +261,7 @@ O logotipo fica no bucket privado `logos-oficina` do Supabase Storage, limitado 
 - **`endereco` em tabela própria, 1:1 com `cliente`.** Não virou coluna em `cliente` porque é opcional e com ciclo de vida próprio: a maioria dos clientes de balcão nunca informa, e sete colunas nulas sujariam a entidade principal.
 - **`os_servico` e `os_peca` guardam `descricao` própria**, e a FK para o catálogo é `SET NULL`. Assim o item lançado na OS sobrevive à inativação do serviço ou da peça de origem — o histórico não se reescreve.
 - **`movimentacao_estoque.id_os` é nulo** em entradas e ajustes; só saídas vinculam a uma OS.
-- **Peça lançada na OS não baixa o estoque automaticamente.** É decisão de escopo (ver escopo excluído em [REQUISITOS.md](REQUISITOS.md)); o saldo é ajustado pelo RF10.
+- **Peça lançada na OS não baixa o estoque automaticamente.** É decisão de escopo (o item está no escopo excluído); o saldo é ajustado pelo RF10.
 - **Nada é excluído, tudo é inativado** (RN05): `ativo BOOLEAN` em `cliente`, `veiculo`, `usuario`, `funcionario`, `servico_catalogo` e `item_estoque`. A OS não tem `ativo` — ela é **cancelada** pelo `status`.
 - **`atualizado_em` é mantido por trigger** (`fn_set_atualizado_em`), não pela aplicação. Não grave esse campo manualmente.
 - **`item_estoque.quantidade` também é mantido por trigger** (`fn_update_estoque_quantidade`, `03_functions.sql:273`, trigger em `:328`): cada `movimentacao_estoque` ajusta o saldo. Gravar `quantidade` na mão junto com uma movimentação **conta duas vezes**.
@@ -323,14 +322,14 @@ Antes de propor qualquer `DROP` dessas colunas: tire o fallback do código prime
 
 ⚠️ **Atenção ao `comissao_detalhes`.** `Relatorios.jsx:172` faz `os.comissao_detalhes || calculatedComissoes`: a coluna legada **vence** o cálculo atual. Aplicar a Fase 2 da 11 não quebra a tela — faz os relatórios de comissão das OS antigas trocarem silenciosamente o snapshot gravado pelo recálculo, com valores diferentes dos já impressos. **Não quebra, muda número**, que é pior. Do lado da **escrita** a Fase 2 é segura: `pickOSFields` (`useDatabase.js:122-141`) não envia `comissao_detalhes`, `servicos_itens` nem `pecas_itens` ao PostgREST.
 
-## Divergências entre o DERS e o schema
+## Divergências entre os requisitos e o schema
 
-| # | O DERS especifica | Situação |
+| # | O requisito especifica | Situação |
 | --- | --- | --- |
 | 1 | **RF09 / RN35:** `item_estoque` com custo unitário, preço de venda e margem calculada a partir dos dois | ✅ **Resolvido pela migração 15.** Até a 14 não existia coluna de custo, embora `ListaEstoque.jsx` já enviasse `custo` no payload e lesse `item.custo` — o custo nunca era persistido e o PostgREST rejeitava a coluna. A `15_custo_item_estoque.sql` adicionou `item_estoque.custo` **anulável**: `NULL` = não informado (o Quadro 28 marca o campo como Obrigatório = Não), `0` = custo zero. A margem segue derivada, calculada na tela, e é `—` nos três casos em que não dá para calcular: custo nulo, preço nulo, ou custo zero (divisão por zero). |
-| 4 | **RN38:** resposta local de contingência quando a IA do chatbot não responde | ⚠️ **Divergência deliberada, decidida pelo responsável do projeto.** O sistema **não tem mais fallback local**. O roteador de respostas fixas (`utils/chatbot.js`) foi removido; se as tentativas e os modelos falharem, o chatbot informa indisponibilidade, sem fabricar resposta local. A antiga divergência de RN42 foi resolvida no DERS: o Painel IA também informa indisponibilidade e não fabrica análise, recomendação ou número. |
+| 4 | **RN38:** resposta local de contingência quando a IA do chatbot não responde | ⚠️ **Divergência deliberada, decidida pelo responsável do projeto.** O sistema **não tem mais fallback local**. O roteador de respostas fixas (`utils/chatbot.js`) foi removido; se as tentativas e os modelos falharem, o chatbot informa indisponibilidade, sem fabricar resposta local. A antiga divergência de RN42 foi resolvida: o Painel IA também informa indisponibilidade e não fabrica análise, recomendação ou número. |
 | 5 | **Quadro 13 / RN15:** descrição da OS com mínimo de 10 caracteres | ⚠️ **Só na aplicação.** Não existe `CHECK` de comprimento em nenhum dos 16 scripts; a validação vive na tela. Registrado para ninguém remover a validação do frontend supondo que o banco protege. |
-| 2 | **RF10 / Quadro 35:** "o motivo informado não é armazenado" | ⚠️ **Erro de redação do DERS.** `movimentacao_estoque.motivo VARCHAR(100)` existe e é gravado. O que não existe é a **tela de histórico** das movimentações. O Quadro 35 deveria dizer "não é exibido". |
-| 3 | **Escopo excluído:** trilha de auditoria por operação | ✅ Coerente. `log_auditoria` existe e está completa, e o DERS diz que "a estrutura de dados foi mantida para versões futuras". Registrado aqui para ninguém concluir que a tabela está órfã por engano. |
+| 2 | **RF10 / Quadro 35:** "o motivo informado não é armazenado" | ⚠️ **Erro de redação do requisito.** `movimentacao_estoque.motivo VARCHAR(100)` existe e é gravado. O que não existe é a **tela de histórico** das movimentações. O Quadro 35 deveria dizer "não é exibido". |
+| 3 | **Escopo excluído:** trilha de auditoria por operação | ✅ Coerente. `log_auditoria` existe e está completa, e o requisito diz que "a estrutura de dados foi mantida para versões futuras". Registrado aqui para ninguém concluir que a tabela está órfã por engano. |
 | 6 | **RN03:** o mecânico visualiza os dados do cliente da OS atribuída a ele | ❌ **Bug latente no banco, não corrigido.** `pol_cliente_mecanico_select` (`08_comissoes_os.sql:33-46`) compara `os.id_mecanico = auth.uid()`. Depois da migração 11, `id_mecanico` aponta para `funcionario.id`, não para `auth.users.id` — a comparação **nunca casa** e o mecânico não vê cliente nenhum. A 11 corrigiu as policies análogas de `ordem_servico` e `veiculo` (`11:189-216`) e deixou a de `cliente` para trás; o comentário de `13_endereco_cliente.sql:144-147` registra o problema de passagem, ao escrever a policy de `endereco` já na forma correta. **Conserto pertence a uma migração própria**, com teste de RLS, porque mexer em policy de leitura de cliente merece revisão isolada. |
 | 7 | **RF05 (fluxo principal, passo 7) / RN21:** o encerramento "grava valores, desconto, forma de pagamento, observações e data e hora de encerramento" | ❌ **Desconto e observações finais não são persistidos.** `ordem_servico` não tem coluna de desconto (nem tipo, nem valor, nem percentual) nem `observacoes_finais` — conferido nos scripts e no banco remoto em 14/10/2026. `EncerrarOS.jsx` envia `desconto_tipo`, `desconto_valor`, `desconto_percentual` e `observacoes_finais`, mas `pickOSFields` (`useDatabase.js`) os descarta antes do update; só `valor_total` (o valor **final**, já com desconto) e `observacoes` chegam ao banco. **Consequência no PDF da OS:** para uma OS concluída, `utils/osPdf.js` deriva o desconto como `subtotal dos itens − valor_total` e o exibe **sem percentual**; o percentual só aparece no documento emitido na própria tela de encerramento, que ainda o tem em memória. O valor final impresso é sempre o persistido. Persistir o desconto exige migração própria (colunas + backfill a partir de `valor_servicos + valor_pecas − valor_total`) e ajuste em `pickOSFields` — fica para decisão do responsável. |

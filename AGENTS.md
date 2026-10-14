@@ -21,29 +21,20 @@ Antes de implementar, consulte — nesta ordem de autoridade:
 
 | Arquivo | O que é | Fonte |
 |---|---|---|
-| `docs/Desenvolvimento_DERS_BrunoGabrielGuimaraes.docx` | O **DERS**, entrega acadêmica do TFC. **Local, fora do Git** (`.gitignore`): é binário de 9,6 MB e a entrega vai pelo sistema da faculdade | **A fonte dos requisitos.** É este arquivo que você edita no Word |
-| `docs/REQUISITOS.md` | A especificação: **RF01–RF15** com critérios de aceite e campos de tela, **RN01–RN50** (regras de negócio), restrições obrigatórias, glossário, **escopo incluído e excluído**, RNF | **Gerado — não edite à mão, e não versionado.** Derivado do `.docx` acima |
-| [`docs/DER.md`](docs/DER.md) | O modelo de dados real, em Mermaid | **`database/*.sql`.** Se o DERS e o schema divergirem, o schema ganha — divergências listadas lá |
+| [`docs/DER.md`](docs/DER.md) | O modelo de dados real, em Mermaid | **`database/*.sql`.** Se a especificação e o schema divergirem, o schema ganha — divergências listadas lá |
 | [`docs/VALIDACAO_VERIFICACAO.md`](docs/VALIDACAO_VERIFICACAO.md) | Plano de V&V e a matriz de rastreabilidade UC → RF → implementação → teste | **O código e as suítes.** Só rodando os testes se sabe quantos são |
 
-**Requisito novo ou alterado entra pelo `.docx` que está em `docs/`**, nunca editando o `REQUISITOS.md`. Abra `docs/Desenvolvimento_DERS_BrunoGabrielGuimaraes.docx` no Word, salve, e regenere:
-
-```bash
-pip install python-docx
-python docs/importar-ders.py
-```
-
-O script lê a cópia de `docs/` por padrão, avisa se algum RF01–RF15 ou RN01–RN50 desapareceu, e refaz as imagens em `docs/img/`. É idempotente: rodar duas vezes não muda o arquivo, então o diff mostra só o que você alterou no Word.
-
-Edição feita direto no `REQUISITOS.md` é perdida na próxima importação.
-
-**O material do DERS não vai para o Git.** `.gitignore` exclui o `.docx`, o `REQUISITOS.md`, o `docs/img/`, o `docs/importar-ders.py` e o `docs/superpowers/`: são a entrega acadêmica e artefatos derivados dela, não código. Quem clonar o repositório não os terá — guarde cópia própria do `.docx`, porque o Git deixou de ser o backup dele. Versionados em `docs/` ficam só o [`DER.md`](docs/DER.md) e o [`VALIDACAO_VERIFICACAO.md`](docs/VALIDACAO_VERIFICACAO.md).
+Os requisitos numerados (**RF01–RF15**, **RN01–RN50**) são a especificação do
+sistema: critérios de aceite, campos de tela, regras de negócio, restrições
+obrigatórias e o escopo incluído e excluído. Em `docs/` o repositório versiona
+apenas os dois arquivos acima; o resto da pasta é material de consulta local e
+está fora do Git.
 
 Três coisas que esses documentos evitam, e que custam caro:
 
 - **Escopo excluído é excluído.** Nota fiscal eletrônica, módulo financeiro, baixa automática de estoque na OS, trilha de auditoria por operação, app móvel nativo e folha de pagamento estão **fora** desta versão. Não implemente por iniciativa própria.
 - **Requisito tem número.** Ao mexer num comportamento, cite o RF/RN correspondente no commit e no teste. As 50 regras de negócio (RN01–RN50) são critérios verificáveis, não prosa.
-- **Divergência se relata, não se resolve no escuro.** Se o código contradiz o DERS, registre em `docs/DER.md` (última seção) e avise — não escolha um lado em silêncio. Foi assim que apareceram a troca RF12/RF13 na matriz e o `custo` que a tela enviava para uma coluna inexistente.
+- **Divergência se relata, não se resolve no escuro.** Se o código contradiz a especificação, registre em `docs/DER.md` (última seção) e avise — não escolha um lado em silêncio. Foi assim que apareceram a troca RF12/RF13 na matriz e o `custo` que a tela enviava para uma coluna inexistente.
 
 ## Arquitetura (fatos não óbvios)
 

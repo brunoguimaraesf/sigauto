@@ -1,6 +1,6 @@
 -- =============================================================================
 -- 11_normalizacao_relacional.sql
--- Descricao: Normaliza o modelo conforme revisao do orientador (secao 10.6 DERS):
+-- Descricao: Normaliza o modelo conforme revisao do orientador:
 --   1) Comissao sai da tabela `usuario` e passa para a nova entidade `funcionario`
 --   2) Itens de servico/peca da OS deixam de ser JSONB e viram tabelas
 --      relacionais `os_servico` e `os_peca`
