@@ -40,3 +40,11 @@ Thumbs.db
 
 # Artefatos locais do gstack (QA, relatorios)
 .gstack/
+
+# Temporario do importador do DERS (docs/importar-ders.py)
+docs/.img-tmp/
+
+# Vigia de handoff: estado local, logs e pid
+scripts/logs/
+scripts/.watcher-estado.json
+scripts/.watcher.pid

@@ -1,0 +1,28 @@
+{
+  "repo": "C:/Users/elson/OneDrive/Documents/SIGAUTO",
+  "transcritosRaiz": "C:/Users/elson/.claude/projects",
+  "filtroProjetos": [],
+  "contexto": "CONTEXTO.md",
+  "janelaHoras": 5,
+  "orcamentoPonderado": 40000000,
+  "limiarHandoff": 0.8,
+  "limiarRetorno": 0.35,
+  "minutosParado": 12,
+  "usoMinimoParaParado": 0.5,
+  "intervaloSegundos": 60,
+  "pesos": {
+    "input": 1,
+    "cacheCreation": 1.25,
+    "cacheRead": 0.1,
+    "output": 5
+  },
+  "codex": {
+    "comando": "codex",
+    "argumentos": [
+      "exec",
+      "-s",
+      "workspace-write",
+      "--approve-for-me"
+    ]
+  }
+}
