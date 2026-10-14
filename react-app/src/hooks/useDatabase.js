@@ -169,6 +169,49 @@ const syncItensOS = async (supabaseDb, osId, servicos = [], pecas = []) => {
   }
 }
 
+// ── Configuracao da oficina (migracao 18) ──────────────────────────────────
+// Singleton `configuracao_oficina` (id = 1) e bucket privado `logos-oficina`.
+// O banco guarda so o caminho do objeto: nunca URL assinada nem Base64.
+const OFICINA_BUCKET = 'logos-oficina'
+const LOGO_TAMANHO_MAX = 2 * 1024 * 1024 // mesmo limite do bucket
+// A extensao vem do MIME, nunca do nome que o usuario deu ao arquivo.
+const LOGO_EXTENSOES = { 'image/png': 'png', 'image/jpeg': 'jpg', 'image/webp': 'webp' }
+const LOGO_PATH_CONTROLADO = /^oficina\/logo-[A-Za-z0-9-]+\.(png|jpg|webp)$/
+
+export const caminhoLogoControlado = (path) => LOGO_PATH_CONTROLADO.test(path || '')
+
+const textoOuNull = (valor) => {
+  if (valor === undefined || valor === null) return null
+  const texto = String(valor).trim()
+  return texto || null
+}
+
+export const normalizeOficinaForDb = (oficina = {}) => {
+  const normalizada = {
+    id: 1,
+    nome_fantasia: textoOuNull(oficina.nome_fantasia),
+    razao_social: textoOuNull(oficina.razao_social),
+    cnpj: somenteDigitos(String(oficina.cnpj ?? '')),
+    telefone: textoOuNull(oficina.telefone),
+    email: textoOuNull(oficina.email),
+    cep: somenteDigitos(String(oficina.cep ?? '')) || null,
+    logradouro: textoOuNull(oficina.logradouro),
+    numero: textoOuNull(oficina.numero),
+    complemento: textoOuNull(oficina.complemento),
+    bairro: textoOuNull(oficina.bairro),
+    cidade: textoOuNull(oficina.cidade),
+    uf: textoOuNull(oficina.uf)?.toUpperCase() ?? null,
+    logo_path: textoOuNull(oficina.logo_path),
+    texto_rodape: textoOuNull(oficina.texto_rodape),
+  }
+  if (!normalizada.nome_fantasia) throw new Error('Informe o nome fantasia da oficina.')
+  if (normalizada.cnpj.length !== 14) throw new Error('O CNPJ da oficina deve ter 14 digitos.')
+  if (normalizada.logo_path && !caminhoLogoControlado(normalizada.logo_path)) {
+    throw new Error('Caminho de logotipo invalido.')
+  }
+  return normalizada
+}
+
 function useDatabaseState() {
   const [clientes, setClientes] = useState([])
   const [veiculos, setVeiculos] = useState([])
@@ -180,6 +223,9 @@ function useDatabaseState() {
   const [supabaseConnected, setSupabaseConnected] = useState(false)
   const [databaseError, setDatabaseError] = useState('')
   const [currentUserId, setCurrentUserId] = useState(null)
+  const [oficina, setOficina] = useState(null)
+  const [carregandoOficina, setCarregandoOficina] = useState(true)
+  const [erroOficina, setErroOficina] = useState('')
 
   const salvarState = (next) => {
     if (next.clientes) setClientes(next.clientes)
@@ -194,7 +240,7 @@ function useDatabaseState() {
     setLoading(true)
     setDatabaseError('')
     try {
-      const [{ data: sessionData }, clientesRes, veiculosRes, osRes, servicosRes, usuariosRes, funcionariosRes] = await Promise.all([
+      const [{ data: sessionData }, clientesRes, veiculosRes, osRes, servicosRes, usuariosRes, funcionariosRes, oficinaRes] = await Promise.all([
         supabase.auth.getUser(),
         // Alias no embed porque `endereco` colide com a coluna legada de mesmo
         // nome em cliente.
@@ -207,7 +253,20 @@ function useDatabaseState() {
         // na resolucao de nomes. Comissao so nas telas de gestor (Relatorios,
         // Funcionarios), que consultam a tabela funcionario diretamente.
         supabaseDb.from('funcionario_publico').select('*').eq('ativo', true).order('nome'),
+        // Singleton: sem linha (oficina ainda nao cadastrada) vem data null.
+        supabaseDb.from('configuracao_oficina').select('*').maybeSingle(),
       ])
+
+      // Falha aqui (ex.: banco sem a migracao 18) nao derruba o resto do app:
+      // a oficina fica nula e o erro e exposto, sem registro inventado.
+      if (oficinaRes.error) {
+        setOficina(null)
+        setErroOficina(oficinaRes.error.message || 'Falha ao carregar a configuracao da oficina.')
+      } else {
+        const registro = oficinaRes.data
+        setOficina(registro && typeof registro === 'object' && !Array.isArray(registro) ? registro : null)
+        setErroOficina('')
+      }
 
       // Fallback para bancos ainda sem a tabela endereco (pre-13): repete sem o
       // embed, e o cliente cai no campo de texto livre.
@@ -253,7 +312,76 @@ function useDatabaseState() {
       setSupabaseConnected(false)
     } finally {
       setLoading(false)
+      setCarregandoOficina(false)
     }
+  }
+
+  // Estado so muda depois que o banco confirmou. Escrita restrita ao gestor
+  // pelo RLS da migracao 18 — o frontend nao repete essa checagem.
+  const salvarOficina = async (payload) => {
+    const normalizada = normalizeOficinaForDb(payload)
+    const { data, error } = await supabaseDb
+      .from('configuracao_oficina')
+      .upsert(normalizada, { onConflict: 'id' })
+      .select()
+      .single()
+    if (error) throw error
+    setOficina(data)
+    return data
+  }
+
+  // Ordem que nao deixa referencia quebrada: sobe o novo, grava o caminho e
+  // so entao apaga o antigo. Se gravar o caminho falhar, o novo e descartado e
+  // o cadastro continua apontando para o logo anterior.
+  const uploadLogoOficina = async (file) => {
+    const extensao = LOGO_EXTENSOES[file?.type]
+    if (!extensao) throw new Error('O logotipo deve ser uma imagem PNG, JPEG ou WebP.')
+    if (file.size > LOGO_TAMANHO_MAX) throw new Error('O logotipo deve ter no maximo 2 MB.')
+    if (!oficina) throw new Error('Salve os dados da oficina antes de enviar o logotipo.')
+
+    const bucket = supabase.storage.from(OFICINA_BUCKET)
+    const novoPath = `oficina/logo-${newUuid()}.${extensao}`
+    const anterior = oficina.logo_path
+
+    const { error: erroUpload } = await bucket.upload(novoPath, file, { contentType: file.type, upsert: false })
+    if (erroUpload) throw erroUpload
+
+    let salvo
+    try {
+      salvo = await salvarOficina({ ...oficina, logo_path: novoPath })
+    } catch (error) {
+      const { error: erroLimpeza } = await bucket.remove([novoPath])
+      if (erroLimpeza) console.warn('Logotipo enviado ficou orfao no Storage:', novoPath, erroLimpeza)
+      throw error
+    }
+
+    if (anterior && anterior !== novoPath && caminhoLogoControlado(anterior)) {
+      const { error: erroRemocao } = await bucket.remove([anterior])
+      if (erroRemocao) console.warn('Logotipo anterior ficou orfao no Storage:', anterior, erroRemocao)
+    }
+    return salvo
+  }
+
+  // Bucket privado: o arquivo vem como Blob pela sessao do usuario. Usado na
+  // previa da tela e no PDF; nenhuma URL e persistida.
+  const baixarLogoOficina = async (path = oficina?.logo_path) => {
+    if (!caminhoLogoControlado(path)) return null
+    const { data, error } = await supabase.storage.from(OFICINA_BUCKET).download(path)
+    if (error) throw error
+    return data
+  }
+
+  const removerLogoOficina = async (path) => {
+    if (!caminhoLogoControlado(path)) throw new Error('Caminho de logotipo invalido.')
+
+    let salvo = oficina
+    if (oficina?.logo_path === path) salvo = await salvarOficina({ ...oficina, logo_path: null })
+
+    const { error } = await supabase.storage.from(OFICINA_BUCKET).remove([path])
+    if (error) {
+      throw new Error(`O logotipo foi desvinculado, mas o arquivo nao pode ser apagado: ${error.message || error}`)
+    }
+    return salvo
   }
 
   useEffect(() => {
@@ -275,18 +403,24 @@ function useDatabaseState() {
     if (error) console.error('Erro ao salvar endereco do cliente:', error)
   }
 
-  const addCliente = (newC) => {
+  // Resolve com o registro JA gravado. Quem vai referenciar o cliente por FK
+  // (veiculo, O.S.) precisa esperar: o item aparece na lista na hora, mas so
+  // existe no banco depois do insert. Em erro, o item otimista sai da lista —
+  // senao ele continuaria selecionavel e qualquer O.S. com ele falharia na FK.
+  const addCliente = async (newC) => {
     const localCliente = { ...newC, id: isUuid(newC.id) ? newC.id : newUuid() }
     salvarState({ clientes: [...clientes, localCliente] })
 
-    supabaseDb.from('cliente').insert(normalizeClienteForDb(localCliente)).select().single().then(async ({ data, error }) => {
-      if (error) { console.error('Erro ao salvar cliente no Supabase:', error); return }
-      await salvarEnderecoCliente(data.id, localCliente.endereco_estruturado)
-      const saved = { ...mapClienteFromDb(data), endereco_estruturado: localCliente.endereco_estruturado ?? null }
-      salvarState({ clientes: [saved, ...clientes.filter(c => c.id !== localCliente.id)] })
-    })
-
-    return localCliente
+    const { data, error } = await supabaseDb.from('cliente').insert(normalizeClienteForDb(localCliente)).select().single()
+    if (error) {
+      console.error('Erro ao salvar cliente no Supabase:', error)
+      salvarState({ clientes: clientes.filter(c => c.id !== localCliente.id) })
+      throw error
+    }
+    await salvarEnderecoCliente(data.id, localCliente.endereco_estruturado)
+    const saved = { ...mapClienteFromDb(data), endereco_estruturado: localCliente.endereco_estruturado ?? null }
+    salvarState({ clientes: [saved, ...clientes.filter(c => c.id !== localCliente.id)] })
+    return saved
   }
 
   const updateCliente = (id, updatedC) => {
@@ -305,15 +439,20 @@ function useDatabaseState() {
     })
   }
 
-  const addVeiculo = (newV) => {
+  // Mesmo contrato do addCliente: resolve com o veiculo gravado, rejeita em erro.
+  const addVeiculo = async (newV) => {
     const localVeiculo = { ...newV, id: isUuid(newV.id) ? newV.id : newUuid() }
     salvarState({ veiculos: [...veiculos, localVeiculo] })
-    supabaseDb.from('veiculo').insert(normalizeVeiculoForDb(localVeiculo)).select().single().then(({ data, error }) => {
-      if (error) { console.error('Erro ao salvar veiculo no Supabase:', error); return }
-      const saved = mapVeiculoFromDb(data)
-      salvarState({ veiculos: [saved, ...veiculos.filter(v => v.id !== localVeiculo.id)] })
-    })
-    return localVeiculo
+
+    const { data, error } = await supabaseDb.from('veiculo').insert(normalizeVeiculoForDb(localVeiculo)).select().single()
+    if (error) {
+      console.error('Erro ao salvar veiculo no Supabase:', error)
+      salvarState({ veiculos: veiculos.filter(v => v.id !== localVeiculo.id) })
+      throw error
+    }
+    const saved = mapVeiculoFromDb(data)
+    salvarState({ veiculos: [saved, ...veiculos.filter(v => v.id !== localVeiculo.id)] })
+    return saved
   }
 
   const updateVeiculo = (id, updatedV) => {
@@ -440,6 +579,13 @@ function useDatabaseState() {
     supabaseConnected,
     databaseError,
     currentUserId,
+    oficina,
+    carregandoOficina,
+    erroOficina,
+    salvarOficina,
+    uploadLogoOficina,
+    removerLogoOficina,
+    baixarLogoOficina,
     reloadDatabase: carregarDados,
     addCliente,
     updateCliente,

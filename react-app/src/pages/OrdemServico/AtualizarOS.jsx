@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, CheckCircle, Package, Plus, Search, Trash2, Wrench, X } from 'lucide-react'
 import { GlassPanel } from '../../components/GlassPanel'
+import { AcoesDocumentoOS } from '../../components/ui/AcoesDocumentoOS'
 import { useDatabase } from '../../hooks/useDatabase'
 import { supabaseDb } from '../../supabaseClient'
 import { calcOSCommissions, calcOSTotals, formatCurrency, getLineTotal, resolveEquipe, toMoney } from '../../utils/osFinance'
@@ -65,11 +66,18 @@ export function AtualizarOS() {
 
   useEffect(() => {
     async function carregarEstoque() {
-      const { data, error } = await supabaseDb
-        .from('item_estoque')
+      // View sem `custo` (migracao 19), com fallback para a tabela em bancos
+      // pre-19. A tela de O.S. nunca precisou do custo de aquisicao.
+      let { data, error } = await supabaseDb
+        .from('item_estoque_publico')
         .select('*')
         .eq('ativo', true)
         .order('nome')
+      if (error) ({ data, error } = await supabaseDb
+        .from('item_estoque')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome'))
       if (!error) setEstoque(data || [])
       else console.error('Erro ao carregar estoque do Supabase:', error)
     }
@@ -205,10 +213,11 @@ export function AtualizarOS() {
             {veiculo.placa ? ` · ${veiculo.placa} ${veiculo.marca} ${veiculo.modelo}` : ''}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
           <button className="btn-secondary" onClick={() => navigate('/ordens-servico')} style={{ padding: '8px 14px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '6px' }}>
             <ArrowLeft size={15} /> Voltar
           </button>
+          <AcoesDocumentoOS os={os} cliente={cliente} veiculo={veiculo} compacto />
           {bloqueada ? (
             <button className="btn-primary" onClick={reabrirOS} style={{ padding: '8px 14px', borderRadius: 'var(--radius-sm)' }}>Reabrir O.S.</button>
           ) : (

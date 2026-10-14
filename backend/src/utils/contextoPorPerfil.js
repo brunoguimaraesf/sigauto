@@ -23,15 +23,17 @@ export function filtrarContextoPorPerfil(contexto, perfil) {
   const totaisOriginais = contexto.totais || {}
   const restritos = []
 
-  // Ordens de Servico e Historico estao no menu de todos os perfis, entao a
-  // contagem de OS fica disponivel para qualquer um.
-  const totais = { ordens_servico: totaisOriginais.ordens_servico ?? 0 }
+  // O mecanico ve somente as OS atribuidas a ele (RN03). Como este contexto foi
+  // agregado globalmente com service_role, nem a contagem global pode chegar a
+  // esse perfil. Gestor e atendente operam a lista geral.
+  const totais = {}
 
   if (podeCadastros) {
+    totais.ordens_servico = totaisOriginais.ordens_servico ?? 0
     totais.clientes = totaisOriginais.clientes ?? 0
     totais.veiculos = totaisOriginais.veiculos ?? 0
   } else {
-    restritos.push('total de clientes e veiculos cadastrados')
+    restritos.push('totais globais de ordens de servico, clientes e veiculos cadastrados')
   }
 
   if (podeFinanceiro) {
@@ -45,6 +47,8 @@ export function filtrarContextoPorPerfil(contexto, perfil) {
 
   if (podeFinanceiro) {
     filtrado.ranking_clientes = contexto.ranking_clientes || []
+    filtrado.analises_financeiras = contexto.analises_financeiras || {}
+    filtrado.analises_operacionais = contexto.analises_operacionais || {}
   } else if (podeCadastros) {
     // O atendente atende esses clientes: pode saber quem tem mais OS, mas nao
     // quanto cada um gastou — isso e leitura de relatorio.
@@ -53,8 +57,10 @@ export function filtrarContextoPorPerfil(contexto, perfil) {
       qtd_os: c.qtd_os,
     }))
     restritos.push('valores gastos e ticket medio por cliente')
+    restritos.push('analises gerenciais de faturamento, entradas de veiculos e saidas de pecas')
   } else {
     restritos.push('ranking e dados de clientes')
+    restritos.push('analises gerenciais de faturamento, entradas de veiculos e saidas de pecas')
   }
 
   if (podeCadastros) {

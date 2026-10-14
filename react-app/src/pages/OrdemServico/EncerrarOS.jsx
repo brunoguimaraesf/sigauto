@@ -1,21 +1,12 @@
-import jsPDF from 'jspdf'
-import autoTable from 'jspdf-autotable'
 import { useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { ArrowLeft, CheckCircle, Download, Package, Wrench } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Package, Wrench } from 'lucide-react'
 import { GlassPanel } from '../../components/GlassPanel'
+import { AcoesDocumentoOS } from '../../components/ui/AcoesDocumentoOS'
 import { useDatabase } from '../../hooks/useDatabase'
 import { calcOSTotals, formatCurrency, getLineTotal } from '../../utils/osFinance'
+import { PAGAMENTO_LABEL } from '../../utils/osPdf'
 
-const PAGAMENTO_LABEL = {
-  dinheiro: 'Dinheiro',
-  pix: 'Pix',
-  cartao_credito: 'Cartão de crédito',
-  cartao_debito: 'Cartão de débito',
-  transferencia: 'Transferência',
-  boleto: 'Boleto',
-  a_definir: 'A definir',
-}
 
 function Chip({ label, value, tone }) {
   return (
@@ -56,204 +47,6 @@ function ItensTable({ items }) {
   )
 }
 
-function gerarPDF({ os, cliente, veiculo, totals, descontoValor, valorFinal, formaPagamento, observacoesFinais }) {
-  const doc = new jsPDF({ unit: 'mm', format: 'a4' })
-  const pageW = doc.internal.pageSize.getWidth()
-  const marginX = 14
-  let y = 14
-
-  // — Cabeçalho —
-  doc.setFillColor(20, 20, 30)
-  doc.rect(0, 0, pageW, 36, 'F')
-
-  doc.setFont('helvetica', 'bold')
-  doc.setFontSize(20)
-  doc.setTextColor(232, 89, 12)
-  doc.text('SIGAUTO', marginX, y + 8)
-
-  doc.setFontSize(9)
-  doc.setTextColor(160, 160, 180)
-  doc.setFont('helvetica', 'normal')
-  doc.text('Sistema Inteligente de Gestão de Oficinas', marginX, y + 15)
-
-  // OS number + date (top right)
-  const osNum = `OS #${os.numero_os || os.id?.slice(-6)?.toUpperCase() || '------'}`
-  const dataFormatada = new Date().toLocaleDateString('pt-BR', { day: '2-digit', month: 'long', year: 'numeric' })
-  doc.setFontSize(11)
-  doc.setFont('helvetica', 'bold')
-  doc.setTextColor(232, 89, 12)
-  doc.text(osNum, pageW - marginX, y + 8, { align: 'right' })
-  doc.setFontSize(8)
-  doc.setFont('helvetica', 'normal')
-  doc.setTextColor(160, 160, 180)
-  doc.text(dataFormatada, pageW - marginX, y + 15, { align: 'right' })
-
-  y = 44
-
-  // — Dados do cliente e veículo —
-  const colW = (pageW - marginX * 2 - 8) / 2
-  const col2x = marginX + colW + 8
-
-  const sectionBox = (title, lines, x, startY, w) => {
-    doc.setFillColor(28, 28, 40)
-    doc.roundedRect(x, startY, w, 4 + lines.length * 5 + 6, 2, 2, 'F')
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(7.5)
-    doc.setTextColor(100, 149, 237)
-    doc.text(title.toUpperCase(), x + 4, startY + 5)
-    doc.setFont('helvetica', 'normal')
-    doc.setTextColor(200, 200, 210)
-    doc.setFontSize(8.5)
-    lines.forEach((line, i) => doc.text(line, x + 4, startY + 11 + i * 5))
-    return startY + 4 + lines.length * 5 + 6
-  }
-
-  const clienteLines = [
-    `Nome: ${cliente.nome || 'Não informado'}`,
-    ...(cliente.cpf_cnpj && !cliente.cpf_cnpj.startsWith('SC') ? [`CPF/CNPJ: ${cliente.cpf_cnpj}`] : []),
-    ...(cliente.telefone && cliente.telefone !== 'Nao informado' ? [`Tel.: ${cliente.telefone}`] : []),
-    ...(cliente.email ? [`E-mail: ${cliente.email}`] : []),
-    ...(cliente.endereco ? [`Endereço: ${cliente.endereco}`] : []),
-  ]
-
-  const veiculoLines = [
-    `Placa: ${veiculo.placa || 'N/I'}`,
-    `Veículo: ${[veiculo.marca, veiculo.modelo, veiculo.ano].filter(Boolean).join(' ')}`,
-    ...(veiculo.cor && veiculo.cor !== 'Nao informada' ? [`Cor: ${veiculo.cor}`] : []),
-    ...(os.km_entrada ? [`KM entrada: ${Number(os.km_entrada).toLocaleString('pt-BR')} km`] : []),
-  ]
-
-  const endY1 = sectionBox('Cliente', clienteLines, marginX, y, colW)
-  const endY2 = sectionBox('Veículo', veiculoLines, col2x, y, colW)
-  y = Math.max(endY1, endY2) + 6
-
-  // — Serviços —
-  if (os.servicos_itens?.length) {
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(9)
-    doc.setTextColor(100, 149, 237)
-    doc.text('SERVIÇOS EXECUTADOS', marginX, y)
-    y += 3
-
-    autoTable(doc, {
-      startY: y,
-      margin: { left: marginX, right: marginX },
-      head: [['Descrição', 'Qtd', 'Valor Unit.', 'Total']],
-      body: os.servicos_itens.map(item => [
-        item.descricao,
-        String(item.quantidade),
-        formatCurrency(item.valor_unitario),
-        formatCurrency(getLineTotal(item)),
-      ]),
-      foot: [['', '', 'Subtotal serviços', formatCurrency(totals.valorServicos)]],
-      styles: { fontSize: 8.5, cellPadding: 3, textColor: [200, 200, 210], fillColor: [22, 22, 34] },
-      headStyles: { fillColor: [30, 40, 70], textColor: [100, 149, 237], fontStyle: 'bold', fontSize: 8 },
-      footStyles: { fillColor: [22, 22, 34], textColor: [100, 149, 237], fontStyle: 'bold' },
-      columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right', textColor: [100, 149, 237] } },
-      alternateRowStyles: { fillColor: [26, 26, 38] },
-    })
-    y = doc.lastAutoTable.finalY + 6
-  }
-
-  // — Peças —
-  if (os.pecas_itens?.length) {
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(9)
-    doc.setTextColor(232, 89, 12)
-    doc.text('PEÇAS E PRODUTOS', marginX, y)
-    y += 3
-
-    autoTable(doc, {
-      startY: y,
-      margin: { left: marginX, right: marginX },
-      head: [['Descrição', 'Qtd', 'Valor Unit.', 'Total']],
-      body: os.pecas_itens.map(item => [
-        item.descricao,
-        String(item.quantidade),
-        formatCurrency(item.valor_unitario),
-        formatCurrency(getLineTotal(item)),
-      ]),
-      foot: [['', '', 'Subtotal peças', formatCurrency(totals.valorPecas)]],
-      styles: { fontSize: 8.5, cellPadding: 3, textColor: [200, 200, 210], fillColor: [22, 22, 34] },
-      headStyles: { fillColor: [50, 30, 10], textColor: [232, 89, 12], fontStyle: 'bold', fontSize: 8 },
-      footStyles: { fillColor: [22, 22, 34], textColor: [232, 89, 12], fontStyle: 'bold' },
-      columnStyles: { 1: { halign: 'right' }, 2: { halign: 'right' }, 3: { halign: 'right', textColor: [232, 89, 12] } },
-      alternateRowStyles: { fillColor: [26, 26, 38] },
-    })
-    y = doc.lastAutoTable.finalY + 6
-  }
-
-  // — Resumo financeiro —
-  const resumoRows = [
-    ['Subtotal serviços', formatCurrency(totals.valorServicos)],
-    ['Subtotal peças', formatCurrency(totals.valorPecas)],
-    ['Subtotal geral', formatCurrency(totals.valorTotal)],
-  ]
-  if (descontoValor > 0) resumoRows.push(['Desconto', `− ${formatCurrency(descontoValor)}`])
-  resumoRows.push(['VALOR FINAL', formatCurrency(valorFinal)])
-  resumoRows.push(['Forma de pagamento', PAGAMENTO_LABEL[formaPagamento] || formaPagamento || 'A definir'])
-
-  autoTable(doc, {
-    startY: y,
-    margin: { left: pageW / 2, right: marginX },
-    head: [['Descrição', 'Valor']],
-    body: resumoRows,
-    styles: { fontSize: 8.5, cellPadding: 3, textColor: [200, 200, 210], fillColor: [22, 22, 34] },
-    headStyles: { fillColor: [30, 30, 50], textColor: [200, 200, 220], fontStyle: 'bold', fontSize: 8 },
-    columnStyles: { 1: { halign: 'right' } },
-    didParseCell: (data) => {
-      if (data.row.index === resumoRows.length - 2 && data.section === 'body') {
-        data.cell.styles.fontStyle = 'bold'
-        data.cell.styles.textColor = [232, 89, 12]
-        data.cell.styles.fontSize = 10
-      }
-    },
-  })
-  y = doc.lastAutoTable.finalY + 8
-
-  // — Observações —
-  const obs = observacoesFinais || os.observacoes
-  if (obs) {
-    doc.setFont('helvetica', 'bold')
-    doc.setFontSize(8.5)
-    doc.setTextColor(160, 160, 180)
-    doc.text('OBSERVAÇÕES', marginX, y)
-    y += 4
-    doc.setFont('helvetica', 'normal')
-    doc.setFontSize(8.5)
-    doc.setTextColor(190, 190, 200)
-    const lines = doc.splitTextToSize(obs, pageW - marginX * 2)
-    doc.text(lines, marginX, y)
-    y += lines.length * 4 + 6
-  }
-
-  // — Área de assinatura —
-  const pageH = doc.internal.pageSize.getHeight()
-  const signY = Math.max(y + 10, pageH - 52)
-
-  doc.setDrawColor(80, 80, 100)
-  doc.setLineDash([2, 2])
-  doc.line(marginX, signY + 20, pageW / 2 - 10, signY + 20)
-  doc.setLineDash([])
-  doc.setFont('helvetica', 'normal')
-  doc.setFontSize(8)
-  doc.setTextColor(120, 120, 140)
-  doc.text('Assinatura do cliente', marginX, signY + 25)
-  doc.text(`${cliente.nome || 'Cliente'}`, marginX, signY + 30)
-
-  doc.line(pageW / 2 + 10, signY + 20, pageW - marginX, signY + 20)
-  doc.text('Assinatura do responsável', pageW / 2 + 10, signY + 25)
-
-  // — Rodapé —
-  doc.setFillColor(20, 20, 30)
-  doc.rect(0, pageH - 10, pageW, 10, 'F')
-  doc.setFontSize(7)
-  doc.setTextColor(80, 80, 100)
-  doc.text('SIGAUTO · Sistema Inteligente de Gestão de Oficinas · TFC UniRV 2026', pageW / 2, pageH - 4, { align: 'center' })
-
-  doc.save(`OS-${os.numero_os || os.id?.slice(-6)?.toUpperCase() || 'sem-numero'}.pdf`)
-}
-
 export function EncerrarOS() {
   const { id } = useParams()
   const navigate = useNavigate()
@@ -279,7 +72,13 @@ export function EncerrarOS() {
 
   const jaEncerrada = os?.status === 'concluida' || os?.status === 'Concluído'
 
-  const pdfArgs = (fp, obs) => ({ os, cliente, veiculo, totals, descontoValor, valorFinal, formaPagamento: fp, observacoesFinais: obs })
+  // O que a tela de encerramento sabe e o banco ainda nao: vai para o PDF
+  // da previa e do comprovante logo apos finalizar.
+  const extraDocumento = {
+    desconto: { descontoValor, descontoPercentual: tipoDesconto === 'pct' ? descontoNum : undefined },
+    formaPagamento,
+    observacoesFinais,
+  }
 
   if (!os) {
     return (
@@ -293,7 +92,6 @@ export function EncerrarOS() {
   }
 
   if (jaEncerrada && !encerrada) {
-    const osTotals = calcOSTotals(os)
     return (
       <div className="dashboard-grid">
         <GlassPanel className="panel stagger-1" style={{ textAlign: 'center', padding: '64px 48px' }}>
@@ -304,20 +102,7 @@ export function EncerrarOS() {
           </p>
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button className="btn-secondary" onClick={() => navigate('/ordens-servico')}>Voltar</button>
-            <button
-              className="btn-secondary"
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-              onClick={() => gerarPDF({
-                os, cliente, veiculo,
-                totals: osTotals,
-                descontoValor: os.desconto_valor || 0,
-                valorFinal: os.valor_total || osTotals.valorTotal,
-                formaPagamento: os.forma_pagamento || '',
-                observacoesFinais: os.observacoes_finais || os.observacoes || '',
-              })}
-            >
-              <Download size={15} /> Exportar PDF
-            </button>
+            <AcoesDocumentoOS os={os} cliente={cliente} veiculo={veiculo} />
             <button className="btn-primary" onClick={() => {
               if (!confirm('Confirmar reabertura da O.S.?')) return
               updateOrdemServico(id, { status: 'em_andamento', data_reabertura: new Date().toISOString(), atualizado_em: new Date().toISOString() })
@@ -351,13 +136,7 @@ export function EncerrarOS() {
           </p>
           <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
             <button className="btn-secondary" onClick={() => navigate('/historico')}>Ver Histórico</button>
-            <button
-              className="btn-secondary"
-              style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-              onClick={() => gerarPDF(pdfArgs(formaPagamento, observacoesFinais))}
-            >
-              <Download size={15} /> Exportar PDF
-            </button>
+            <AcoesDocumentoOS os={os} cliente={cliente} veiculo={veiculo} extra={extraDocumento} />
             <button className="btn-primary" onClick={() => navigate('/ordens-servico')}>Ordens de Serviço</button>
           </div>
         </GlassPanel>
@@ -544,14 +323,7 @@ export function EncerrarOS() {
                 {confirmando ? (
                   <>
                     <button type="button" className="btn-secondary" onClick={() => setConfirmando(false)}>Revisar</button>
-                    <button
-                      type="button"
-                      className="btn-secondary"
-                      style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-                      onClick={() => gerarPDF(pdfArgs(formaPagamento, observacoesFinais))}
-                    >
-                      <Download size={15} /> PDF
-                    </button>
+                    <AcoesDocumentoOS os={os} cliente={cliente} veiculo={veiculo} extra={extraDocumento} compacto />
                     <button type="submit" className="btn-primary" style={{ padding: '10px 24px', background: 'linear-gradient(135deg, var(--status-done), #00cc66)' }}>
                       <CheckCircle size={15} style={{ marginRight: '6px' }} /> Confirmar finalização
                     </button>
@@ -559,14 +331,7 @@ export function EncerrarOS() {
                 ) : (
                   <>
                     <button type="button" className="btn-secondary" onClick={() => navigate(`/ordens-servico/${id}`)}>Cancelar</button>
-                    <button
-                      type="button"
-                      className="btn-secondary"
-                      style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-                      onClick={() => gerarPDF(pdfArgs(formaPagamento, observacoesFinais))}
-                    >
-                      <Download size={15} /> Prévia PDF
-                    </button>
+                    <AcoesDocumentoOS os={os} cliente={cliente} veiculo={veiculo} extra={extraDocumento} compacto />
                     <button type="submit" className="btn-primary" style={{ padding: '10px 24px' }}>Finalizar O.S.</button>
                   </>
                 )}

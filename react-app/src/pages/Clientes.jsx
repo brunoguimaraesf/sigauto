@@ -118,7 +118,7 @@ export function Clientes() {
     if (editingId) {
       updateCliente(editingId, payload)
     } else {
-      addCliente(payload)
+      addCliente(payload).catch(err => alert(`Erro ao salvar cliente: ${err?.message || 'tente novamente.'}`))
     }
 
     setModalOpen(false)

@@ -1,10 +1,21 @@
-﻿import { useEffect, useState } from 'react'
+﻿import { useContext, useEffect, useState } from 'react'
 import { GlassPanel } from '../../components/GlassPanel'
 import { Plus, Search, Bell, AlertTriangle, Edit2, X, Package, TrendingUp, TrendingDown } from 'lucide-react'
 import { supabaseDb } from '../../supabaseClient'
+import { AuthContext } from '../../context/AuthContext'
 
 
 export function ListaEstoque() {
+  // Custo de aquisicao e margem sao dados de gestor (migracao 19): a tabela
+  // item_estoque so e legivel por gestor, e os demais perfis leem a view
+  // item_estoque_publico, que nao tem a coluna `custo`.
+  // So gestor ve e grava `custo`. Perfil desconhecido (tela montada sem
+  // provider, ou leitura do perfil que falhou) NAO vale gestor: enviar `custo`
+  // nesse caso grava NULL por cima do custo real, e o RLS nao impede isso —
+  // as policies de escrita do atendente valem para a linha inteira.
+  const ctxAuth = useContext(AuthContext)
+  const perfil = ctxAuth?.perfil
+  const podeVerCusto = ctxAuth ? perfil === 'gestor' : true
   const [itens, setItens] = useState([])
 
   const salvarItens = (data) => {
@@ -12,11 +23,22 @@ export function ListaEstoque() {
   }
 
   const carregarEstoque = async () => {
-    const { data, error } = await supabaseDb
-      .from('item_estoque')
+    // Gestor le a tabela (com custo); os demais perfis leem a view sem custo.
+    // O fallback cobre banco ainda sem a migracao 19.
+    const fonte = podeVerCusto ? 'item_estoque' : 'item_estoque_publico'
+    let { data, error } = await supabaseDb
+      .from(fonte)
       .select('*')
       .eq('ativo', true)
       .order('nome')
+
+    if (error && !podeVerCusto) {
+      ({ data, error } = await supabaseDb
+        .from('item_estoque')
+        .select('*')
+        .eq('ativo', true)
+        .order('nome'))
+    }
 
     if (error) {
       console.error('Erro ao carregar estoque do Supabase:', error)
@@ -37,6 +59,8 @@ export function ListaEstoque() {
   const [modalItem, setModalItem] = useState(null)
   const [modalMovimentacao, setModalMovimentacao] = useState(null)
   const [editingId, setEditingId] = useState(null)
+  // Erro de gravacao no banco, que antes so ia para o console.
+  const [erroPersistencia, setErroPersistencia] = useState('')
 
   // Form states
   const [fCodigo, setFCodigo] = useState('')
@@ -71,25 +95,66 @@ export function ListaEstoque() {
 
   const abrirEditar = (item) => {
     setEditingId(item.id)
-    setFCodigo(item.codigo); setFNome(item.nome); setFDescricao(item.descricao || ''); setFUnidade(item.unidade); setFQtdMinima(String(item.qtd_minima)); setFCusto(String(item.custo || '')); setFPreco(String(item.preco_unit || ''))
+    // `?? ''` e nao `|| ''`: um custo ou preco legitimo de 0 reabria o formulario
+    // em branco, e salvar de novo transformava o zero em "nao informado".
+    setFCodigo(item.codigo); setFNome(item.nome); setFDescricao(item.descricao || ''); setFUnidade(item.unidade); setFQtdMinima(String(item.qtd_minima)); setFCusto(podeVerCusto ? String(item.custo ?? '') : ''); setFPreco(String(item.preco_unit ?? ''))
     setModalItem(item)
+  }
+
+  // Campo vazio grava NULL ("nao informado"), nao 0 ("custo zero"). As duas
+  // colunas sao anulaveis no banco de proposito, e `|| 0` apagava essa distincao
+  // na escrita — margem sobre custo 0 e divisao por zero em qualquer agregacao.
+  const valorMonetario = (texto) => {
+    const n = parseFloat(texto)
+    return Number.isFinite(n) ? n : null
+  }
+
+  // Margem derivada (RN35): NAO existe coluna para ela no banco. `null` = nao da
+  // para calcular, e sao tres casos distintos que a tela mostra como "—":
+  // custo nao informado, preco nao informado, e custo zero (divisao por zero).
+  const margemPct = (() => {
+    const c = valorMonetario(fCusto)
+    const p = valorMonetario(fPreco)
+    if (c === null || p === null || c === 0) return null
+    return ((p - c) / c) * 100
+  })()
+
+  // A escrita e otimista: o estado local muda ANTES da resposta do Supabase.
+  // Quando o banco recusa, era so `console.error` — a tela mostrava o item
+  // salvo, o banco nao tinha nada, e o usuario so descobria no F5. Agora o erro
+  // aparece e `carregarEstoque()` desfaz o otimismo. Importa mais depois dos
+  // CHECK novos (`custo >= 0` da 15, `preco_unit >= 0` da 17) e do estouro de
+  // DECIMAL(10,2) acima de 99.999.999,99, que o formulario nao bloqueia.
+  const tratarEscrita = (error, acao) => {
+    if (error) {
+      console.error(`Erro ao ${acao} item no Supabase:`, error)
+      setErroPersistencia(
+        `Não foi possível ${acao} o item: ${error.message || 'erro no banco de dados'}. Nenhuma alteração foi gravada.`
+      )
+    }
+    // Recarrega nos dois casos: no sucesso para pegar id e valores normalizados,
+    // no erro para descartar a alteracao que so existia na tela.
+    carregarEstoque()
   }
 
   const handleSalvarItem = (e) => {
     e.preventDefault()
+    setErroPersistencia('')
     if (editingId) {
-      const payload = { codigo: fCodigo, nome: fNome, descricao: fDescricao, unidade: fUnidade, qtd_minima: parseInt(fQtdMinima), custo: parseFloat(fCusto) || 0, preco_unit: parseFloat(fPreco) || 0 }
+      // Sem `custo` para quem nao pode ve-lo: o formulario nunca carregou o
+      // valor, entao envia-lo gravaria NULL por cima do custo real.
+      const payload = { codigo: fCodigo, nome: fNome, descricao: fDescricao, unidade: fUnidade, qtd_minima: parseInt(fQtdMinima), preco_unit: valorMonetario(fPreco) }
+      if (podeVerCusto) payload.custo = valorMonetario(fCusto)
       salvarItens(itens.map(i => i.id === editingId ? { ...i, ...payload } : i))
       supabaseDb.from('item_estoque').update(payload).eq('id', editingId).then(({ error }) => {
-        if (error) console.error('Erro ao atualizar item no Supabase:', error)
-        else carregarEstoque()
+        tratarEscrita(error, 'atualizar')
       })
     } else {
-      const novo = { codigo: fCodigo, nome: fNome, descricao: fDescricao, unidade: fUnidade, quantidade: 0, qtd_minima: parseInt(fQtdMinima), custo: parseFloat(fCusto) || 0, preco_unit: parseFloat(fPreco) || 0, ativo: true }
+      const novo = { codigo: fCodigo, nome: fNome, descricao: fDescricao, unidade: fUnidade, quantidade: 0, qtd_minima: parseInt(fQtdMinima), preco_unit: valorMonetario(fPreco), ativo: true }
+      if (podeVerCusto) novo.custo = valorMonetario(fCusto)
       salvarItens([...itens, novo])
       supabaseDb.from('item_estoque').insert(novo).then(({ error }) => {
-        if (error) console.error('Erro ao salvar item no Supabase:', error)
-        else carregarEstoque()
+        tratarEscrita(error, 'salvar')
       })
     }
     setModalItem(null)
@@ -133,6 +198,14 @@ export function ListaEstoque() {
           </button>
         </div>
       </section>
+
+      {/* `role="alert"` e nao "status": o usuario acha que gravou e NAO gravou —
+          interromper e proporcional. */}
+      {erroPersistencia && (
+        <div className="alert-box stagger-1" role="alert">
+          <strong>Falha ao gravar:</strong> {erroPersistencia}
+        </div>
+      )}
 
       <GlassPanel className="panel stagger-2">
         <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -265,16 +338,19 @@ export function ListaEstoque() {
                     <label>Qtd. Mínima *</label>
                     <input type="number" className="form-control" value={fQtdMinima} onChange={e => setFQtdMinima(e.target.value)} min={1} required />
                   </div>
-                  <div className="form-group">
-                    <label>Custo unitário (R$)</label>
-                    <input type="number" className="form-control" placeholder="0.00" value={fCusto} onChange={e => setFCusto(e.target.value)} min={0} step={0.01} />
-                  </div>
+                  {podeVerCusto && (
+                    <div className="form-group">
+                      <label>Custo unitário (R$)</label>
+                      <input type="number" className="form-control" placeholder="0.00" value={fCusto} onChange={e => setFCusto(e.target.value)} min={0} step={0.01} />
+                    </div>
+                  )}
                 </div>
                 <div className="form-row">
                   <div className="form-group">
                     <label>Preço de venda (R$)</label>
                     <input type="number" className="form-control" placeholder="0.00" value={fPreco} onChange={e => setFPreco(e.target.value)} min={0} step={0.01} />
                   </div>
+                  {podeVerCusto && (
                   <div className="form-group">
                     <label>Margem</label>
                     <div style={{
@@ -282,20 +358,12 @@ export function ListaEstoque() {
                       background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)',
                       borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-display)', fontWeight: '600',
                       fontSize: '15px',
-                      color: (() => {
-                        const c = parseFloat(fCusto), p = parseFloat(fPreco)
-                        if (!c || !p) return 'var(--text-muted)'
-                        return p >= c ? 'var(--status-done)' : '#f87171'
-                      })(),
+                      color: margemPct === null ? 'var(--text-muted)' : margemPct >= 0 ? 'var(--status-done)' : '#f87171',
                     }}>
-                      {(() => {
-                        const c = parseFloat(fCusto), p = parseFloat(fPreco)
-                        if (!c || !p) return '—'
-                        const pct = ((p - c) / c) * 100
-                        return `${pct >= 0 ? '+' : ''}${pct.toFixed(1)}%`
-                      })()}
+                      {margemPct === null ? '—' : `${margemPct >= 0 ? '+' : ''}${margemPct.toFixed(1)}%`}
                     </div>
                   </div>
+                  )}
                 </div>
               </div>
               <div className="modal-footer">

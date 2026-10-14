@@ -26,10 +26,24 @@ O SIGAuto digitaliza e centraliza os processos operacionais de uma oficina: aber
 ```
 SIGAUTO/
 ├── react-app/       ← Frontend (React + Vite)
-├── backend/         ← API REST (Node.js + Express)
-├── database/        ← Scripts SQL (Supabase)
+├── backend/         ← API (Node.js + Express): auth, chatbot e IA
+├── database/        ← Scripts SQL (Supabase), 01 → 15
+├── docs/            ← DERS (.docx), especificação, modelo de dados e plano de V&V
+├── CLAUDE.md        ← Guia para agentes de IA (= AGENTS.md)
 └── README.md
 ```
+
+### Documentação
+
+| Arquivo | Conteúdo |
+|---|---|
+| [`docs/DER.md`](docs/DER.md) | Modelo entidade-relacionamento, em Mermaid, extraído de `database/` |
+| [`docs/VALIDACAO_VERIFICACAO.md`](docs/VALIDACAO_VERIFICACAO.md) | Plano de V&V e matriz de rastreabilidade UC → RF → implementação → teste |
+
+O **DERS** (Documento de Especificação de Requisitos de Software), entrega
+acadêmica do TFC, e a especificação em Markdown gerada a partir dele não são
+versionados: ficam na máquina de desenvolvimento e são entregues pelo sistema
+da faculdade.
 
 ---
 
@@ -49,6 +63,12 @@ SIGAUTO/
    - `09_fix_recomendacao_ia.sql` — Ajuste da tabela de recomendações da IA
    - `10_seed_demo.sql` — Massa de dados de demonstração
    - `11_normalizacao_relacional.sql` — **Normalização do modelo**: cria a entidade `funcionario` e as tabelas `os_servico`/`os_peca` (substituem a comissão em `usuario` e os campos JSON da OS), com backfill e ajuste de RLS. A "Fase 2" (drop das colunas antigas) fica comentada no fim — rode só após validar a aplicação.
+   - `12_hardening_rls_funcionario.sql` — **Endurecimento de RLS**: impede o mecânico de reatribuir a OS a outro funcionário e restringe a leitura de `funcionario` (que expunha a comissão a todos), criando a view `funcionario_publico`. Rode **depois** de publicar o frontend que lê essa view.
+   - `13_endereco_cliente.sql` — **Endereço estruturado**: cria a entidade `endereco` (1:1 com `cliente`) com preenchimento pelo CEP, em vez do texto livre `cliente.endereco`. A "Fase 2" fica comentada no fim.
+   - `14_hardening_advisor.sql` — **Achados do Security Advisor**: revoga `EXECUTE` de funções `SECURITY DEFINER` que a chave pública (`anon`) podia chamar por RPC para ler dados do negócio sem login, fixa o `search_path` e indexa chaves estrangeiras.
+   - `15_custo_item_estoque.sql` — **Custo do estoque**: acrescenta `item_estoque.custo` (anulável: `NULL` = não informado, `0` = custo zero), exigido pelo RF09/RN35 e que faltava no schema.
+   - `16_hardening_execute_restante.sql` — **Fecha o que a 14 deixou aberto**: três funções `SECURITY DEFINER` continuaram com `EXECUTE` para `PUBLIC`, e duas delas (`get_clientes_frequentes`, `get_relatorio_atendimentos`) devolviam nome, CPF/CNPJ e telefone de cliente a quem chamasse por RPC com a chave `anon`, **sem login**. Revoga o `EXECUTE`, fixa o `search_path`, fecha com `REVOKE` explícito a view `funcionario_publico` (que ignora RLS por design e nunca teve `REVOKE` de `anon`) e termina com uma pós-condição que falha se alguma `SECURITY DEFINER` ou view que ignore RLS ainda estiver acessível por `anon`.
+   - `17_check_preco_unit.sql` — **Preço não negativo**: o `CHECK` que faltava em `item_estoque.preco_unit`, em script próprio para que um dado ruim não aborte o hardening de segurança da 16.
 4. Anote a **URL** e as **chaves** (anon e service_role) em **Project Settings > API**
 
 ---
@@ -125,18 +145,16 @@ Acesse: **http://localhost:5173**
 
 ## Endpoints da API (`/api/v1/`)
 
-| Recurso | Rotas |
-|---|---|
-| Auth | `POST /auth/login`, `/logout`, `/refresh`, `/forgot-password` |
-| Clientes | `GET/POST /clientes`, `GET/PUT/PATCH /clientes/:id` |
-| Veículos | `GET/POST /veiculos`, `GET/PUT/PATCH /veiculos/:id` |
-| Ordens de Serviço | `GET/POST /ordens-servico`, `PUT/PATCH /ordens-servico/:id` |
-| Estoque | `GET/POST /estoque`, `POST /estoque/:id/entrada`, `POST /estoque/:id/saida` |
-| Movimentações | `GET /movimentacoes` |
-| Relatórios | `GET /relatorios/atendimentos`, `/faturamento`, `/estoque`, `/servicos-frequentes`, `/clientes-frequentes` |
-| Chatbot | `POST /chatbot/mensagem`, `GET /chatbot/historico` |
-| IA | `POST /ia/analisar`, `GET /ia/recomendacoes` |
-| Usuários | `GET/POST /usuarios`, `PUT/PATCH /usuarios/:id` |
+O backend expõe **apenas** o que não pode rodar no navegador, porque depende da chave do Gemini ou da `service_role`:
+
+| Recurso | Rotas | Limite de taxa |
+|---|---|---|
+| Auth | `POST /auth/login`, `/logout`, `/refresh`, `/forgot-password` | 5 tentativas / 10 min por IP no login |
+| Chatbot | `POST /chatbot/mensagem`, `GET /chatbot/historico` | 10 req/min |
+| IA | `POST /ia/analisar`, `GET /ia/recomendacoes` | 10 req/min |
+| Health | `GET /health` (fora do `/api/v1`) | — |
+
+> **As antigas rotas de CRUD foram removidas** — clientes, veículos, ordens de serviço, estoque, movimentações, relatórios e usuários. Elas rodavam com a `service_role`, ignorando o RLS, e sem checagem de dono eram uma superfície de IDOR e de bypass das políticas. Todo o CRUD de dados passa **direto pelo Supabase**, com a chave `anon` + RLS. Não crie rota nova de cadastro aqui.
 
 ---
 
@@ -148,7 +166,7 @@ Acesse: **http://localhost:5173**
 
 **Banco de dados:** Supabase (PostgreSQL) com Row Level Security (RLS)
 
-**IA:** Google Gemini (gemini-flash-lite-latest para chatbot e análise)
+**IA:** Google Gemini — `gemini-flash-lite-latest` para chatbot e análise, com `gemini-3.5-flash-lite` como modelo de contingência quando o primeiro está sobrecarregado. **Não há resposta de contingência local:** se os dois modelos falharem, a tela declara a indisponibilidade da IA e nenhum número é estimado — divergência deliberada das RN38/RN42, registrada em [`docs/DER.md`](docs/DER.md)
 
 **Testes:** Vitest + React Testing Library (frontend), Supertest (API) e Playwright (E2E)
 
@@ -169,7 +187,7 @@ cd react-app && npx playwright test
 cd backend && npx vitest run
 ```
 
-Cobertura atual: **47** testes de frontend + **29** de backend + **11** E2E.
+Cobertura atual: **136** testes de frontend (24 arquivos) + **94** de backend (10 arquivos) + **12** E2E — medidos em 13/10/2026, todos passando.
 
 ---
 

@@ -1,6 +1,11 @@
 import { useState, useRef, useEffect } from 'react'
-import { MessageCircle, X, Send, Bot, User, Trash2 } from 'lucide-react'
-import { buscarResposta } from '../../utils/chatbot'
+import { MessageCircle, X, Send, Bot, User, Trash2, CloudOff } from 'lucide-react'
+
+// Texto único de indisponibilidade. Não há resposta local de substituição: se a
+// IA não responde, o assistente diz isso e não inventa orientação. Constante
+// para que a UI e os testes não derivem um do outro.
+export const MSG_IA_INDISPONIVEL =
+  'A IA está indisponível no momento. Nenhuma resposta foi gerada — tente novamente em alguns instantes.'
 
 const SAUDACAO = {
   id: 'init',
@@ -60,12 +65,23 @@ export function Chatbot() {
       const { chatbotApi } = await import('../../services/api.js')
       const data = await chatbotApi.enviarMensagem(pergunta, historicoSessao)
       const resposta = data?.dados?.resposta || data?.resposta || data?.mensagem
+      // Um 200 com corpo fora do contrato (ou com texto vazio) não lança por si:
+      // sem esta checagem, entrava uma bolha em branco, sem aviso nenhum, que o
+      // usuário lê como assistente quebrado. Jogar para o `catch` unifica o
+      // tratamento com o da falha de rede.
+      if (!resposta?.trim()) throw new Error('resposta vazia da IA')
       setMensagens(m => [...m, { id: crypto.randomUUID(), remetente: 'chatbot', conteudo: resposta, criado_em: new Date().toISOString() }])
     } catch (e) {
-      console.error('[Chatbot] API de IA falhou — usando resposta local. Causa:', e?.status, e?.data?.codigo || e?.message, e)
-      const resposta = buscarResposta(pergunta)
-      await new Promise(r => setTimeout(r, 600))
-      setMensagens(m => [...m, { id: crypto.randomUUID(), remetente: 'chatbot', conteudo: resposta, criado_em: new Date().toISOString() }])
+      console.error('[Chatbot] IA indisponível. Causa:', e?.status, e?.data?.codigo || e?.message, e)
+      // `indisponivel: true` muda a aparência da bolha; o conteúdo é o aviso, não
+      // uma resposta de mentira.
+      setMensagens(m => [...m, {
+        id: crypto.randomUUID(),
+        remetente: 'chatbot',
+        conteudo: MSG_IA_INDISPONIVEL,
+        criado_em: new Date().toISOString(),
+        indisponivel: true,
+      }])
     } finally {
       setEnviando(false)
     }
@@ -92,13 +108,23 @@ export function Chatbot() {
   }
 
   const totalMsgs = mensagens.length - 1
+  // O status da sidebar precisa concordar com as bolhas. Antes era o literal
+  // "Online" em verde, fixo: a bolha dizia "IA indisponível" e, a 20 px dali, um
+  // ponto verde afirmava o contrário — e o usuário acredita no ponto verde.
+  //
+  // Olha a ÚLTIMA resposta, não o histórico: se a IA voltou a responder, o status
+  // volta a "Online". Com `some()` ele ficaria presa em indisponível para sempre,
+  // contradizendo a resposta boa que acabou de chegar.
+  const iaIndisponivel = mensagens.filter(m => m.remetente === 'chatbot').at(-1)?.indisponivel === true
 
   return (
     <>
       {/* Botão flutuante */}
       <button
         onClick={() => setAberto(v => !v)}
-        title="Abrir assistente"
+        aria-label={aberto ? 'Fechar assistente' : 'Abrir assistente'}
+        aria-expanded={aberto}
+        title={aberto ? 'Fechar assistente' : 'Abrir assistente'}
         style={{
           position: 'fixed', bottom: '24px', right: '24px', zIndex: 1000,
           width: '56px', height: '56px', borderRadius: '50%',
@@ -169,9 +195,16 @@ export function Chatbot() {
                   <Bot size={24} color="var(--neon-orange)" />
                 </div>
                 <div style={{ fontWeight: '700', fontSize: '14px', color: 'var(--text-primary)' }}>Assistente SIGAuto</div>
-                <div style={{ fontSize: '11px', color: 'var(--status-done)', display: 'flex', alignItems: 'center', gap: '5px', marginTop: '5px' }}>
-                  <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--status-done)', display: 'inline-block' }} />
-                  Online
+                <div style={{
+                  fontSize: '11px',
+                  color: iaIndisponivel ? 'var(--status-pending)' : 'var(--status-done)',
+                  display: 'flex', alignItems: 'center', gap: '5px', marginTop: '5px',
+                }}>
+                  <span style={{
+                    width: '6px', height: '6px', borderRadius: '50%', display: 'inline-block',
+                    background: iaIndisponivel ? 'var(--status-pending)' : 'var(--status-done)',
+                  }} />
+                  {iaIndisponivel ? 'IA indisponível' : 'Online'}
                 </div>
                 <p style={{ fontSize: '11px', color: 'var(--text-muted)', marginTop: '10px', lineHeight: '1.55' }}>
                   Suporte operacional para o sistema de gestão automotiva.
@@ -247,6 +280,7 @@ export function Chatbot() {
                 </div>
                 <button
                   onClick={() => setAberto(false)}
+                  aria-label="Fechar assistente (Esc)"
                   title="Fechar (Esc)"
                   style={{
                     color: 'var(--text-muted)', background: 'transparent', border: 'none',
@@ -261,12 +295,23 @@ export function Chatbot() {
                 </button>
               </div>
 
-              {/* Mensagens */}
-              <div style={{
-                flex: 1, overflowY: 'auto',
-                padding: '20px 24px',
-                display: 'flex', flexDirection: 'column', gap: '16px',
-              }}>
+              {/* Mensagens.
+                  `role="log"` + `aria-live="polite"` é o que faz a resposta (e o
+                  aviso de indisponibilidade) ser anunciada por leitor de tela: ela
+                  chega depois de um await, e sem região viva o usuário fica
+                  esperando sem saber que chegou. A região vive no CONTÊINER, não na
+                  bolha — região criada já populada frequentemente não anuncia. */}
+              <div
+                role="log"
+                aria-live="polite"
+                aria-relevant="additions"
+                aria-label="Conversa com o assistente"
+                style={{
+                  flex: 1, overflowY: 'auto',
+                  padding: '20px 24px',
+                  display: 'flex', flexDirection: 'column', gap: '16px',
+                }}
+              >
                 {mensagens.map(msg => (
                   <div key={msg.id} style={{ display: 'flex', gap: '10px', flexDirection: msg.remetente === 'usuario' ? 'row-reverse' : 'row' }}>
                     <div style={{
@@ -292,6 +337,22 @@ export function Chatbot() {
                       border: `1px solid ${msg.remetente === 'usuario' ? 'rgba(232, 89, 12, 0.2)' : 'rgba(255,255,255,0.06)'}`,
                       fontSize: '14px', lineHeight: '1.6', color: 'var(--text-primary)',
                     }}>
+                      {/* A bolha de indisponibilidade NÃO carrega resposta: ela é o
+                          aviso. O rótulo fica no DOM, visível — antes a única frase
+                          acionável vivia num `title`, inalcançável por teclado, por
+                          toque e por leitor de tela (no cálculo de nome acessível o
+                          conteúdo de texto vence o atributo, que é descartado). */}
+                      {msg.indisponivel && (
+                        <div style={{
+                          display: 'flex', alignItems: 'center', gap: '6px',
+                          marginBottom: '8px', paddingBottom: '8px',
+                          borderBottom: '1px solid rgba(255,255,255,0.06)',
+                          fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)',
+                        }}>
+                          <CloudOff size={14} color="var(--neon-orange)" style={{ flexShrink: 0 }} />
+                          IA indisponível
+                        </div>
+                      )}
                       <span dangerouslySetInnerHTML={{ __html: renderTexto(msg.conteudo) }} />
                       <div style={{ marginTop: '4px', fontSize: '10px', color: 'var(--text-muted)', textAlign: msg.remetente === 'usuario' ? 'right' : 'left' }}>
                         {new Date(msg.criado_em).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}

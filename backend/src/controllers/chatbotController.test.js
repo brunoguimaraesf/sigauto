@@ -2,17 +2,19 @@ import { describe, it, expect, vi, beforeEach } from 'vitest'
 
 const DADOS = {
   cliente: [{ id: 'c1', nome: 'Rodrigo Rocha' }],
-  veiculo: [{ id: 'v1', id_cliente: 'c1' }],
+  veiculo: [{ id: 'v1', id_cliente: 'c1', marca: 'Ford', modelo: 'Ka' }],
   ordem_servico: [
-    { id_veiculo: 'v1', valor_total: 6495, status: 'concluida', data_abertura: '2026-08-01' },
+    { id: 'os1', id_veiculo: 'v1', valor_total: 6495, status: 'concluida', data_abertura: '2026-08-01', data_encerramento: '2026-08-02' },
   ],
-  item_estoque: [{ nome: 'Filtro de oleo', quantidade: 1, qtd_minima: 5 }],
+  item_estoque: [{ id: 'p1', codigo: 'FIL-1', nome: 'Filtro de oleo', quantidade: 1, qtd_minima: 5 }],
   servico_catalogo: [{ nome: 'Troca de oleo', preco: 120 }],
+  movimentacao_estoque: [{ id_item: 'p1', tipo: 'saida', quantidade: 3, data_hora: '2026-08-03' }],
 }
+const ERROS = new Map()
 
 vi.mock('../services/supabaseClient.js', () => {
   const consulta = (tabela) => {
-    const resultado = { data: DADOS[tabela] || [], error: null }
+    const resultado = { data: DADOS[tabela] || [], error: ERROS.get(tabela) || null }
     // Precisa ser encadeável (.select().eq()) e aguardável em qualquer ponto.
     const alvo = {
       select: () => alvo,
@@ -28,7 +30,7 @@ vi.mock('../services/supabaseClient.js', () => {
 })
 
 const responderChatbot = vi.fn(async () => 'resposta qualquer')
-vi.mock('../services/claudeService.js', () => ({ responderChatbot }))
+vi.mock('../services/iaService.js', () => ({ responderChatbot }))
 
 const { mensagem } = await import('./chatbotController.js')
 
@@ -43,7 +45,10 @@ async function contextoEnviadoAoModelo(perfil) {
   return responderChatbot.mock.calls[0][3]
 }
 
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => {
+  vi.clearAllMocks()
+  ERROS.clear()
+})
 
 describe('chatbot — o contexto entregue ao modelo respeita o perfil', () => {
   it('repassa o perfil de quem perguntou ao montar o contexto', async () => {
@@ -57,6 +62,9 @@ describe('chatbot — o contexto entregue ao modelo respeita o perfil', () => {
 
     expect(contexto.totais.faturamento_total).toBe(6495)
     expect(contexto.ranking_clientes[0].total_gasto).toBe(6495)
+    expect(contexto.analises_financeiras.todo_historico.faturamento).toBe(6495)
+    expect(contexto.analises_operacionais.todo_historico.modelos_com_mais_entradas[0].nome).toBe('Ford Ka')
+    expect(contexto.analises_operacionais.todo_historico.pecas_com_maior_saida[0].quantidade_saida).toBe(3)
   })
 
   it('mecanico não recebe faturamento, ranking nem estoque', async () => {
@@ -65,6 +73,8 @@ describe('chatbot — o contexto entregue ao modelo respeita o perfil', () => {
     expect(contexto.totais.faturamento_total).toBeUndefined()
     expect(contexto.ranking_clientes).toBeUndefined()
     expect(contexto.estoque_em_alerta).toBeUndefined()
+    expect(contexto.analises_financeiras).toBeUndefined()
+    expect(contexto.analises_operacionais).toBeUndefined()
     expect(JSON.stringify(contexto)).not.toContain('6495')
   })
 
@@ -74,6 +84,16 @@ describe('chatbot — o contexto entregue ao modelo respeita o perfil', () => {
     expect(contexto.totais.clientes).toBe(1)
     expect(contexto.estoque_em_alerta).toHaveLength(1)
     expect(contexto.totais.faturamento_total).toBeUndefined()
+    expect(contexto.analises_financeiras).toBeUndefined()
+    expect(contexto.analises_operacionais).toBeUndefined()
     expect(JSON.stringify(contexto)).not.toContain('6495')
+  })
+
+  it('falha de consulta nao vira metrica numerica falsa', async () => {
+    ERROS.set('movimentacao_estoque', new Error('consulta indisponivel'))
+
+    const contexto = await contextoEnviadoAoModelo('gestor')
+
+    expect(contexto).toBeNull()
   })
 })

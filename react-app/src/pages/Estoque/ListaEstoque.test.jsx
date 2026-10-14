@@ -1,7 +1,8 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent } from '@testing-library/react'
 import { ListaEstoque } from './ListaEstoque'
+import { AuthContext } from '../../context/AuthContext'
 
 // Mock encadeavel do Supabase (select -> eq -> order resolve com os itens).
 vi.mock('../../supabaseClient', () => {
@@ -13,8 +14,17 @@ vi.mock('../../supabaseClient', () => {
   q.select = () => q
   q.eq = () => q
   q.order = () => Promise.resolve({ data, error: null })
-  return { supabaseDb: { from: () => q } }
+  const from = vi.fn(() => q)
+  return { supabaseDb: { from } }
 })
+
+import { supabaseDb } from '../../supabaseClient'
+
+const comPerfil = (perfil, no) => (
+  <AuthContext.Provider value={{ perfil, user: null, isAuthenticated: true, loading: false, login: () => {}, logout: () => {} }}>
+    {no}
+  </AuthContext.Provider>
+)
 
 beforeEach(() => vi.clearAllMocks())
 
@@ -29,4 +39,38 @@ describe('Tela de Estoque', () => {
     expect(await screen.findByText('Filtro de Óleo')).toBeInTheDocument()
     expect(screen.getByText('Pastilha de Freio')).toBeInTheDocument()
   })
+})
+
+// Migracao 19: `custo` so existe para gestor. Nao gestor le a view sem a
+// coluna e nao ve o campo — se visse vazio, salvar apagaria o custo real.
+describe('custo por perfil (migracao 19)', () => {
+  it('atendente le item_estoque_publico e nao ve custo nem margem', async () => {
+    render(comPerfil('atendente', <ListaEstoque />))
+    expect(await screen.findByText('Filtro de Óleo')).toBeInTheDocument()
+    expect(supabaseDb.from).toHaveBeenCalledWith('item_estoque_publico')
+    expect(supabaseDb.from).not.toHaveBeenCalledWith('item_estoque')
+    fireEvent.click(screen.getByRole('button', { name: /Novo Item/i }))
+    expect(screen.queryByLabelText(/Custo unitário/i)).toBeNull()
+    expect(screen.queryByText('Margem')).toBeNull()
+  })
+
+  it('gestor le a tabela e ve custo e margem', async () => {
+    render(comPerfil('gestor', <ListaEstoque />))
+    expect(await screen.findByText('Filtro de Óleo')).toBeInTheDocument()
+    expect(supabaseDb.from).toHaveBeenCalledWith('item_estoque')
+    fireEvent.click(screen.getByRole('button', { name: /Novo Item/i }))
+    expect(screen.getByText(/Custo unitário/i)).toBeInTheDocument()
+    expect(screen.getByText('Margem')).toBeInTheDocument()
+  })
+})
+
+// Fail-closed: perfil nao resolvido (AuthContext devolve null depois de falhar
+// a leitura de `usuario`) nao vale gestor. Se valesse, o formulario vazio
+// mandaria `custo: null` e apagaria o custo real.
+it('perfil nulo dentro do provider nao libera custo', async () => {
+  render(comPerfil(null, <ListaEstoque />))
+  expect(await screen.findByText('Filtro de Óleo')).toBeInTheDocument()
+  expect(supabaseDb.from).toHaveBeenCalledWith('item_estoque_publico')
+  fireEvent.click(screen.getByRole('button', { name: /Novo Item/i }))
+  expect(screen.queryByText(/Custo unitário/i)).toBeNull()
 })

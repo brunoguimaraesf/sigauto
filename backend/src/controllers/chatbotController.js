@@ -1,6 +1,7 @@
 import { supabase } from '../services/supabaseClient.js'
-import { responderChatbot } from '../services/claudeService.js'
+import { responderChatbot } from '../services/iaService.js'
 import { filtrarContextoPorPerfil } from '../utils/contextoPorPerfil.js'
+import { calcularContextoAnalitico } from '../utils/contextoAnalitico.js'
 
 // Coleta e pré-agrega os dados da oficina para o chatbot responder perguntas
 // analíticas (ranking de clientes, ticket médio, faturamento, estoque em alerta).
@@ -8,19 +9,25 @@ import { filtrarContextoPorPerfil } from '../utils/contextoPorPerfil.js'
 // o recorte por perfil é aplicado depois, em filtrarContextoPorPerfil.
 async function montarContextoOficina() {
   try {
-    const [clientesRes, veiculosRes, osRes, estoqueRes, servicosRes] = await Promise.all([
+    const [clientesRes, veiculosRes, osRes, estoqueRes, servicosRes, movimentacoesRes] = await Promise.all([
       supabase.from('cliente').select('id, nome').eq('ativo', true),
-      supabase.from('veiculo').select('id, id_cliente').eq('ativo', true),
-      supabase.from('ordem_servico').select('id_veiculo, valor_total, status, data_abertura'),
-      supabase.from('item_estoque').select('nome, quantidade, qtd_minima').eq('ativo', true),
+      supabase.from('veiculo').select('id, id_cliente, marca, modelo').eq('ativo', true),
+      supabase.from('ordem_servico').select('id, id_veiculo, valor_total, status, data_abertura, data_encerramento'),
+      supabase.from('item_estoque').select('id, codigo, nome, quantidade, qtd_minima').eq('ativo', true),
       supabase.from('servico_catalogo').select('nome, preco').eq('ativo', true),
+      supabase.from('movimentacao_estoque').select('id_item, tipo, quantidade, data_hora'),
     ])
+
+    const falha = [clientesRes, veiculosRes, osRes, estoqueRes, servicosRes, movimentacoesRes]
+      .find(resultado => resultado.error)
+    if (falha) throw falha.error
 
     const clientes = clientesRes.data || []
     const veiculos = veiculosRes.data || []
     const ordens = osRes.data || []
     const estoque = estoqueRes.data || []
     const servicos = servicosRes.data || []
+    const movimentacoes = movimentacoesRes.data || []
 
     // Map em vez de objeto literal: as chaves vêm do banco, e um Map não herda
     // do Object.prototype (sem risco de prototype pollution por chave dinâmica).
@@ -48,21 +55,28 @@ async function montarContextoOficina() {
       .sort((a, b) => b.qtd_os - a.qtd_os || b.total_gasto - a.total_gasto)
       .slice(0, 50)
 
-    const faturamentoTotal = ordens.reduce((s, o) => s + Number(o.valor_total || 0), 0)
+    const contextoAnalitico = calcularContextoAnalitico({
+      veiculos,
+      ordens,
+      itensEstoque: estoque,
+      movimentacoes,
+    })
+    const financeiroHistorico = contextoAnalitico.analises_financeiras.todo_historico
 
     return {
       totais: {
         clientes: clientes.length,
         veiculos: veiculos.length,
         ordens_servico: ordens.length,
-        faturamento_total: +faturamentoTotal.toFixed(2),
-        ticket_medio_geral: ordens.length ? +(faturamentoTotal / ordens.length).toFixed(2) : 0,
+        faturamento_total: financeiroHistorico.faturamento,
+        ticket_medio_geral: financeiroHistorico.ticket_medio,
       },
       ranking_clientes: rankingClientes,
       estoque_em_alerta: estoque
         .filter(i => i.quantidade <= i.qtd_minima)
         .map(i => ({ nome: i.nome, quantidade: i.quantidade, qtd_minima: i.qtd_minima })),
       servicos_catalogo: servicos.slice(0, 50),
+      ...contextoAnalitico,
     }
   } catch (err) {
     console.error('[Chatbot] Falha ao montar contexto da oficina:', err.message)

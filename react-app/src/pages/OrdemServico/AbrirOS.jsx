@@ -68,7 +68,7 @@ export function AbrirOS() {
   })
   const veiculoSelecionado = veiculos.find(v => v.id === veiculoId)
 
-  const garantirConsumidor = () => {
+  const garantirConsumidor = async () => {
     const existente = clientes.find(c => c.id === CONSUMIDOR_ID || c.nome?.toLowerCase() === 'consumidor')
     if (existente) return existente
     return addCliente({
@@ -82,42 +82,63 @@ export function AbrirOS() {
     })
   }
 
-  const salvarClienteRapido = () => {
+  // addCliente/addVeiculo resolvem so depois do insert. Esperar aqui e o que
+  // garante a ordem cliente -> veiculo -> O.S. que as FKs exigem.
+  const salvarClienteRapido = async () => {
     if (!clienteForm.nome.trim()) {
       alert('Informe o nome do cliente.')
       return null
     }
-    const cliente = addCliente({
-      ...clienteForm,
-      nome: clienteForm.nome.trim(),
-      telefone: clienteForm.telefone || 'Nao informado',
-      cpf_cnpj: clienteForm.cpf_cnpj || `SC${Date.now().toString().slice(-9)}`,
-      ativo: true,
-    })
+    let cliente
+    try {
+      cliente = await addCliente({
+        ...clienteForm,
+        nome: clienteForm.nome.trim(),
+        telefone: clienteForm.telefone || 'Nao informado',
+        cpf_cnpj: clienteForm.cpf_cnpj || `SC${Date.now().toString().slice(-9)}`,
+        ativo: true,
+      })
+    } catch (err) {
+      alert(`Erro ao salvar cliente: ${err?.message || 'tente novamente.'}`)
+      return null
+    }
     setClienteId(cliente.id)
     setNovoCliente(false)
     setClienteForm(emptyCliente)
     return cliente
   }
 
-  const salvarVeiculoRapido = (ownerId) => {
+  const salvarVeiculoRapido = async (ownerId) => {
     const resolvedOwner = typeof ownerId === 'string' ? ownerId : null
-    const donoId = resolvedOwner || (clienteId === CONSUMIDOR_ID ? garantirConsumidor().id : clienteId) || salvarClienteRapido()?.id
-    if (!donoId) return null
     if (!veiculoForm.placa.trim() || !veiculoForm.marca.trim() || !veiculoForm.modelo.trim()) {
       alert('Informe placa, marca e modelo do veiculo.')
       return null
     }
-    const veiculo = addVeiculo({
-      ...veiculoForm,
-      placa: veiculoForm.placa.toUpperCase(),
-      ano: veiculoForm.ano || new Date().getFullYear(),
-      cor: veiculoForm.cor || 'Nao informada',
-      cliente_id: donoId,
-      id_cliente: donoId,
-      status: 'Pendente',
-      ativo: true,
-    })
+    let donoId = resolvedOwner || clienteId
+    try {
+      if (!resolvedOwner && clienteId === CONSUMIDOR_ID) donoId = (await garantirConsumidor()).id
+    } catch (err) {
+      alert(`Erro ao salvar cliente: ${err?.message || 'tente novamente.'}`)
+      return null
+    }
+    if (!donoId) donoId = (await salvarClienteRapido())?.id
+    if (!donoId) return null
+    let veiculo
+    try {
+      veiculo = await addVeiculo({
+        ...veiculoForm,
+        placa: veiculoForm.placa.toUpperCase(),
+        ano: veiculoForm.ano || new Date().getFullYear(),
+        cor: veiculoForm.cor || 'Nao informada',
+        cliente_id: donoId,
+        id_cliente: donoId,
+        status: 'Pendente',
+        ativo: true,
+      })
+    } catch (err) {
+      alert(`Erro ao salvar veiculo: ${err?.message || 'tente novamente.'}`)
+      return null
+    }
     setVeiculoId(veiculo.id)
     setNovoVeiculo(false)
     setVeiculoForm(emptyVeiculo)
@@ -129,24 +150,40 @@ export function AbrirOS() {
     let clienteFinal = clienteSelecionado
     let veiculoFinal = veiculoSelecionado
 
-    if (novoCliente) clienteFinal = salvarClienteRapido()
-    if (clienteId === CONSUMIDOR_ID) clienteFinal = garantirConsumidor()
-    if (!clienteFinal) {
-      alert('Selecione ou cadastre um cliente.')
-      return
-    }
-    if (novoVeiculo) veiculoFinal = salvarVeiculoRapido(clienteFinal?.id)
-    if (!veiculoFinal) {
-      alert('Selecione ou cadastre um veiculo.')
-      return
-    }
     if (descricao.trim().length < 10) {
       alert('A descricao da queixa deve ter pelo menos 10 caracteres.')
       return
     }
 
+    // Trava o botao ja aqui: cliente e veiculo novos sao gravados antes da
+    // O.S., e um segundo clique nesse intervalo duplicaria os cadastros.
     setSubmitting(true)
     try {
+      if (novoCliente) {
+        clienteFinal = await salvarClienteRapido()
+        if (!clienteFinal) return
+      }
+      if (clienteId === CONSUMIDOR_ID) {
+        try {
+          clienteFinal = await garantirConsumidor()
+        } catch (err) {
+          alert(`Erro ao salvar cliente: ${err?.message || 'tente novamente.'}`)
+          return
+        }
+      }
+      if (!clienteFinal) {
+        alert('Selecione ou cadastre um cliente.')
+        return
+      }
+      if (novoVeiculo) {
+        veiculoFinal = await salvarVeiculoRapido(clienteFinal.id)
+        if (!veiculoFinal) return
+      }
+      if (!veiculoFinal) {
+        alert('Selecione ou cadastre um veiculo.')
+        return
+      }
+
       const saved = await addOrdemServico({
         veiculo_id: veiculoFinal.id,
         id_veiculo: veiculoFinal.id,

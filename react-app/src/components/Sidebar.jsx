@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { NavLink, useNavigate } from 'react-router-dom'
-import { LayoutDashboard, CarFront, Users, Wrench, BarChart3, FileText, Package, Brain, UserCog, HardHat, History, LogOut } from 'lucide-react'
+import { LayoutDashboard, CarFront, Users, Wrench, BarChart3, FileText, Package, Brain, UserCog, HardHat, History, LogOut, Building2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabaseDb } from '../supabaseClient'
 
@@ -18,10 +18,16 @@ export function Sidebar() {
 
   useEffect(() => {
     async function carregarAlertas() {
-      const { data, error } = await supabaseDb
-        .from('item_estoque')
+      // Le pela view sem `custo` (migracao 19): a tabela item_estoque passou a
+      // ser legivel so por gestor. Fallback para a tabela em bancos pre-19.
+      let { data, error } = await supabaseDb
+        .from('item_estoque_publico')
         .select('quantidade,qtd_minima')
         .eq('ativo', true)
+      if (error) ({ data, error } = await supabaseDb
+        .from('item_estoque')
+        .select('quantidade,qtd_minima')
+        .eq('ativo', true))
       if (!error) setQtdAlertas((data || []).filter(i => i.quantidade <= i.qtd_minima).length)
     }
     carregarAlertas()
@@ -76,6 +82,7 @@ export function Sidebar() {
             <li className="sidebar-item"><NavLink to="/painel-ia" className={nc}><Brain size={20} /> Painel IA</NavLink></li>
             <li className="sidebar-item"><NavLink to="/funcionarios" className={nc}><HardHat size={20} /> Funcionarios</NavLink></li>
             <li className="sidebar-item"><NavLink to="/usuarios" className={nc}><UserCog size={20} /> Usuarios</NavLink></li>
+            <li className="sidebar-item"><NavLink to="/configuracao-oficina" className={nc}><Building2 size={20} /> Oficina</NavLink></li>
           </>
         )}
       </ul>
