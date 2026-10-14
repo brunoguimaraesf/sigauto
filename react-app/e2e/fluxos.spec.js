@@ -40,3 +40,24 @@ test('fluxo de nova O.S. exige cliente antes do veículo', async ({ page }) => {
   const veiculoSelect = page.locator('select').filter({ hasText: 'Selecione um cliente primeiro' })
   await expect(veiculoSelect).toBeDisabled()
 })
+
+// RF05: o documento da O.S. pode ser salvo ou impresso em qualquer status.
+// O conteudo do PDF e coberto em utils/osPdf.test.js; aqui so a disponibilidade
+// das acoes na tela real, sem baixar arquivo.
+for (const [status, rotulo] of [['aberta', 'aberta'], ['concluida', 'concluída']]) {
+  test(`O.S. ${rotulo} oferece Salvar PDF e Imprimir`, async ({ page }) => {
+    await page.getByRole('link', { name: 'Ordens de Servico', exact: true }).click()
+    await page.locator('select').filter({ hasText: 'Todos os status' }).selectOption(status)
+
+    const ver = page.getByRole('button', { name: /^Ver$/ }).first()
+    try {
+      await ver.waitFor({ timeout: 15000 })
+    } catch {
+      test.skip(true, `Nenhuma O.S. com status ${status} no banco de teste.`)
+    }
+    await ver.click()
+
+    await expect(page.getByRole('button', { name: /Salvar PDF/i })).toBeVisible()
+    await expect(page.getByRole('button', { name: /Imprimir/i })).toBeVisible()
+  })
+}

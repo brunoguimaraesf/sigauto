@@ -90,7 +90,7 @@ export function Veiculos() {
     }
 
     if (editingId) updateVeiculo(editingId, payload)
-    else addVeiculo(payload)
+    else addVeiculo(payload).catch(err => alert(`Erro ao salvar veiculo: ${err?.message || 'tente novamente.'}`))
 
     setModalOpen(false)
   }

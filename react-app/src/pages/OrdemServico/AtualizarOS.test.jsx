@@ -1,11 +1,17 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { AtualizarOS } from './AtualizarOS'
 import { useDatabase } from '../../hooks/useDatabase'
+import { abrirDocumentoOS, imprimirDocumentoOS } from '../../utils/osPdf'
 
 vi.mock('../../hooks/useDatabase', () => ({ useDatabase: vi.fn() }))
+vi.mock('../../utils/osPdf', () => ({
+  abrirDocumentoOS: vi.fn(() => ({})),
+  imprimirDocumentoOS: vi.fn(async () => {}),
+  carregarLogoDataUrl: vi.fn(async () => null),
+}))
 
 // estoque carregado via supabase no useEffect
 vi.mock('../../supabaseClient', () => {
@@ -53,5 +59,37 @@ describe('Tela de Atualizar O.S.', () => {
   it('mostra aviso quando a OS nao existe', () => {
     renderAt('inexistente')
     expect(screen.getByText(/Ordem de servico nao encontrada/i)).toBeInTheDocument()
+  })
+
+  // RF05: o documento da O.S. pode ser salvo ou impresso em qualquer status.
+  const oficina = { id: 1, nome_fantasia: 'Oficina Central', cnpj: '11222333000181' }
+
+  it.each(['aberta', 'em_andamento', 'aguardando_peca', 'concluida', 'cancelada'])(
+    'oferece Visualizar PDF e Imprimir com a O.S. %s',
+    async (status) => {
+      const osStatus = { ...os, status }
+      useDatabase.mockReturnValue({ ...baseDb, ordensServico: [osStatus], oficina })
+      renderAt('o1')
+
+      fireEvent.click(screen.getByRole('button', { name: /Visualizar PDF/i }))
+      await waitFor(() => expect(abrirDocumentoOS).toHaveBeenCalledTimes(1))
+      expect(abrirDocumentoOS.mock.calls[0][0]).toMatchObject({
+        os: expect.objectContaining({ id: 'o1', status }),
+        cliente: expect.objectContaining({ nome: 'João Silva' }),
+        veiculo: expect.objectContaining({ placa: 'ABC1D23' }),
+        oficina,
+      })
+
+      fireEvent.click(screen.getByRole('button', { name: /Imprimir/i }))
+      await waitFor(() => expect(imprimirDocumentoOS).toHaveBeenCalledTimes(1))
+    },
+  )
+
+  it('avisa quando a oficina ainda nao foi cadastrada, sem gerar o documento', async () => {
+    useDatabase.mockReturnValue({ ...baseDb, oficina: null })
+    renderAt('o1')
+    fireEvent.click(screen.getByRole('button', { name: /Visualizar PDF/i }))
+    expect(await screen.findByRole('alert')).toHaveTextContent(/oficina ainda não foram cadastrados/i)
+    expect(abrirDocumentoOS).not.toHaveBeenCalled()
   })
 })

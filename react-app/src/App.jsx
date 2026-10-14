@@ -18,6 +18,7 @@ import { Relatorios } from './pages/Relatorios'
 import { PainelIA } from './pages/PainelIA'
 import { Usuarios } from './pages/Usuarios'
 import { Funcionarios } from './pages/Funcionarios'
+import { ConfiguracaoOficina } from './pages/ConfiguracaoOficina'
 
 // OS Pages
 import { ListaOS } from './pages/OrdemServico/ListaOS'
@@ -78,6 +79,9 @@ function AppLayout() {
 
           {/* Usuários - gestor apenas */}
           <Route path="/usuarios" element={<ProtectedRoute requiredRoles={['gestor']}><Usuarios /></ProtectedRoute>} />
+
+          {/* Configuração da oficina (cabeçalho da O.S.) - gestor apenas */}
+          <Route path="/configuracao-oficina" element={<ProtectedRoute requiredRoles={['gestor']}><ConfiguracaoOficina /></ProtectedRoute>} />
 
           {/* Redirect raiz para dashboard se logado */}
           <Route path="*" element={<Navigate to="/" replace />} />
