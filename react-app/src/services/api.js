@@ -66,7 +66,22 @@ export const chatbotApi = {
   historico: () => api.get('/chatbot/historico'),
 }
 
+function normalizarInteiroPositivo(valor, padrao, maximo) {
+  const numero = typeof valor === 'number'
+    ? valor
+    : /^\d+$/.test(String(valor).trim())
+      ? Number(valor)
+      : NaN
+
+  if (!Number.isSafeInteger(numero) || numero < 1) return padrao
+  return Math.min(numero, maximo)
+}
+
 export const iaApi = {
   analisar: () => api.post('/ia/analisar'),
-  recomendacoes: () => api.get('/ia/recomendacoes'),
+  recomendacoes: (pagina = 1, limite = 10) => {
+    const paginaSegura = normalizarInteiroPositivo(pagina, 1, 100000)
+    const limiteSeguro = normalizarInteiroPositivo(limite, 10, 50)
+    return api.get(`/ia/recomendacoes?page=${paginaSegura}&limit=${limiteSeguro}`)
+  },
 }

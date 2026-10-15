@@ -32,10 +32,10 @@ export function Header() {
       .slice(0, 3)
       .map(os => ({
         id: os.id + '_peca',
-        icon: <Package size={14} color="var(--neon-orange)" />,
+        icon: <Package size={14} color="var(--color-warning)" />,
         title: `O.S. #${os.numero_os || os.id?.slice(-4).toUpperCase()} — aguardando peça`,
         desc: os.descricao || 'Peça não disponível em estoque',
-        color: 'var(--neon-orange)',
+        color: 'var(--color-warning)',
         route: `/ordens-servico/${os.id}`,
       })),
     ...ordensServico
@@ -64,7 +64,7 @@ export function Header() {
             padding: '8px',
             borderRadius: '50%',
             transition: 'background 0.15s',
-            background: open ? 'rgba(232,89,12,0.1)' : 'transparent',
+            background: open ? 'var(--color-primary-tint)' : 'transparent',
             color: open ? 'var(--neon-orange)' : 'var(--text-secondary)',
           }}
         >
@@ -97,10 +97,10 @@ export function Header() {
             top: 'calc(100% + 10px)',
             right: 0,
             width: '340px',
-            background: '#232323',
-            border: '1px solid rgba(232,89,12,0.2)',
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--color-primary-border)',
             borderRadius: 'var(--radius-md)',
-            boxShadow: '0 12px 40px rgba(0,0,0,0.5), 0 0 20px rgba(232,89,12,0.06)',
+            boxShadow: 'var(--shadow-lg)',
             zIndex: 200,
             overflow: 'hidden',
           }}>
@@ -132,17 +132,17 @@ export function Header() {
                       gap: '12px',
                       width: '100%',
                       padding: '12px 16px',
-                      borderBottom: '1px solid rgba(255,255,255,0.04)',
+                      borderBottom: '1px solid var(--border-color)',
                       background: 'transparent',
                       border: 'none',
                       cursor: 'pointer',
                       textAlign: 'left',
                       transition: 'background 0.12s',
                     }}
-                    onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.03)'}
+                    onMouseEnter={e => e.currentTarget.style.background = 'var(--bg-subtle)'}
                     onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
                   >
-                    <div style={{ marginTop: '2px', flexShrink: 0, width: '28px', height: '28px', borderRadius: '50%', background: 'rgba(255,255,255,0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                    <div style={{ marginTop: '2px', flexShrink: 0, width: '28px', height: '28px', borderRadius: '50%', background: 'var(--bg-subtle)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                       {n.icon}
                     </div>
                     <div style={{ flex: 1, minWidth: 0 }}>

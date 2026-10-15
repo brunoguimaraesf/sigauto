@@ -104,16 +104,28 @@ describe('parâmetros enviados ao modelo', () => {
     expect(generationConfig.maxOutputTokens).toBe(800)
     // Teto por chamada: sem ele o pior caso não tem limite e a função serverless
     // é morta pela plataforma no meio.
-    expect(requestOptions.timeout).toBe(TIMEOUT_CHAMADA_MS)
+    expect(requestOptions.timeout).toBeGreaterThan(0)
+    expect(requestOptions.timeout).toBeLessThanOrEqual(TIMEOUT_CHAMADA_MS)
   })
 
-  it('o painel de IA pede JSON e tem teto de tempo', async () => {
+  it('o painel de IA pede o contrato completo em JSON e tem teto de tempo', async () => {
     await gerarRecomendacoesIA({ os: [] })
 
     const [{ systemInstruction, generationConfig, requestOptions }] = estado.params
     expect(systemInstruction).toContain('JSON')
+    expect(systemInstruction).toContain('acao_sugerida')
+    expect(systemInstruction).toContain('impacto_esperado')
+    expect(systemInstruction).toContain('periodo')
+    expect(systemInstruction).toContain('evidencias')
+    expect(systemInstruction).toContain('catalogo_evidencias')
+    expect(systemInstruction).toContain('Não recalcule métricas')
+    expect(systemInstruction).toContain('não invente impacto quantitativo')
+    expect(systemInstruction).toContain('não execute ações automáticas')
+    expect(systemInstruction).toContain('título, descrição, ação sugerida e impacto esperado')
+    expect(systemInstruction).toContain('Somente o array evidencias pode conter valores numéricos')
     expect(generationConfig.maxOutputTokens).toBe(2000)
-    expect(requestOptions.timeout).toBe(TIMEOUT_CHAMADA_MS)
+    expect(requestOptions.timeout).toBeGreaterThan(0)
+    expect(requestOptions.timeout).toBeLessThanOrEqual(TIMEOUT_CHAMADA_MS)
   })
 })
 

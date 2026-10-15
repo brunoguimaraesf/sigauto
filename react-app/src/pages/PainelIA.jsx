@@ -1,26 +1,50 @@
 import { useState } from 'react'
 import { GlassPanel } from '../components/GlassPanel'
 import { useDatabase } from '../hooks/useDatabase'
-import { Brain, AlertTriangle, CloudOff, TrendingUp, Package, Users, Zap, RefreshCw } from 'lucide-react'
-
-const TIPO_ICONS = {
-  estoque_critico: Package,
-  manutencao_preventiva: Zap,
-  cliente_recorrente: Users,
-  anomalia_valor: TrendingUp,
-}
-
-const PRIORIDADE_COLORS = {
-  alta: { color: '#ff4d4d', bg: 'rgba(255, 0, 0, 0.06)', border: 'rgba(255, 0, 0, 0.2)' },
-  media: { color: 'var(--status-pending)', bg: 'rgba(255, 179, 0, 0.06)', border: 'rgba(255, 179, 0, 0.2)' },
-  baixa: { color: 'var(--text-secondary)', bg: 'rgba(255,255,255,0.02)', border: 'var(--border-color)' },
-}
+import { Brain, AlertTriangle, CloudOff, History, RefreshCw } from 'lucide-react'
+import { ComparacaoPeriodo } from '../components/ia/ComparacaoPeriodo'
+import { EstoqueInteligente } from '../components/ia/EstoqueInteligente'
+import { ProdutividadeOS } from '../components/ia/ProdutividadeOS'
+import { RecomendacaoExplicavel } from '../components/ia/RecomendacaoExplicavel'
 
 // Mensagem única de indisponibilidade. Não existe análise local de substituição:
 // número calculado por regra fixa e número vindo do modelo não têm a mesma
 // origem, e exibir um no lugar do outro é pior que não exibir painel.
 export const MSG_IA_INDISPONIVEL =
   'A IA está indisponível no momento. Nenhuma análise foi gerada — nenhum número desta tela foi estimado localmente. Tente novamente em alguns instantes.'
+
+function formatarMoeda(valor) {
+  return valor !== null && valor !== '' && Number.isFinite(Number(valor))
+    ? Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
+    : '—'
+}
+
+function formatarNumero(valor, sufixo = '') {
+  return valor !== null && valor !== '' && Number.isFinite(Number(valor))
+    ? `${Number(valor).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}${sufixo}`
+    : '—'
+}
+
+function formatarDataHora(valor) {
+  const data = new Date(valor)
+  return Number.isNaN(data.getTime())
+    ? 'Data indisponível'
+    : data.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
+}
+
+function formatarPeriodo(periodo) {
+  const inicio = new Date(periodo?.inicio)
+  const fim = new Date(periodo?.fim)
+  if (Number.isNaN(inicio.getTime()) || Number.isNaN(fim.getTime())) return 'Período indisponível'
+  return `${inicio.toLocaleDateString('pt-BR', { timeZone: 'UTC' })} a ${fim.toLocaleDateString('pt-BR', { timeZone: 'UTC' })}`
+}
+
+function obterAnaliseHistorica(registro) {
+  const analise = registro?.recomendacoes
+  return analise && typeof analise === 'object' && !Array.isArray(analise) ? analise : {}
+}
+
+const LIMITE_HISTORICO = 10
 
 export function PainelIA() {
   const { clientes, veiculos, ordensServico } = useDatabase()
@@ -29,6 +53,12 @@ export function PainelIA() {
   // `erro` deixou de ser estado morto: agora é o único caminho de falha da tela,
   // e é ele que mostra a indisponibilidade da IA.
   const [erro, setErro] = useState('')
+  const [historicoVisivel, setHistoricoVisivel] = useState(false)
+  const [historico, setHistorico] = useState([])
+  const [paginacaoHistorico, setPaginacaoHistorico] = useState(null)
+  const [carregandoHistorico, setCarregandoHistorico] = useState(false)
+  const [erroHistorico, setErroHistorico] = useState('')
+  const [detalheHistorico, setDetalheHistorico] = useState(null)
 
   const handleAnalisar = async () => {
     setAnalisando(true)
@@ -55,6 +85,33 @@ export function PainelIA() {
     }
   }
 
+  const carregarHistorico = async (pagina = 1) => {
+    setCarregandoHistorico(true)
+    setErroHistorico('')
+    try {
+      const { iaApi } = await import('../services/api.js')
+      const resposta = await iaApi.recomendacoes(pagina, LIMITE_HISTORICO)
+      const registros = Array.isArray(resposta?.dados) ? resposta.dados : []
+      const paginacao = resposta?.paginacao && typeof resposta.paginacao === 'object'
+        ? resposta.paginacao
+        : { total: registros.length, pagina, limite: LIMITE_HISTORICO, totalPaginas: registros.length > 0 ? 1 : 0 }
+
+      setHistorico(registros)
+      setPaginacaoHistorico(paginacao)
+    } catch (e) {
+      console.error('[PainelIA] Histórico indisponível:', e?.status, e?.message)
+      setErroHistorico('Não foi possível carregar as análises anteriores. Tente novamente em alguns instantes.')
+    } finally {
+      setCarregandoHistorico(false)
+    }
+  }
+
+  const handleAbrirHistorico = () => {
+    setHistoricoVisivel(true)
+    setDetalheHistorico(null)
+    carregarHistorico(1)
+  }
+
   return (
     <div className="dashboard-grid">
       <section className="welcome-section stagger-1" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
@@ -70,7 +127,7 @@ export function PainelIA() {
         >
           {analisando ? (
             <>
-              <span style={{ width: '14px', height: '14px', borderRadius: '50%', border: '2px solid rgba(255,255,255,0.3)', borderTopColor: '#fff', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} />
+              <span style={{ width: '14px', height: '14px', borderRadius: '50%', border: '2px solid var(--border-color)', borderTopColor: '#fff', display: 'inline-block', animation: 'spin 0.8s linear infinite' }} />
               Analisando...
             </>
           ) : (
@@ -87,6 +144,105 @@ export function PainelIA() {
         Nenhuma ação será executada automaticamente. O gestor é responsável por avaliar e decidir sobre cada recomendação apresentada.
       </div>
 
+      <section className="stagger-2" aria-labelledby="historico-ia-titulo">
+        {!historicoVisivel ? (
+          <button
+            className="btn-secondary"
+            onClick={handleAbrirHistorico}
+            style={{ padding: '8px 16px', borderRadius: 'var(--radius-sm)', display: 'inline-flex', alignItems: 'center', gap: '8px' }}
+          >
+            <History size={15} aria-hidden="true" /> Consultar análises anteriores
+          </button>
+        ) : (
+          <GlassPanel className="panel">
+            <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', gap: '12px', alignItems: 'center', flexWrap: 'wrap' }}>
+              <div>
+                <h3 id="historico-ia-titulo">Análises anteriores</h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '4px' }}>Consulta somente leitura das análises já geradas.</p>
+              </div>
+              <button className="btn-secondary" onClick={() => carregarHistorico(paginacaoHistorico?.pagina ?? 1)} disabled={carregandoHistorico}>
+                {carregandoHistorico ? 'Carregando...' : 'Recarregar histórico'}
+              </button>
+            </div>
+
+            {erroHistorico && (
+              <div role="status" aria-label="Não foi possível carregar o histórico" style={{ marginTop: '12px', padding: '12px', borderLeft: '3px solid var(--color-warning)', background: 'var(--color-primary-tint)', color: 'var(--text-secondary)', fontSize: '13px' }}>
+                {erroHistorico}
+              </div>
+            )}
+
+            {carregandoHistorico ? (
+              <p role="status" style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '16px' }}>Carregando análises anteriores...</p>
+            ) : historico.length === 0 && !erroHistorico ? (
+              <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '16px' }}>Não há análises anteriores para exibir.</p>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '16px' }}>
+                {historico.map((registro, indice) => {
+                  const analise = obterAnaliseHistorica(registro)
+                  return (
+                    <div key={registro?.id ?? `${registro?.criado_em}-${indice}`} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px', padding: '12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', flexWrap: 'wrap' }}>
+                      <div>
+                        <strong style={{ fontSize: '13px' }}>{formatarDataHora(registro?.criado_em)}</strong>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '4px' }}>Período: {formatarPeriodo(analise.periodo_atual)}</p>
+                        <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '4px' }}>{analise.resumo || 'Resumo indisponível.'}</p>
+                      </div>
+                      <button className="btn-secondary" onClick={() => setDetalheHistorico(registro)}>Ver detalhes da análise de {formatarDataHora(registro?.criado_em)}</button>
+                    </div>
+                  )
+                })}
+              </div>
+            )}
+
+            {paginacaoHistorico && paginacaoHistorico.totalPaginas > 1 && (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '10px', marginTop: '16px' }}>
+                <button className="btn-secondary" onClick={() => carregarHistorico(paginacaoHistorico.pagina - 1)} disabled={carregandoHistorico || paginacaoHistorico.pagina <= 1}>Página anterior</button>
+                <span style={{ color: 'var(--text-secondary)', fontSize: '12px' }}>Página {paginacaoHistorico.pagina} de {paginacaoHistorico.totalPaginas}</span>
+                <button className="btn-secondary" onClick={() => carregarHistorico(paginacaoHistorico.pagina + 1)} disabled={carregandoHistorico || paginacaoHistorico.pagina >= paginacaoHistorico.totalPaginas}>Próxima página</button>
+              </div>
+            )}
+          </GlassPanel>
+        )}
+      </section>
+
+      {detalheHistorico && (() => {
+        const analise = obterAnaliseHistorica(detalheHistorico)
+        const recomendacoes = Array.isArray(analise.recomendacoes) ? analise.recomendacoes : []
+        return (
+          <GlassPanel role="region" aria-labelledby="detalhe-analise-anterior-titulo" className="panel">
+            <div className="panel-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '12px' }}>
+              <div>
+                <h3 id="detalhe-analise-anterior-titulo">Detalhe da análise anterior</h3>
+                <p style={{ color: 'var(--text-secondary)', fontSize: '12px', marginTop: '4px' }}>Gerada em {formatarDataHora(detalheHistorico.criado_em)} · Período: {formatarPeriodo(analise.periodo_atual)}</p>
+              </div>
+              <button className="btn-secondary" onClick={() => setDetalheHistorico(null)}>Fechar detalhe</button>
+            </div>
+
+            <p style={{ color: 'var(--text-primary)', fontSize: '14px', lineHeight: '1.6', marginTop: '16px' }}>{analise.resumo || 'Resumo indisponível.'}</p>
+
+            {analise.metricas_destaque && (
+              <section className="metrics-grid" style={{ marginTop: '16px' }} aria-label="Métricas da análise anterior">
+                {[
+                  { label: 'OS abertas (90d)', valor: formatarNumero(analise.metricas_destaque.ordens_abertas) },
+                  { label: 'OS concluídas (90d)', valor: formatarNumero(analise.metricas_destaque.ordens_concluidas) },
+                  { label: 'Faturamento concluído (90d)', valor: formatarMoeda(analise.metricas_destaque.faturamento) },
+                  { label: 'Itens críticos', valor: formatarNumero(analise.metricas_destaque.itens_criticos) },
+                ].map((metrica) => <div key={metrica.label} className="metric-card"><span className="metric-title">{metrica.label}</span><div className="metric-value" style={{ fontSize: '22px' }}>{metrica.valor}</div></div>)}
+              </section>
+            )}
+
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginTop: '16px' }}>
+              <ComparacaoPeriodo periodoAtual={analise.periodo_atual} periodoAnterior={analise.periodo_anterior} comparacoes={analise.comparacoes} />
+              <EstoqueInteligente estoque={analise.estoque_inteligente} />
+              <ProdutividadeOS produtividade={analise.produtividade} />
+              <section aria-labelledby="recomendacoes-historico-titulo">
+                <h4 id="recomendacoes-historico-titulo" style={{ marginBottom: '12px' }}>Recomendações explicáveis</h4>
+                {recomendacoes.length === 0 ? <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Não há recomendações disponíveis nesta análise.</p> : <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>{recomendacoes.map((recomendacao, indice) => <RecomendacaoExplicavel key={`${recomendacao?.titulo}-${indice}`} recomendacao={recomendacao} />)}</div>}
+              </section>
+            </div>
+          </GlassPanel>
+        )
+      })()}
+
       {/* IA indisponível.
           `role="status"` (que já implica aria-live="polite") faz o aviso ser
           anunciado por leitor de tela: ele aparece depois de um await, e sem
@@ -100,12 +256,12 @@ export function PainelIA() {
           className="stagger-2"
           style={{
             padding: '16px',
-            borderLeft: '3px solid var(--neon-orange)',
-            background: 'rgba(232, 89, 12, 0.06)',
+            borderLeft: '3px solid var(--color-warning)',
+            background: 'var(--color-primary-tint)',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
-            <CloudOff size={18} color="var(--neon-orange)" style={{ marginTop: '2px', flexShrink: 0 }} />
+            <CloudOff size={18} color="var(--color-warning)" style={{ marginTop: '2px', flexShrink: 0 }} />
             <div>
               <h3 style={{ fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
                 IA indisponível
@@ -121,7 +277,7 @@ export function PainelIA() {
       {/* Estado inicial */}
       {!resultado && !analisando && !erro && (
         <GlassPanel className="panel stagger-3" style={{ textAlign: 'center', padding: '64px 48px' }}>
-          <Brain size={48} color="rgba(232, 89, 12, 0.4)" style={{ marginBottom: '20px' }} />
+          <Brain size={48} color="var(--color-primary)" style={{ marginBottom: '20px' }} />
           <h3 style={{ fontFamily: 'var(--font-display)', marginBottom: '12px' }}>Pronto para Analisar</h3>
           <p style={{ color: 'var(--text-secondary)', maxWidth: '400px', margin: '0 auto 24px' }}>
             Clique em <strong>"Analisar Dados"</strong> para gerar recomendações baseadas nas ordens de serviço,
@@ -139,7 +295,7 @@ export function PainelIA() {
           <div style={{ display: 'flex', justifyContent: 'center', gap: '8px', marginBottom: '24px' }}>
             {[0, 1, 2].map(i => (
               <div key={i} style={{
-                width: '10px', height: '10px', borderRadius: '50%', background: 'var(--neon-orange)',
+                width: '10px', height: '10px', borderRadius: '50%', background: 'var(--color-warning)',
                 animation: `pulse-glow 1.2s ease-in-out ${i * 0.2}s infinite`
               }} />
             ))}
@@ -153,7 +309,7 @@ export function PainelIA() {
       {resultado && (
         <>
           {resultado.resumo && (
-            <GlassPanel className="panel stagger-2" style={{ borderColor: 'rgba(0, 229, 255, 0.2)' }}>
+            <GlassPanel className="panel stagger-2" style={{ borderColor: 'var(--color-primary)' }}>
               <div style={{ display: 'flex', alignItems: 'flex-start', gap: '12px' }}>
                 <Brain size={20} color="var(--electric-blue)" style={{ marginTop: '2px', flexShrink: 0 }} />
                 <div>
@@ -167,12 +323,10 @@ export function PainelIA() {
           {resultado.metricas_destaque && (
             <section className="metrics-grid stagger-2">
               {[
-                // Rótulos explicitam a janela de 90 dias: o faturamento aqui conta
-                // só OS concluídas no período, então não bate com o total do Dashboard.
-                { label: 'Ordens de Serviço (90d)', valor: resultado.metricas_destaque.total_os ?? '—' },
-                { label: 'Faturamento Concluído (90d)', valor: resultado.metricas_destaque.faturamento_estimado != null ? `R$ ${Number(resultado.metricas_destaque.faturamento_estimado).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—' },
-                { label: 'Itens Críticos', valor: resultado.metricas_destaque.itens_criticos_estoque ?? '—' },
-                { label: 'Crescimento (vs. 90d ant.)', valor: resultado.metricas_destaque.taxa_crescimento ?? '—' },
+                { label: 'OS abertas (90d)', valor: formatarNumero(resultado.metricas_destaque.ordens_abertas) },
+                { label: 'OS concluídas (90d)', valor: formatarNumero(resultado.metricas_destaque.ordens_concluidas) },
+                { label: 'Faturamento concluído (90d)', valor: formatarMoeda(resultado.metricas_destaque.faturamento) },
+                { label: 'Itens críticos', valor: formatarNumero(resultado.metricas_destaque.itens_criticos) },
               ].map((m, i) => (
                 <GlassPanel key={i} className="metric-card">
                   <div className="metric-header">
@@ -187,13 +341,13 @@ export function PainelIA() {
           {resultado.alertas?.length > 0 && (
             <GlassPanel className="panel stagger-2">
               <div className="panel-header">
-                <h3><AlertTriangle size={18} color="var(--neon-orange)" style={{ marginRight: '8px', verticalAlign: 'middle' }} /> Alertas</h3>
+                <h3><AlertTriangle size={18} color="var(--color-warning)" style={{ marginRight: '8px', verticalAlign: 'middle' }} /> Alertas</h3>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {resultado.alertas.map((a, i) => {
-                  const cor = a.urgencia === 'critica' ? '#ff4d4d' : a.urgencia === 'alta' ? 'var(--neon-orange)' : a.urgencia === 'media' ? 'var(--status-pending)' : 'var(--text-secondary)'
+                  const cor = a.urgencia === 'critica' ? 'var(--color-danger)' : a.urgencia === 'alta' ? 'var(--color-warning)' : a.urgencia === 'media' ? 'var(--status-pending)' : 'var(--text-secondary)'
                   return (
-                    <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '12px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }}>
+                    <div key={i} style={{ display: 'flex', gap: '10px', alignItems: 'flex-start', padding: '12px', background: 'var(--bg-subtle)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }}>
                       <AlertTriangle size={16} color={cor} style={{ marginTop: '2px', flexShrink: 0 }} />
                       <div>
                         {a.tipo && <div style={{ fontSize: '11px', textTransform: 'uppercase', letterSpacing: '0.5px', color: cor, fontWeight: 700, marginBottom: '2px' }}>{a.tipo}</div>}
@@ -206,58 +360,30 @@ export function PainelIA() {
             </GlassPanel>
           )}
 
-          {resultado.recomendacoes?.length === 0 ? (
-            <GlassPanel className="panel stagger-3" style={{ textAlign: 'center', padding: '48px' }}>
-              <p style={{ color: 'var(--text-secondary)' }}>Dados insuficientes para gerar recomendações. Registre mais ordens de serviço e retorne.</p>
-            </GlassPanel>
-          ) : (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }} className="stagger-3">
-              {resultado.recomendacoes?.map((rec, idx) => {
-                const prCfg = PRIORIDADE_COLORS[rec.prioridade] || PRIORIDADE_COLORS['baixa']
-                const Icon = TIPO_ICONS[rec.tipo] || Brain
-                return (
-                  <GlassPanel key={idx} className="panel" style={{ borderColor: prCfg.border }}>
-                    {/* Badge consultivo */}
-                    <div style={{
-                      display: 'inline-flex', alignItems: 'center', gap: '6px',
-                      padding: '4px 10px', borderRadius: '100px', fontSize: '10px', fontWeight: '700',
-                      background: 'rgba(255, 179, 0, 0.08)', border: '1px solid rgba(255, 179, 0, 0.2)',
-                      color: 'var(--status-pending)', textTransform: 'uppercase', letterSpacing: '0.5px',
-                      marginBottom: '12px'
-                    }}>
-                      <AlertTriangle size={10} /> Caráter Consultivo — Requer Aprovação do Gestor
-                    </div>
+          <ComparacaoPeriodo
+            periodoAtual={resultado.periodo_atual}
+            periodoAnterior={resultado.periodo_anterior}
+            comparacoes={resultado.comparacoes}
+          />
 
-                    <div style={{ display: 'flex', gap: '12px', alignItems: 'flex-start' }}>
-                      <div style={{
-                        width: '40px', height: '40px', borderRadius: 'var(--radius-sm)',
-                        background: prCfg.bg, border: `1px solid ${prCfg.border}`,
-                        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0
-                      }}>
-                        <Icon size={20} color={prCfg.color} />
-                      </div>
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '6px', flexWrap: 'wrap', gap: '8px' }}>
-                          <h4 style={{ fontFamily: 'var(--font-display)', fontSize: '16px', color: 'var(--text-primary)' }}>{rec.titulo}</h4>
-                          <span style={{ padding: '3px 10px', borderRadius: '100px', fontSize: '10px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', background: prCfg.bg, color: prCfg.color, border: `1px solid ${prCfg.border}` }}>
-                            {rec.prioridade?.toUpperCase()}
-                          </span>
-                        </div>
-                        <p style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: '1.6', marginBottom: '8px' }}>{rec.descricao}</p>
-                        {/* A barra de "confiança" saiu junto com a análise local: os
-                            percentuais (97%, 88%, 82%, 75%) eram literais escritos no
-                            código, e precisão decimal lê como medição. O modelo não
-                            devolve `confianca` — devolve `categoria`. */}
-                        {rec.categoria && (
-                          <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'capitalize' }}>Categoria: {rec.categoria}</span>
-                        )}
-                      </div>
-                    </div>
-                  </GlassPanel>
-                )
-              })}
-            </div>
-          )}
+          <EstoqueInteligente estoque={resultado.estoque_inteligente} />
+
+          <ProdutividadeOS produtividade={resultado.produtividade} />
+
+          <section className="stagger-3" aria-labelledby="recomendacoes-ia-titulo">
+            <h3 id="recomendacoes-ia-titulo" style={{ margin: '8px 0 12px' }}>Recomendações explicáveis</h3>
+            {resultado.recomendacoes?.length === 0 ? (
+              <GlassPanel className="panel" style={{ textAlign: 'center', padding: '48px' }}>
+                <p style={{ color: 'var(--text-secondary)' }}>Dados insuficientes para gerar recomendações. Registre mais ordens de serviço e retorne.</p>
+              </GlassPanel>
+            ) : (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                {resultado.recomendacoes?.map((rec, indice) => (
+                  <RecomendacaoExplicavel key={`${rec.titulo}-${indice}`} recomendacao={rec} />
+                ))}
+              </div>
+            )}
+          </section>
 
           <div style={{ textAlign: 'center', marginTop: '8px' }}>
             <button className="btn-secondary" onClick={handleAnalisar} style={{ padding: '8px 16px', borderRadius: 'var(--radius-sm)', display: 'inline-flex', alignItems: 'center', gap: '8px' }}>

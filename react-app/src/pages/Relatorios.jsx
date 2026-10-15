@@ -289,8 +289,8 @@ export function Relatorios() {
               onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setTipoSel(t.id)}
               style={{
                 cursor: 'pointer', padding: '16px 20px', flex: '1', minWidth: '160px', textAlign: 'center',
-                borderColor: tipoSel === t.id ? 'rgba(232, 89, 12, 0.4)' : 'var(--border-color)',
-                background: tipoSel === t.id ? 'rgba(232, 89, 12, 0.06)' : 'var(--bg-surface)',
+                borderColor: tipoSel === t.id ? 'var(--color-primary)' : 'var(--border-color)',
+                background: tipoSel === t.id ? 'var(--color-primary-tint)' : 'var(--bg-surface)',
               }}
             >
               <CardIcon size={20} color={tipoSel === t.id ? 'var(--neon-orange)' : 'var(--text-secondary)'} style={{ marginBottom: '8px' }} />
@@ -327,7 +327,7 @@ export function Relatorios() {
         {dados.totais.length > 0 && (
           <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
             {dados.totais.map((t, i) => (
-              <div key={i} style={{ padding: '16px 20px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', flex: 1, minWidth: '140px', textAlign: 'center' }}>
+              <div key={i} style={{ padding: '16px 20px', background: 'var(--bg-subtle)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', flex: 1, minWidth: '140px', textAlign: 'center' }}>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>{t.label}</div>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', fontWeight: '600', color: 'var(--neon-orange)' }}>{t.valor}</div>
               </div>

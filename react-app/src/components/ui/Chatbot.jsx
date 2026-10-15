@@ -129,18 +129,18 @@ export function Chatbot() {
           position: 'fixed', bottom: '24px', right: '24px', zIndex: 1000,
           width: '56px', height: '56px', borderRadius: '50%',
           background: aberto
-            ? 'rgba(255,255,255,0.08)'
-            : 'linear-gradient(135deg, var(--neon-orange), #C2410C)',
+            ? 'var(--bg-subtle)'
+            : 'var(--color-primary)',
           boxShadow: aberto
-            ? '0 2px 12px rgba(0,0,0,0.3)'
-            : '0 4px 20px rgba(232, 89, 12, 0.5)',
+            ? 'var(--shadow-md)'
+            : '0 4px 20px var(--color-primary-tint)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           transition: 'all 0.2s ease',
-          border: aberto ? '1px solid rgba(255,255,255,0.12)' : 'none',
+          border: aberto ? '1px solid var(--border-color)' : 'none',
           cursor: 'pointer',
         }}
-        onMouseEnter={e => { if (!aberto) { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.boxShadow = '0 6px 28px rgba(232, 89, 12, 0.7)' } }}
-        onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = aberto ? '0 2px 12px rgba(0,0,0,0.3)' : '0 4px 20px rgba(232, 89, 12, 0.5)' }}
+        onMouseEnter={e => { if (!aberto) { e.currentTarget.style.transform = 'scale(1.1)'; e.currentTarget.style.boxShadow = '0 6px 28px var(--color-primary-ring)' } }}
+        onMouseLeave={e => { e.currentTarget.style.transform = 'scale(1)'; e.currentTarget.style.boxShadow = aberto ? 'var(--shadow-md)' : 'var(--shadow-md)' }}
       >
         {aberto
           ? <X size={22} color="var(--text-secondary)" />
@@ -154,7 +154,7 @@ export function Chatbot() {
           onClick={e => e.target === e.currentTarget && setAberto(false)}
           style={{
             position: 'fixed', inset: 0, zIndex: 999,
-            background: 'rgba(0,0,0,0.65)',
+            background: 'rgba(16, 24, 40, 0.45)',
             backdropFilter: 'blur(4px)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: '24px',
@@ -164,10 +164,10 @@ export function Chatbot() {
           <div style={{
             width: 'min(880px, 96vw)',
             height: 'min(700px, 88vh)',
-            background: '#111114',
-            border: '1px solid rgba(232, 89, 12, 0.18)',
+            background: 'var(--bg-surface)',
+            border: '1px solid var(--color-primary-border)',
             borderRadius: '16px',
-            boxShadow: '0 32px 80px rgba(0,0,0,0.8), 0 0 60px rgba(232,89,12,0.07)',
+            boxShadow: 'var(--shadow-lg)',
             display: 'flex',
             overflow: 'hidden',
             animation: 'scaleIn 0.22s cubic-bezier(0.16, 1, 0.3, 1)',
@@ -176,19 +176,19 @@ export function Chatbot() {
             {/* ── Sidebar esquerda ── */}
             <div style={{
               width: '230px', flexShrink: 0,
-              borderRight: '1px solid rgba(255,255,255,0.05)',
+              borderRight: '1px solid var(--border-color)',
               display: 'flex', flexDirection: 'column',
-              background: 'rgba(255,255,255,0.01)',
+              background: 'var(--bg-subtle)',
             }}>
               {/* Gradiente top */}
-              <div style={{ height: '2px', background: 'linear-gradient(90deg, var(--neon-orange), var(--electric-blue))' }} />
+              <div style={{ height: '2px', background: 'var(--color-primary)' }} />
 
               {/* Info do bot */}
-              <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ padding: '20px 16px 16px', borderBottom: '1px solid var(--border-color)' }}>
                 <div style={{
                   width: '52px', height: '52px', borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(232,89,12,0.15), rgba(232,89,12,0.04))',
-                  border: '1px solid rgba(232, 89, 12, 0.35)',
+                  background: 'radial-gradient(circle, var(--color-primary-tint), var(--color-primary))',
+                  border: '1px solid var(--color-primary-border)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   marginBottom: '12px',
                 }}>
@@ -224,15 +224,15 @@ export function Chatbot() {
                       style={{
                         width: '100%', textAlign: 'left',
                         padding: '8px 10px',
-                        background: 'rgba(232, 89, 12, 0.04)',
-                        border: '1px solid rgba(232, 89, 12, 0.12)',
+                        background: 'var(--color-primary-tint)',
+                        border: '1px solid var(--color-primary-border)',
                         borderRadius: '8px', fontSize: '12px',
                         color: 'var(--text-secondary)', cursor: 'pointer',
                         fontFamily: 'var(--font-body)', lineHeight: '1.4',
                         transition: 'all 0.12s',
                       }}
-                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(232,89,12,0.1)'; e.currentTarget.style.color = 'var(--neon-orange)'; e.currentTarget.style.borderColor = 'rgba(232,89,12,0.3)' }}
-                      onMouseLeave={e => { e.currentTarget.style.background = 'rgba(232,89,12,0.04)'; e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'rgba(232,89,12,0.12)' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'var(--color-primary-tint)'; e.currentTarget.style.color = 'var(--neon-orange)'; e.currentTarget.style.borderColor = 'var(--color-primary)' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'var(--color-primary-tint)'; e.currentTarget.style.color = 'var(--text-secondary)'; e.currentTarget.style.borderColor = 'var(--color-primary)' }}
                     >
                       {r}
                     </button>
@@ -241,20 +241,20 @@ export function Chatbot() {
               </div>
 
               {/* Rodapé sidebar */}
-              <div style={{ padding: '12px 16px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
+              <div style={{ padding: '12px 16px', borderTop: '1px solid var(--border-color)' }}>
                 <button
                   onClick={limparConversa}
                   style={{
                     width: '100%', display: 'flex', alignItems: 'center', gap: '6px',
                     padding: '7px 10px', background: 'transparent',
-                    border: '1px solid rgba(255,255,255,0.06)',
+                    border: '1px solid var(--border-color)',
                     borderRadius: '8px', fontSize: '12px',
                     color: 'var(--text-muted)', cursor: 'pointer',
                     fontFamily: 'var(--font-body)',
                     transition: 'all 0.12s',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.color = '#f87171'; e.currentTarget.style.borderColor = 'rgba(248,113,113,0.3)' }}
-                  onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.06)' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = 'var(--color-danger)'; e.currentTarget.style.borderColor = 'var(--color-danger)' }}
+                  onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.borderColor = 'var(--text-secondary)' }}
                 >
                   <Trash2 size={13} /> Limpar conversa
                 </button>
@@ -265,10 +265,10 @@ export function Chatbot() {
             <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
 
               {/* Header do chat */}
-              <div style={{ height: '2px', background: 'linear-gradient(90deg, transparent, rgba(232,89,12,0.3))' }} />
+              <div style={{ height: '2px', background: 'var(--border-color)' }} />
               <div style={{
                 padding: '14px 20px',
-                borderBottom: '1px solid rgba(255,255,255,0.05)',
+                borderBottom: '1px solid var(--border-color)',
                 display: 'flex', justifyContent: 'space-between', alignItems: 'center',
                 flexShrink: 0,
               }}>
@@ -288,7 +288,7 @@ export function Chatbot() {
                     display: 'flex', alignItems: 'center',
                     transition: 'all 0.12s',
                   }}
-                  onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'rgba(255,255,255,0.06)' }}
+                  onMouseEnter={e => { e.currentTarget.style.color = 'var(--text-primary)'; e.currentTarget.style.background = 'var(--bg-subtle)' }}
                   onMouseLeave={e => { e.currentTarget.style.color = 'var(--text-muted)'; e.currentTarget.style.background = 'transparent' }}
                 >
                   <X size={18} />
@@ -317,9 +317,9 @@ export function Chatbot() {
                     <div style={{
                       width: '32px', height: '32px', borderRadius: '50%', flexShrink: 0, marginTop: '2px',
                       background: msg.remetente === 'usuario'
-                        ? 'linear-gradient(135deg, var(--neon-orange), #C2410C)'
-                        : 'rgba(232, 89, 12, 0.08)',
-                      border: msg.remetente === 'chatbot' ? '1px solid rgba(232, 89, 12, 0.25)' : 'none',
+                        ? 'var(--color-primary)'
+                        : 'var(--color-primary-tint)',
+                      border: msg.remetente === 'chatbot' ? '1px solid var(--color-primary-border)' : 'none',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
                       {msg.remetente === 'usuario'
@@ -332,9 +332,9 @@ export function Chatbot() {
                       padding: '12px 16px',
                       borderRadius: msg.remetente === 'usuario' ? '14px 4px 14px 14px' : '4px 14px 14px 14px',
                       background: msg.remetente === 'usuario'
-                        ? 'linear-gradient(135deg, rgba(232, 89, 12, 0.18), rgba(255, 42, 0, 0.12))'
-                        : 'rgba(255,255,255,0.04)',
-                      border: `1px solid ${msg.remetente === 'usuario' ? 'rgba(232, 89, 12, 0.2)' : 'rgba(255,255,255,0.06)'}`,
+                        ? 'var(--color-danger)'
+                        : 'var(--bg-subtle)',
+                      border: `1px solid ${msg.remetente === 'usuario' ? 'var(--color-primary-border)' : 'var(--border-color)'}`,
                       fontSize: '14px', lineHeight: '1.6', color: 'var(--text-primary)',
                     }}>
                       {/* A bolha de indisponibilidade NÃO carrega resposta: ela é o
@@ -346,10 +346,10 @@ export function Chatbot() {
                         <div style={{
                           display: 'flex', alignItems: 'center', gap: '6px',
                           marginBottom: '8px', paddingBottom: '8px',
-                          borderBottom: '1px solid rgba(255,255,255,0.06)',
+                          borderBottom: '1px solid var(--border-color)',
                           fontSize: '12px', fontWeight: 600, color: 'var(--text-secondary)',
                         }}>
-                          <CloudOff size={14} color="var(--neon-orange)" style={{ flexShrink: 0 }} />
+                          <CloudOff size={14} color="var(--color-warning)" style={{ flexShrink: 0 }} />
                           IA indisponível
                         </div>
                       )}
@@ -366,16 +366,16 @@ export function Chatbot() {
                   <div style={{ display: 'flex', gap: '10px', alignItems: 'flex-start' }}>
                     <div style={{
                       width: '32px', height: '32px', borderRadius: '50%',
-                      background: 'rgba(232, 89, 12, 0.08)', border: '1px solid rgba(232, 89, 12, 0.25)',
+                      background: 'var(--color-primary-tint)', border: '1px solid var(--color-primary-border)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
                     }}>
                       <Bot size={15} color="var(--neon-orange)" />
                     </div>
                     <div style={{
                       padding: '12px 16px',
-                      background: 'rgba(255,255,255,0.04)',
+                      background: 'var(--bg-subtle)',
                       borderRadius: '4px 14px 14px 14px',
-                      border: '1px solid rgba(255,255,255,0.06)',
+                      border: '1px solid var(--border-color)',
                     }}>
                       <div style={{ display: 'flex', gap: '5px', alignItems: 'center' }}>
                         {[0, 1, 2].map(i => (
@@ -399,9 +399,9 @@ export function Chatbot() {
               {/* Input */}
               <div style={{
                 padding: '14px 20px',
-                borderTop: '1px solid rgba(255,255,255,0.05)',
+                borderTop: '1px solid var(--border-color)',
                 display: 'flex', gap: '10px', flexShrink: 0,
-                background: 'rgba(255,255,255,0.01)',
+                background: 'var(--bg-subtle)',
               }}>
                 <input
                   ref={inputRef}
@@ -420,9 +420,9 @@ export function Chatbot() {
                   style={{
                     width: '44px', height: '44px', borderRadius: '10px',
                     background: input.trim()
-                      ? 'linear-gradient(135deg, var(--neon-orange), #C2410C)'
-                      : 'rgba(255,255,255,0.04)',
-                    border: '1px solid rgba(232, 89, 12, 0.25)',
+                      ? 'var(--color-primary)'
+                      : 'var(--bg-subtle)',
+                    border: '1px solid var(--color-primary-border)',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',
                     cursor: input.trim() ? 'pointer' : 'not-allowed',
                     flexShrink: 0, transition: 'all 0.15s',

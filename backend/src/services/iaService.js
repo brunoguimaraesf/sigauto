@@ -231,7 +231,7 @@ ${MAPA_DO_SISTEMA}${contexto ? `\n\nDADOS ATUAIS DA OFICINA (JSON, use para resp
 
 export async function gerarRecomendacoesIA(dadosHistorico) {
   const systemPrompt = `Você é um analista de dados especializado em oficinas mecânicas.
-Analise os dados históricos fornecidos e retorne recomendações de negócio em formato JSON.
+Analise os dados históricos fornecidos e retorne recomendações consultivas de negócio em formato JSON.
 Retorne APENAS um JSON válido com a seguinte estrutura:
 {
   "resumo": "string com resumo executivo",
@@ -240,7 +240,11 @@ Retorne APENAS um JSON válido com a seguinte estrutura:
       "titulo": "string",
       "descricao": "string",
       "prioridade": "alta|media|baixa",
-      "categoria": "estoque|atendimento|financeiro|operacional"
+      "categoria": "estoque|atendimento|financeiro|operacional",
+      "acao_sugerida": "string",
+      "impacto_esperado": "string qualitativa, sem número inventado",
+      "periodo": { "inicio": "ISO", "fim": "ISO" },
+      "evidencias": [{ "chave": "string", "valor": "number|null", "unidade": "string" }]
     }
   ],
   "alertas": [
@@ -250,13 +254,13 @@ Retorne APENAS um JSON válido com a seguinte estrutura:
       "urgencia": "critica|alta|media|baixa"
     }
   ],
-  "metricas_destaque": {
-    "total_os": number,
-    "faturamento_estimado": number,
-    "itens_criticos_estoque": number,
-    "taxa_crescimento": "string"
-  }
+  "metricas_destaque": {}
 }
+Use exclusivamente as chaves, valores e unidades presentes em catalogo_evidencias.
+Para cada evidência, copie o período correspondente e exato do catálogo. Não recalcule métricas.
+No impacto esperado, não invente impacto quantitativo. Recomendações são consultivas: não execute ações automáticas.
+Resumo, alertas, título, descrição, ação sugerida e impacto esperado devem ser estritamente qualitativos e sem números: não use algarismos, percentuais, valores monetários, unidades quantificadas nem numerais por extenso (como "dois", "cem", "mil", "dobro", "metade" ou "reais").
+Somente o array evidencias pode conter valores numéricos, sempre copiados exatamente de catalogo_evidencias.
 Não inclua texto fora do JSON. Responda sempre em português brasileiro.`
 
   // Mesma contingência do chatbot: o modelo nasce dentro do callback para que a

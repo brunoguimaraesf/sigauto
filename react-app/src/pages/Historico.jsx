@@ -32,7 +32,7 @@ export function Historico() {
     cancelada: 'var(--text-muted)',
     aberta: 'var(--status-pending)', 'Pendente': 'var(--status-pending)',
     em_andamento: 'var(--status-progress)', 'Em Andamento': 'var(--status-progress)',
-    aguardando_peca: 'var(--neon-orange)'
+    aguardando_peca: 'var(--color-warning)'
   }
 
   const todos = getEnriched()
@@ -109,7 +109,7 @@ export function Historico() {
                       <span style={{
                         padding: '4px 10px', borderRadius: '100px', fontSize: '11px', fontWeight: '600',
                         color: STATUS_COLORS[os.status] || 'var(--text-secondary)',
-                        background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)'
+                        background: 'var(--bg-subtle)', border: '1px solid var(--border-color)'
                       }}>
                         {STATUS_MAP[os.status] || os.status}
                       </span>
@@ -160,7 +160,7 @@ export function Historico() {
                   ['Abertura', (() => { const d = new Date(detalheModal.data_abertura || detalheModal.criado_em); return isNaN(d) ? '—' : d.toLocaleString('pt-BR') })()],
                   ['Encerramento', detalheModal.data_encerramento ? new Date(detalheModal.data_encerramento).toLocaleString('pt-BR') : '—'],
                 ].map(([k, v]) => (
-                  <div key={k} style={{ padding: '10px', background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-sm)' }}>
+                  <div key={k} style={{ padding: '10px', background: 'var(--bg-subtle)', borderRadius: 'var(--radius-sm)' }}>
                     <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>{k}</div>
                     <div style={{ fontWeight: '600', fontSize: '13px' }}>{v}</div>
                   </div>
@@ -179,7 +179,7 @@ export function Historico() {
                 </div>
               )}
               {(detalheModal.valor_total || detalheModal.preco_final) > 0 && (
-                <div style={{ padding: '16px', background: 'rgba(232, 89, 12, 0.05)', border: '1px solid rgba(232, 89, 12, 0.15)', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
+                <div style={{ padding: '16px', background: 'var(--color-primary-tint)', border: '1px solid var(--color-primary-border)', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>Valor Total</div>
                   <div style={{ fontFamily: 'var(--font-display)', fontSize: '28px', fontWeight: '600', color: 'var(--neon-orange)' }}>
                     R$ {Number(detalheModal.valor_total || detalheModal.preco_final).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}

@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Eye, EyeOff, Wrench, Mail, Lock, X } from 'lucide-react'
+import { Eye, EyeOff, Mail, Lock, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../supabaseClient'
 
@@ -86,19 +86,6 @@ export function Login() {
       overflow: 'hidden',
       fontFamily: 'var(--font-body)'
     }}>
-      {/* Gradientes de fundo */}
-      <div style={{
-        position: 'absolute', top: '-20%', right: '-10%',
-        width: '600px', height: '600px',
-        background: 'radial-gradient(circle, rgba(232, 89, 12, 0.08) 0%, transparent 70%)',
-        pointerEvents: 'none'
-      }} />
-      <div style={{
-        position: 'absolute', bottom: '-20%', left: '10%',
-        width: '500px', height: '500px',
-        background: 'radial-gradient(circle, rgba(232, 89, 12, 0.06) 0%, transparent 70%)',
-        pointerEvents: 'none'
-      }} />
 
       <div className="glass stagger-1" style={{
         width: '100%', maxWidth: '440px',
@@ -110,27 +97,31 @@ export function Login() {
         {/* Linha decorativa no topo */}
         <div style={{
           position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
-          background: 'linear-gradient(90deg, var(--neon-orange), var(--electric-blue))'
+          background: 'var(--color-primary)'
         }} />
 
         {/* Brand */}
         <div style={{ textAlign: 'center', marginBottom: '40px' }}>
           <div style={{
             display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            width: '56px', height: '56px',
-            background: 'rgba(232, 89, 12, 0.1)',
-            border: '1px solid rgba(232, 89, 12, 0.3)',
-            borderRadius: '12px',
-            marginBottom: '20px',
-            filter: 'drop-shadow(0 0 12px rgba(232, 89, 12, 0.3))'
+            width: '104px', height: '104px',
+            background: '#fff',
+            border: '1px solid var(--border-color)',
+            borderRadius: '16px',
+            marginBottom: '18px',
+            overflow: 'hidden'
           }}>
-            <Wrench size={28} color="var(--neon-orange)" />
+            <img
+              src="/logo-sigauto.png"
+              alt="Logo SIGAUTO"
+              style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scale(1.12)' }}
+            />
           </div>
           <h1 style={{
             fontFamily: 'var(--font-display)',
             fontSize: '28px',
             fontWeight: '700',
-            letterSpacing: '3px',
+            letterSpacing: '1px',
             textTransform: 'uppercase',
             color: 'var(--text-primary)',
             marginBottom: '8px'
@@ -193,10 +184,10 @@ export function Login() {
           {erro && (
             <div style={{
               padding: '12px 16px',
-              background: 'rgba(232, 89, 12, 0.08)',
-              border: '1px solid rgba(232, 89, 12, 0.25)',
+              background: 'var(--color-primary-tint)',
+              border: '1px solid var(--color-primary-border)',
               borderRadius: 'var(--radius-sm)',
-              color: '#E8590C',
+              color: 'var(--color-primary)',
               fontSize: '13px',
               marginBottom: '20px',
               lineHeight: '1.4'
@@ -215,7 +206,7 @@ export function Login() {
               <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
                 <span style={{
                   width: '16px', height: '16px', borderRadius: '50%',
-                  border: '2px solid rgba(255,255,255,0.3)',
+                  border: '2px solid var(--border-color)',
                   borderTopColor: '#fff',
                   display: 'inline-block',
                   animation: 'spin 0.8s linear infinite'
@@ -239,17 +230,17 @@ export function Login() {
         {/* Contas de demonstração */}
         <div style={{
           marginTop: '28px', padding: '14px 16px',
-          background: 'rgba(232, 89, 12, 0.03)',
-          border: '1px solid rgba(232, 89, 12, 0.12)',
+          background: 'var(--color-primary-tint)',
+          border: '1px solid var(--color-primary-border)',
           borderRadius: 'var(--radius-sm)'
         }}>
           <p style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px', fontWeight: '600' }}>
             Contas de demonstração
           </p>
           {[
-            { email: 'gestor@sigauto.com',    senha: 'Gestor123', perfil: 'Gestor',    cor: 'var(--neon-orange)' },
-            { email: 'atendente@sigauto.com', senha: 'Atend123',  perfil: 'Atendente', cor: 'var(--electric-blue)' },
-            { email: 'mecanico@sigauto.com',  senha: 'Mec123456', perfil: 'Mecânico',  cor: 'var(--status-done)' },
+            { email: 'gestor@sigauto.com',    senha: 'Gestor123', perfil: 'Gestor',    cor: 'var(--color-primary)' },
+            { email: 'atendente@sigauto.com', senha: 'Atend123',  perfil: 'Atendente', cor: 'var(--color-warning)' },
+            { email: 'mecanico@sigauto.com',  senha: 'Mec123456', perfil: 'Mecânico',  cor: 'var(--color-success)' },
           ].map(u => (
             <button
               key={u.email}
@@ -258,12 +249,12 @@ export function Login() {
               style={{
                 display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                 width: '100%', padding: '7px 10px', marginBottom: '4px',
-                background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.05)',
+                background: 'var(--bg-subtle)', border: '1px solid var(--border-color)',
                 borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontFamily: 'var(--font-body)',
                 transition: 'border-color 0.15s'
               }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.12)'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = 'rgba(255,255,255,0.05)'}
+              onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--color-primary)'}
+              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
             >
               <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{u.email}</span>
               <span style={{ fontSize: '10px', fontWeight: '700', color: u.cor, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{u.perfil}</span>
@@ -293,8 +284,8 @@ export function Login() {
               <div className="modal-body">
                 <div style={{
                   padding: '16px',
-                  background: 'rgba(0, 255, 136, 0.05)',
-                  border: '1px solid rgba(0, 255, 136, 0.2)',
+                  background: 'var(--color-success-tint)',
+                  border: '1px solid var(--color-success-border)',
                   borderRadius: 'var(--radius-sm)',
                   color: 'var(--status-done)',
                   fontSize: '14px',

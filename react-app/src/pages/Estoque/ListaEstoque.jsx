@@ -189,7 +189,7 @@ export function ListaEstoque() {
         </div>
         <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
           {qtdAlertas > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'rgba(232, 89, 12, 0.1)', border: '1px solid rgba(232, 89, 12, 0.3)', borderRadius: '100px', fontSize: '12px', color: 'var(--neon-orange)', fontWeight: '600' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'var(--color-primary-tint)', border: '1px solid var(--color-primary-border)', borderRadius: '100px', fontSize: '12px', color: 'var(--neon-orange)', fontWeight: '600' }}>
               <Bell size={12} /> {qtdAlertas} {qtdAlertas === 1 ? 'item' : 'itens'} em alerta
             </div>
           )}
@@ -242,7 +242,7 @@ export function ListaEstoque() {
                     <td><span style={{ fontFamily: 'monospace', fontSize: '12px', color: 'var(--text-secondary)' }}>{item.codigo}</span></td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ width: '32px', height: '32px', borderRadius: 'var(--radius-sm)', background: 'rgba(232, 89, 12, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        <div style={{ width: '32px', height: '32px', borderRadius: 'var(--radius-sm)', background: 'var(--color-primary-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                           <Package size={14} color="var(--neon-orange)" />
                         </div>
                         <div>
@@ -255,7 +255,7 @@ export function ListaEstoque() {
                     <td>
                       <span style={{
                         fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: '600',
-                        color: item.quantidade === 0 ? '#ff4d4d' : item.quantidade <= item.qtd_minima ? 'var(--neon-orange)' : 'var(--text-primary)'
+                        color: item.quantidade === 0 ? 'var(--color-danger)' : item.quantidade <= item.qtd_minima ? 'var(--color-warning)' : 'var(--text-primary)'
                       }}>
                         {item.quantidade}
                       </span>
@@ -263,7 +263,7 @@ export function ListaEstoque() {
                     <td style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>{item.qtd_minima}</td>
                     <td>
                       {item.quantidade === 0 ? (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: '#ff4d4d', fontSize: '12px', fontWeight: '600' }}>
+                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--color-danger)', fontSize: '12px', fontWeight: '600' }}>
                           <AlertTriangle size={12} /> CRÍTICO
                         </span>
                       ) : temAlerta(item) ? (
@@ -282,10 +282,10 @@ export function ListaEstoque() {
                         <button className="btn-secondary" onClick={() => abrirEditar(item)} style={{ padding: '5px 8px', fontSize: '11px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '3px' }}>
                           <Edit2 size={11} /> Editar
                         </button>
-                        <button className="btn-secondary" onClick={() => { setModalMovimentacao(item); setMTipo('entrada'); setMQtd(''); setMMotivo('') }} style={{ padding: '5px 8px', fontSize: '11px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--status-done)', borderColor: 'rgba(0, 255, 136, 0.2)' }}>
+                        <button className="btn-secondary" onClick={() => { setModalMovimentacao(item); setMTipo('entrada'); setMQtd(''); setMMotivo('') }} style={{ padding: '5px 8px', fontSize: '11px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--status-done)', borderColor: 'var(--color-success)' }}>
                           <TrendingUp size={11} /> Entrada
                         </button>
-                        <button className="btn-secondary" onClick={() => { setModalMovimentacao(item); setMTipo('saida'); setMQtd(''); setMMotivo('') }} style={{ padding: '5px 8px', fontSize: '11px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--neon-orange)', borderColor: 'rgba(232, 89, 12, 0.2)' }}>
+                        <button className="btn-secondary" onClick={() => { setModalMovimentacao(item); setMTipo('saida'); setMQtd(''); setMMotivo('') }} style={{ padding: '5px 8px', fontSize: '11px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--neon-orange)', borderColor: 'var(--color-primary)' }}>
                           <TrendingDown size={11} /> Saída
                         </button>
                       </div>
@@ -355,10 +355,10 @@ export function ListaEstoque() {
                     <label>Margem</label>
                     <div style={{
                       height: '42px', display: 'flex', alignItems: 'center', paddingLeft: '14px',
-                      background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)',
+                      background: 'var(--bg-subtle)', border: '1px solid var(--border-color)',
                       borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-display)', fontWeight: '600',
                       fontSize: '15px',
-                      color: margemPct === null ? 'var(--text-muted)' : margemPct >= 0 ? 'var(--status-done)' : '#f87171',
+                      color: margemPct === null ? 'var(--text-muted)' : margemPct >= 0 ? 'var(--status-done)' : 'var(--color-danger)',
                     }}>
                       {margemPct === null ? '—' : `${margemPct >= 0 ? '+' : ''}${margemPct.toFixed(1)}%`}
                     </div>
@@ -385,9 +385,9 @@ export function ListaEstoque() {
             </div>
             <form onSubmit={handleMovimentacao}>
               <div className="modal-body">
-                <div style={{ padding: '12px', background: 'rgba(255,255,255,0.02)', borderRadius: 'var(--radius-sm)', marginBottom: '16px', textAlign: 'center' }}>
+                <div style={{ padding: '12px', background: 'var(--bg-subtle)', borderRadius: 'var(--radius-sm)', marginBottom: '16px', textAlign: 'center' }}>
                   <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Saldo Atual</div>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: '32px', fontWeight: '600', color: modalMovimentacao.quantidade === 0 ? '#ff4d4d' : 'var(--text-primary)' }}>{modalMovimentacao.quantidade} {modalMovimentacao.unidade}</div>
+                  <div style={{ fontFamily: 'var(--font-display)', fontSize: '32px', fontWeight: '600', color: modalMovimentacao.quantidade === 0 ? 'var(--color-danger)' : 'var(--text-primary)' }}>{modalMovimentacao.quantidade} {modalMovimentacao.unidade}</div>
                 </div>
                 <div className="form-group">
                   <label>Tipo de Movimentação</label>

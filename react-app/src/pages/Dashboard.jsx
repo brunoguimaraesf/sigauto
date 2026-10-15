@@ -171,30 +171,30 @@ export function Dashboard() {
       {activeTab === 'overview' && (
         <>
           <section className="metrics-grid">
-            <GlassPanel className="metric-card stagger-2">
+            <GlassPanel className="metric-card metric-card--accent stagger-2">
               <div className="metric-header">
                 <span className="metric-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <CarFront size={16} color="var(--neon-orange)" /> Veículos Cadastrados
+                  <CarFront size={16} className="metric-icon" /> Veículos Cadastrados
                 </span>
                 <span className="metric-trend positive" style={{ fontSize: '10px' }}>ATIVOS</span>
               </div>
               <div className="metric-value">{activeVehiclesCount}</div>
             </GlassPanel>
             
-            <GlassPanel className="metric-card stagger-3">
+            <GlassPanel className="metric-card metric-card--info stagger-3">
               <div className="metric-header">
                 <span className="metric-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Wrench size={16} color="var(--electric-blue)" /> Em Manutenção
+                  <Wrench size={16} className="metric-icon" /> Em Manutenção
                 </span>
-                <span className="metric-trend negative" style={{ fontSize: '10px', background: 'rgba(0, 229, 255, 0.1)', color: 'var(--electric-blue)' }}>EM BOX</span>
+                <span className="metric-trend metric-context" style={{ fontSize: '10px' }}>EM BOX</span>
               </div>
               <div className="metric-value">{maintenanceCount}</div>
             </GlassPanel>
 
-            <GlassPanel className="metric-card stagger-4 highlight-card">
+            <GlassPanel className="metric-card metric-card--success stagger-4 highlight-card">
               <div className="metric-header">
                 <span className="metric-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                  <Users size={16} color="var(--neon-orange)" /> Faturamento
+                  <Users size={16} className="metric-icon" /> Faturamento
                 </span>
                 <span className="metric-trend positive" style={{ fontSize: '10px' }}>RECEITA</span>
               </div>
@@ -222,7 +222,7 @@ export function Dashboard() {
                 ) : (
                   recentOrders.map((os) => (
                     <div key={os.id} className="list-item">
-                      <div className="car-indicator" style={{ backgroundColor: 'var(--bg-surface-hover)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: 'var(--neon-orange)' }}>
+                      <div className="car-indicator" style={{ backgroundColor: 'var(--color-accent-tint)', borderColor: 'var(--color-accent-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: 'var(--neon-orange)' }}>
                         {os.veiculoInfo?.charAt(0) || 'V'}
                       </div>
                       <div className="item-details">
@@ -255,13 +255,13 @@ export function Dashboard() {
 
               {/* Mini-cards: veículos e clientes */}
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '20px' }}>
-                <div style={{ padding: '10px 12px', background: 'rgba(232,89,12,0.06)', border: '1px solid rgba(232,89,12,0.15)', borderRadius: 'var(--radius-sm)' }}>
+                <div className="resumo-oficina--accent" style={{ padding: '10px 12px', borderRadius: 'var(--radius-sm)' }}>
                   <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <CarFront size={10} /> Veículos
                   </div>
                   <div style={{ fontSize: '24px', fontWeight: '700', fontVariantNumeric: 'tabular-nums', color: 'var(--neon-orange)' }}>{veiculos.length}</div>
                 </div>
-                <div style={{ padding: '10px 12px', background: 'rgba(96,165,250,0.06)', border: '1px solid rgba(96,165,250,0.15)', borderRadius: 'var(--radius-sm)' }}>
+                <div className="resumo-oficina--info" style={{ padding: '10px 12px', borderRadius: 'var(--radius-sm)' }}>
                   <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
                     <Users size={10} /> Clientes
                   </div>
@@ -274,7 +274,7 @@ export function Dashboard() {
                 {[
                   { label: 'Abertas',       count: osStats.abertas,     color: 'var(--status-pending)', Icon: Clock },
                   { label: 'Em Andamento',  count: osStats.emAndamento,  color: 'var(--status-progress)', Icon: Wrench },
-                  { label: 'Aguard. Peça',  count: osStats.aguardando,   color: 'var(--neon-orange)', Icon: Hourglass },
+                  { label: 'Aguard. Peça',  count: osStats.aguardando,   color: 'var(--color-warning)', Icon: Hourglass },
                   { label: 'Concluídas',    count: osStats.concluidas,   color: 'var(--status-done)', Icon: CheckCircle },
                   { label: 'Canceladas',    count: osStats.canceladas,   color: 'var(--text-muted)', Icon: XCircle },
                 ].map(({ label, count, color, Icon }) => {
@@ -289,7 +289,7 @@ export function Dashboard() {
                           {count} <span style={{ fontSize: '10px', fontWeight: '400', color: 'var(--text-muted)' }}>({pct}%)</span>
                         </span>
                       </div>
-                      <div style={{ height: '4px', background: 'rgba(255,255,255,0.06)', borderRadius: '2px', overflow: 'hidden' }}>
+                      <div style={{ height: '4px', background: 'var(--bg-subtle)', borderRadius: '2px', overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: '2px', transition: 'width 0.5s ease' }} />
                       </div>
                     </div>

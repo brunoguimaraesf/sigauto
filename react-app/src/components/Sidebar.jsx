@@ -5,9 +5,9 @@ import { useAuth } from '../context/AuthContext'
 import { supabaseDb } from '../supabaseClient'
 
 const PERFIL_COLORS = {
-  gestor: { color: 'var(--neon-orange)', label: 'Gestor' },
-  atendente: { color: 'var(--electric-blue)', label: 'Atendente' },
-  mecanico: { color: 'var(--status-done)', label: 'Mecanico' },
+  gestor: { color: 'var(--color-primary)', label: 'Gestor' },
+  atendente: { color: 'var(--color-warning)', label: 'Atendente' },
+  mecanico: { color: 'var(--color-success)', label: 'Mecanico' },
 }
 
 export function Sidebar() {
@@ -46,11 +46,7 @@ export function Sidebar() {
     <nav className="sidebar">
       <div className="brand">
         <div className="brand-logo">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M12 2L2 7L12 12L22 7L12 2Z" stroke="var(--neon-orange)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M2 17L12 22L22 17" stroke="var(--neon-orange)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            <path d="M2 12L12 17L22 12" stroke="var(--neon-orange)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
+          <img src="/logo-sigauto.png" alt="Logo SIGAUTO" />
         </div>
         <h1 className="brand-name">SIGAUTO</h1>
       </div>
@@ -68,7 +64,7 @@ export function Sidebar() {
               <NavLink to="/estoque" className={nc}>
                 <Package size={20} /> Estoque
                 {qtdAlertas > 0 && (
-                  <span style={{ marginLeft: 'auto', background: 'var(--neon-orange)', color: '#fff', borderRadius: '100px', fontSize: '10px', fontWeight: '700', padding: '1px 6px' }}>
+                  <span style={{ marginLeft: 'auto', background: 'var(--color-warning)', color: 'var(--text-inverse)', borderRadius: '100px', fontSize: '10px', fontWeight: '700', padding: '1px 6px' }}>
                     {qtdAlertas}
                   </span>
                 )}
@@ -95,7 +91,7 @@ export function Sidebar() {
         </div>
         {isAuthenticated && (
           <button onClick={handleLogout} title="Sair" style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', flexShrink: 0 }}
-            onMouseEnter={e => e.currentTarget.style.color = 'var(--neon-orange)'}
+            onMouseEnter={e => e.currentTarget.style.color = 'var(--color-danger)'}
             onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}>
             <LogOut size={16} />
           </button>

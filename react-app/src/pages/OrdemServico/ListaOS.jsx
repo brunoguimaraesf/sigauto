@@ -6,22 +6,22 @@ import { useDatabase } from '../../hooks/useDatabase'
 import { calcOSTotals, formatCurrency, resolveEquipe } from '../../utils/osFinance'
 
 const STATUS_COLORS = {
-  aberta: { color: 'var(--status-pending)', border: 'rgba(255, 179, 0, 0.2)', bg: 'rgba(255, 179, 0, 0.05)', label: 'Aberta' },
-  em_andamento: { color: 'var(--status-progress)', border: 'rgba(0, 229, 255, 0.2)', bg: 'rgba(0, 229, 255, 0.05)', label: 'Em Andamento' },
-  aguardando_peca: { color: '#E8590C', border: 'rgba(232, 89, 12, 0.2)', bg: 'rgba(232, 89, 12, 0.05)', label: 'Aguard. Peça' },
-  concluida: { color: 'var(--status-done)', border: 'rgba(0, 255, 136, 0.2)', bg: 'rgba(0, 255, 136, 0.05)', label: 'Concluída' },
-  cancelada: { color: 'var(--text-muted)', border: 'rgba(255, 255, 255, 0.1)', bg: 'rgba(255, 255, 255, 0.02)', label: 'Cancelada' },
+  aberta: { color: 'var(--status-pending)', border: 'var(--color-warning-border)', bg: 'var(--color-warning-border)', label: 'Aberta' },
+  em_andamento: { color: 'var(--status-progress)', border: 'var(--color-primary-border)', bg: 'var(--color-primary-border)', label: 'Em Andamento' },
+  aguardando_peca: { color: 'var(--color-primary)', border: 'var(--color-primary-border)', bg: 'var(--color-primary-border)', label: 'Aguard. Peça' },
+  concluida: { color: 'var(--status-done)', border: 'var(--color-success-border)', bg: 'var(--color-success-border)', label: 'Concluída' },
+  cancelada: { color: 'var(--text-muted)', border: 'var(--border-color)', bg: 'var(--text-secondary)', label: 'Cancelada' },
   // Compat com dados legado
-  'Pendente': { color: 'var(--status-pending)', border: 'rgba(255, 179, 0, 0.2)', bg: 'rgba(255, 179, 0, 0.05)', label: 'Aberta' },
-  'Em Andamento': { color: 'var(--status-progress)', border: 'rgba(0, 229, 255, 0.2)', bg: 'rgba(0, 229, 255, 0.05)', label: 'Em Andamento' },
-  'Concluído': { color: 'var(--status-done)', border: 'rgba(0, 255, 136, 0.2)', bg: 'rgba(0, 255, 136, 0.05)', label: 'Concluída' },
+  'Pendente': { color: 'var(--status-pending)', border: 'var(--color-warning-border)', bg: 'var(--color-warning-border)', label: 'Aberta' },
+  'Em Andamento': { color: 'var(--status-progress)', border: 'var(--color-primary-border)', bg: 'var(--color-primary-border)', label: 'Em Andamento' },
+  'Concluído': { color: 'var(--status-done)', border: 'var(--color-success-border)', bg: 'var(--color-success-border)', label: 'Concluída' },
 }
 
 const PRIORIDADE_COLORS = {
-  urgente: { color: '#ff4d4d', bg: 'rgba(255, 0, 0, 0.08)', label: 'Urgente' },
-  alta: { color: '#E8590C', bg: 'rgba(232, 89, 12, 0.08)', label: 'Alta' },
-  normal: { color: 'var(--electric-blue)', bg: 'rgba(0, 229, 255, 0.08)', label: 'Normal' },
-  baixa: { color: 'var(--text-muted)', bg: 'rgba(255, 255, 255, 0.04)', label: 'Baixa' },
+  urgente: { color: 'var(--color-danger)', bg: 'var(--color-danger-tint)', label: 'Urgente' },
+  alta: { color: 'var(--color-warning)', bg: 'var(--color-warning-tint)', label: 'Alta' },
+  normal: { color: 'var(--color-primary)', bg: 'var(--color-primary-tint)', label: 'Normal' },
+  baixa: { color: 'var(--text-muted)', bg: 'var(--bg-subtle)', label: 'Baixa' },
 }
 
 export function ListaOS() {
@@ -211,7 +211,7 @@ export function ListaOS() {
                           <button
                             className="btn-secondary"
                             onClick={() => navigate(`/ordens-servico/${os.id}/encerrar`)}
-                            style={{ padding: '6px 10px', fontSize: '12px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--status-done)', borderColor: 'rgba(0, 255, 136, 0.2)' }}
+                            style={{ padding: '6px 10px', fontSize: '12px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--status-done)', borderColor: 'var(--color-success)' }}
                           >
                             <CheckCircle size={12} /> Encerrar
                           </button>
