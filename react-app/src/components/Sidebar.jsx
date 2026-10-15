@@ -5,10 +5,12 @@ import { useAuth } from '../context/AuthContext'
 import { supabaseDb } from '../supabaseClient'
 import css from './Sidebar.module.css'
 
+// Tons claros: a sidebar e escura, e as cores semanticas do tema claro
+// (azul, ambar e verde escuros) nao se leem sobre o preto.
 const PERFIL_COLORS = {
-  gestor: { color: 'var(--color-primary)', label: 'Gestor' },
-  atendente: { color: 'var(--color-warning)', label: 'Atendente' },
-  mecanico: { color: 'var(--color-success)', label: 'Mecanico' },
+  gestor: { color: '#79B4E3', label: 'Gestor' },
+  atendente: { color: '#F2A24B', label: 'Atendente' },
+  mecanico: { color: '#5FD08A', label: 'Mecanico' },
 }
 
 export function Sidebar() {

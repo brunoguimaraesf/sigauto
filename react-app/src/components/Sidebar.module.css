@@ -1,6 +1,6 @@
 /* Botao de sair do rodape da sidebar. */
 .logout {
-  color: var(--text-muted);
+  color: var(--sidebar-text-muted);
   background: none;
   border: none;
   cursor: pointer;
@@ -8,9 +8,10 @@
   flex-shrink: 0;
 }
 
+/* O vermelho de perigo do tema claro some no preto da sidebar. */
 .logout:hover,
 .logout:focus-visible {
-  color: var(--color-danger);
+  color: #FF6B5E;
 }
 
 /* Item de menu do Estoque: ancora o badge de alertas. */

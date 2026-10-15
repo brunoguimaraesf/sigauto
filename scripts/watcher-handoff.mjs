@@ -9,13 +9,18 @@
 // limite esta quebrada por construcao. Este processo vive fora da sessao, le os
 // transcritos no disco e dispara sozinho.
 //
-// O QUE ELE OBSERVA (dois gatilhos independentes):
+// O QUE ELE OBSERVA (tres gatilhos independentes):
 //   1) ORCAMENTO — soma ponderada dos tokens das respostas do assistente numa
 //      janela deslizante (padrao 5 h, a mesma janela do plano). Passou do
 //      limiar, transfere. Os pesos existem porque token de saida custa muito
 //      mais que leitura de cache; o valor de `orcamentoPonderado` e uma
 //      ESTIMATIVA e precisa de calibracao (ver `--relatorio`).
-//   2) PARADA — turno em aberto (ultimo registro e prompt do usuario, ou
+//   2) CONTEXTO — ocupacao da janela de contexto da sessao ativa, medida pelo
+//      `input + cache_creation + cache_read` do ultimo registro dela. Mede
+//      coisa DIFERENTE do orcamento: o orcamento so cresce na janela de 5 h, a
+//      ocupacao cai quando a sessao compacta. Em 14/10/2026 a barra do Claude
+//      Code passou de 90% com o orcamento em 31% — nenhum gatilho disparava.
+//   3) PARADA — turno em aberto (ultimo registro e prompt do usuario, ou
 //      resposta do assistente com tool_use) sem nenhum registro novo por
 //      `minutosParado`. Cobre o caso em que a sessao morre no meio do turno.
 //      So dispara com uso acima de `usoMinimoParaParado`, senao ele acionaria o
@@ -149,10 +154,76 @@ function lerRegistros(desdeMs) {
       }
       const ts = Date.parse(o.timestamp || '')
       if (!Number.isFinite(ts) || ts < desdeMs) continue
-      registros.push({ ts, tipo: o.type, uso: o.message?.usage, conteudo: o.message?.content })
+      registros.push({
+        ts,
+        tipo: o.type,
+        uso: o.message?.usage,
+        conteudo: o.message?.content,
+        // Para o gatilho de contexto: de qual sessao e de qual projeto veio a
+        // linha. A ocupacao da janela e por sessao, nao por conta.
+        sessao: path.basename(arq, '.jsonl'),
+        projeto: path.basename(path.dirname(arq)),
+        // Linha de subagent: tem janela de contexto propria, nao conta para a
+        // ocupacao da sessao principal.
+        sidechain: o.isSidechain === true,
+      })
     }
   }
   return registros.sort((a, b) => a.ts - b.ts)
+}
+
+// -----------------------------------------------------------------------------
+// Ocupacao da janela de contexto, por sessao.
+//
+// POR QUE E UMA MEDIDA SEPARADA DO ORCAMENTO: o orcamento soma o que foi gasto
+// na janela de 5 h e so cresce; a ocupacao de contexto e um retrato do turno
+// atual e CAI quando a sessao compacta. Uma sessao pode estourar o contexto com
+// o orcamento em 30% — foi o que aconteceu em 14/10/2026, com a barra do Claude
+// Code acima de 90% e o vigia registrando uso de 31%.
+//
+// COMO SE MEDE: numa requisicao, `input_tokens + cache_creation + cache_read` e
+// o prompt inteiro que foi enviado — ou seja, a janela ocupada naquele momento.
+// Vale o ULTIMO registro da sessao, nao a soma: somar contaria o mesmo contexto
+// uma vez por turno.
+//
+// `output_tokens` fica FORA: a resposta entra no contexto do turno seguinte, e
+// aparece no `input_tokens` dele. Soma-lo aqui contaria duas vezes.
+//
+// So conta sessao do projeto vigiado (`config.repo` virado em nome de diretorio
+// pelo Claude Code) e ativa nos ultimos `minutosSessaoAtiva` — sessao fechada
+// tem contexto congelado, e transferir por causa dela seria falso positivo.
+// -----------------------------------------------------------------------------
+function nomeProjetoDoRepo() {
+  // C:/Users/elson/.../SIGAUTO -> C--Users-elson----SIGAUTO
+  return config.repo.replace(/[:\\/]/g, '-')
+}
+
+function medirContexto(registros, agora) {
+  const teto = config.contextoTokens || 0
+  const vazio = { tokens: 0, fracao: 0, sessao: null, minutos: Infinity, sessoes: 0 }
+  if (teto <= 0) return vazio
+
+  const projeto = nomeProjetoDoRepo().toLowerCase()
+  const ultimoPorSessao = new Map()
+  for (const r of registros) {
+    if (r.sidechain || !r.uso || r.tipo !== 'assistant') continue
+    if (r.projeto.toLowerCase() !== projeto) continue
+    const anterior = ultimoPorSessao.get(r.sessao)
+    if (!anterior || r.ts > anterior.ts) ultimoPorSessao.set(r.sessao, r)
+  }
+
+  const limiteAtiva = (config.minutosSessaoAtiva ?? 10) * 60_000
+  let pior = vazio
+  let ativas = 0
+  for (const r of ultimoPorSessao.values()) {
+    const minutos = (agora - r.ts) / 60_000
+    if (agora - r.ts > limiteAtiva) continue
+    ativas += 1
+    const u = r.uso
+    const tokens = (u.input_tokens || 0) + (u.cache_creation_input_tokens || 0) + (u.cache_read_input_tokens || 0)
+    if (tokens > pior.tokens) pior = { tokens, fracao: tokens / teto, sessao: r.sessao, minutos }
+  }
+  return { ...pior, sessoes: ativas }
 }
 
 function medirJanela() {
@@ -187,6 +258,7 @@ function medirJanela() {
   return {
     ponderado,
     bruto,
+    contexto: medirContexto(registros, agora),
     fracao: ponderado / config.orcamentoPonderado,
     ultimoEm: ultimo ? ultimo.ts : null,
     minutosParado: ultimo ? (agora - ultimo.ts) / 60000 : Infinity,
@@ -332,6 +404,7 @@ function avaliar() {
   const dono = lerDono()
   const estado = lerEstado()
   const pct = (m.fracao * 100).toFixed(1)
+  const pctCtx = (m.contexto.fracao * 100).toFixed(1)
 
   if (SO_RELATORIO) {
     console.log(
@@ -343,6 +416,16 @@ function avaliar() {
           tokensPonderados: Math.round(m.ponderado),
           orcamento: config.orcamentoPonderado,
           usoPct: Number(pct),
+          contexto: {
+            sessao: m.contexto.sessao,
+            tokens: m.contexto.tokens,
+            teto: config.contextoTokens,
+            usoPct: Number(pctCtx),
+            sessoesAtivas: m.contexto.sessoes,
+            minutosDesdeUltimaResposta: Number.isFinite(m.contexto.minutos)
+              ? Number(m.contexto.minutos.toFixed(1))
+              : null,
+          },
           minutosDesdeUltimoRegistro: Number(m.minutosParado.toFixed(1)),
           turnoAberto: m.turnoAberto,
           dono,
@@ -385,6 +468,10 @@ function avaliar() {
   let motivo = null
   if (m.fracao >= config.limiarHandoff) {
     motivo = `orcamento da janela de ${config.janelaHoras} h em ${pct}% (limiar ${config.limiarHandoff * 100}%)`
+  } else if (config.limiarContexto > 0 && m.contexto.fracao >= config.limiarContexto) {
+    motivo =
+      `janela de contexto da sessao ${m.contexto.sessao} em ${pctCtx}% ` +
+      `(${m.contexto.tokens} de ${config.contextoTokens} tokens, limiar ${config.limiarContexto * 100}%)`
   } else if (
     m.turnoAberto &&
     m.minutosParado >= config.minutosParado &&
@@ -394,7 +481,11 @@ function avaliar() {
   }
 
   if (!motivo) {
-    log('INFO', `uso ${pct}% | ${m.respostas} respostas na janela | ultimo registro ha ${m.minutosParado.toFixed(1)} min`)
+    log(
+      'INFO',
+      `uso ${pct}% | contexto ${pctCtx}% (${m.contexto.sessoes} sessao(oes) ativa(s)) | ` +
+        `${m.respostas} respostas na janela | ultimo registro ha ${m.minutosParado.toFixed(1)} min`,
+    )
     return
   }
 
