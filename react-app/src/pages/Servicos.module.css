@@ -1,0 +1,39 @@
+/* Padroes comuns das telas de listagem. */
+.topo { composes: topo from './listaPagina.module.css'; }
+.btnNovo { composes: btnNovo from './listaPagina.module.css'; }
+.panelHeader { composes: panelHeader from './listaPagina.module.css'; }
+.busca { composes: busca from './listaPagina.module.css'; }
+.buscaInput { composes: buscaInput from './listaPagina.module.css'; }
+.buscaIcone { composes: buscaIcone from './listaPagina.module.css'; }
+.aviso { composes: aviso from './listaPagina.module.css'; }
+.celulaNome { composes: celulaNome from './listaPagina.module.css'; }
+.icone { composes: icone from './listaPagina.module.css'; }
+.acoes { composes: acoes from './listaPagina.module.css'; }
+.btnAcao { composes: btnAcao from './listaPagina.module.css'; }
+.btnIcone { composes: btnIcone from './listaPagina.module.css'; }
+.btnFechar { composes: btnFechar from './listaPagina.module.css'; }
+
+/* Proprio desta tela. */
+.nome {
+  font-size: 15px;
+  color: var(--text-primary);
+}
+
+.descricao {
+  font-size: 13px;
+  color: var(--text-secondary);
+  max-width: 400px;
+  line-height: 1.4;
+}
+
+.preco {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--neon-orange);
+}
+
+/* Acompanha .form-group: o campo de preco nao precisa da largura toda. */
+.campoCurto {
+  max-width: 200px;
+}

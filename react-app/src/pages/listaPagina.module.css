@@ -1,0 +1,217 @@
+/* Padroes comuns das telas de listagem (clientes, veiculos, servicos, usuarios,
+   funcionarios, O.S. e estoque). Cada pagina puxa o que usa com `composes`, em
+   vez de repetir a regra no proprio modulo. Alterar aqui muda as sete telas.
+   Nao e design system global: o index.css segue intocado. */
+
+/* Cabecalho da tela: titulo a esquerda, acao primaria a direita. */
+.topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+/* Acompanha .btn-primary do index.css. */
+.btnNovo {
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Acompanha .panel-header do index.css: a busca ocupa a linha inteira. */
+.panelHeader {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+/* Campo de busca com a lupa sobreposta. */
+.busca {
+  position: relative;
+  width: 100%;
+}
+
+/* Acompanha .form-control com especificidade suficiente para preservar o
+   espaco reservado ao icone mesmo quando o CSS global e carregado depois. */
+:global(.form-control).buscaInput {
+  padding-left: 40px;
+}
+
+.buscaIcone {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Mensagem de lista vazia ou de carregamento, no corpo do painel. */
+.aviso {
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 24px;
+}
+
+/* Primeira celula da tabela: icone redondo mais o nome do registro. */
+.celulaNome {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.icone {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-tint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--neon-orange);
+}
+
+/* Coluna de acoes da tabela. */
+.acoes {
+  display: flex;
+  gap: 8px;
+}
+
+/* Acompanha .btn-secondary: acao com rotulo (Editar). */
+.btnAcao {
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Acompanha .btn-danger: acao so com icone (Excluir). */
+.btnIcone {
+  padding: 6px;
+}
+
+/* Fechar do modal. */
+.btnFechar {
+  color: var(--text-secondary);
+}
+
+/* Corpo vazio do painel, com mais respiro que .aviso. */
+.vazio {
+  text-align: center;
+  padding: 48px;
+  color: var(--text-secondary);
+}
+
+/* ── Variante das telas de cadastro de pessoas (usuarios, funcionarios) ──
+   Barra de busca solta no painel, avatar com a inicial e acoes compactas. */
+
+.acoesTopo {
+  display: flex;
+  gap: 8px;
+}
+
+/* Acompanha .btn-secondary: recarrega a lista. */
+.btnAtualizar {
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Busca sem painel de filtros em volta. */
+.buscaBarra {
+  position: relative;
+  margin-bottom: 24px;
+}
+
+.buscaBarraIcone {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+.celulaNomeCompacta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Inicial do nome num circulo, no lugar do icone de entidade. */
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.nomeForte {
+  font-size: 14px;
+}
+
+.celulaTexto {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+/* Etiqueta de perfil ou cargo. As cores vem do dado e ficam inline. */
+.badgePill {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.acoesCompactas {
+  display: flex;
+  gap: 6px;
+}
+
+/* Acompanha .btn-secondary. */
+.btnEditar {
+  padding: 5px 10px;
+  font-size: 12px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+/* Acompanha .btn-danger. */
+.btnInativar {
+  padding: 5px 10px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 12px;
+}
+
+/* Erro do formulario dentro do modal. */
+.erroForm {
+  padding: 10px;
+  background: var(--color-primary-tint);
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--radius-sm);
+  color: var(--neon-orange);
+  font-size: 13px;
+}

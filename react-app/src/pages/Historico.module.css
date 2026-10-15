@@ -1,0 +1,147 @@
+/* Padroes comuns das telas de listagem. */
+.topo { composes: topo from './listaPagina.module.css'; }
+.buscaInput { composes: buscaInput from './listaPagina.module.css'; }
+.vazio { composes: vazio from './listaPagina.module.css'; }
+.btnFechar { composes: btnFechar from './listaPagina.module.css'; }
+.celulaTextoMenor { composes: celulaTexto from './listaPagina.module.css'; }
+.btnDetalhes { composes: btnEditar from './listaPagina.module.css'; }
+
+/* Proprio desta tela. */
+
+/* Linha de filtros: busca elastica, status e o intervalo de datas. */
+.filtros {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.busca {
+  flex: 1;
+  min-width: 200px;
+  position: relative;
+}
+
+.buscaIcone {
+  position: absolute;
+  left: 14px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Acompanha .form-control: status e as duas datas tem largura fixa. */
+:global(.form-control).campoFiltro {
+  width: 160px;
+  flex: 0 0 160px;
+}
+
+.numero {
+  color: var(--neon-orange);
+  font-family: var(--font-display);
+}
+
+.cliente {
+  display: block;
+  font-weight: 600;
+}
+
+.veiculo {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.placa {
+  font-weight: 600;
+  color: var(--neon-orange);
+  letter-spacing: 1px;
+}
+
+/* A cor do texto vem do status e continua inline. */
+.badgeStatus {
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+}
+
+.valor {
+  font-family: var(--font-display);
+  font-weight: 600;
+  color: var(--neon-orange);
+}
+
+/* ── Modal de detalhes ── */
+
+/* Acompanha .modal-content: mais largo que o padrao, para a grade de dados. */
+.modal {
+  max-width: 700px;
+}
+
+.grade {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.dado {
+  padding: 10px;
+  background: var(--bg-subtle);
+  border-radius: var(--radius-sm);
+}
+
+.rotulo {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.dadoValor {
+  font-weight: 600;
+  font-size: 13px;
+}
+
+.bloco {
+  margin-bottom: 12px;
+}
+
+.blocoRotulo {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+/* Rotulo do diagnostico tecnico, destacado do resto. */
+.blocoRotuloTecnico {
+  composes: blocoRotulo;
+  color: var(--electric-blue);
+}
+
+.blocoTexto {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.totalBox {
+  padding: 16px;
+  background: var(--color-primary-tint);
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+.totalValor {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 600;
+  color: var(--neon-orange);
+}

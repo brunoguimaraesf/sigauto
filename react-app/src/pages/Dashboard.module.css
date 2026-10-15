@@ -1,0 +1,284 @@
+/* Padroes comuns das telas de listagem. */
+.topo { composes: topo from './listaPagina.module.css'; }
+.panelHeader { composes: panelHeader from './listaPagina.module.css'; }
+.vazio { composes: vazio from './listaPagina.module.css'; }
+.btnIcone { composes: btnIcone from './listaPagina.module.css'; }
+.celulaTextoMenor { composes: celulaTexto from './listaPagina.module.css'; }
+
+/* Proprio desta tela. */
+.carregando {
+  padding: 48px;
+  color: var(--text-secondary);
+  text-align: center;
+}
+
+/* Alternancia entre Visao Geral e Ordens de Servico. */
+.abas {
+  display: flex;
+  gap: 12px;
+}
+
+/* Acompanha .btn-secondary. */
+.btnAba {
+  border-radius: var(--radius-sm);
+  padding: 8px 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Acompanha .metric-title: o titulo leva um icone ao lado. */
+.metricTitulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Acompanha .metric-trend: etiqueta menor que o padrao. */
+.metricTrend {
+  font-size: 10px;
+}
+
+/* ── Lista de O.S. recentes ── */
+.listaVazia {
+  text-align: center;
+  padding: 40px 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.listaVaziaTexto {
+  color: var(--text-secondary);
+}
+
+/* Acompanha .btn-primary. */
+.btnListaVazia {
+  margin-top: 4px;
+}
+
+/* Acompanha .car-indicator: aqui mostra a inicial do veiculo, nao um icone. */
+.inicialVeiculo {
+  background-color: var(--color-accent-tint);
+  border-color: var(--color-accent-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  color: var(--neon-orange);
+}
+
+.itemPlaca {
+  display: block;
+  margin-bottom: 2px;
+}
+
+.itemServico {
+  color: var(--neon-orange);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.itemLateral {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+}
+
+.itemValor {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+/* ── Situacao da oficina ── */
+.totalOS {
+  font-size: 11px;
+  color: var(--text-muted);
+  font-family: var(--font-display);
+}
+
+.resumoGrade {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+/* Acompanha .resumo-oficina--accent e --info do index.css. */
+.resumoCard {
+  padding: 10px 12px;
+  border-radius: var(--radius-sm);
+}
+
+.resumoRotulo {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.resumoValorBase {
+  font-size: 24px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.resumoValorAccent {
+  composes: resumoValorBase;
+  color: var(--neon-orange);
+}
+
+.resumoValorInfo {
+  composes: resumoValorBase;
+  color: var(--status-progress);
+}
+
+.statusLista {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.statusLinha {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 5px;
+}
+
+.statusRotulo {
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* A cor vem do status e continua inline. */
+.statusContagem {
+  font-size: 12px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.statusPercentual {
+  font-size: 10px;
+  font-weight: 400;
+  color: var(--text-muted);
+}
+
+.statusBarra {
+  height: 4px;
+  background: var(--bg-subtle);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+/* A largura e a cor vem do status e continuam inline. */
+.statusBarraPreenchida {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.5s ease;
+}
+
+.taxaConclusao {
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.taxaRotulo {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.taxaValor {
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 700;
+  color: var(--status-done);
+}
+
+/* ── Aba de ordens de servico ── */
+.headerLinha {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.filtros {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+  margin-top: 8px;
+}
+
+.filtroBusca {
+  flex: 1;
+  min-width: 240px;
+}
+
+.filtroStatus {
+  width: 180px;
+}
+
+.placa {
+  color: var(--neon-orange);
+  display: block;
+  font-size: 13px;
+}
+
+.veiculo {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.valor {
+  font-family: var(--font-display);
+  font-weight: 600;
+}
+
+/* ── Aba de nova O.S. ── */
+
+/* Acompanha .btn-secondary. */
+.btnCancelar {
+  padding: 8px 16px;
+}
+
+.formulario {
+  margin-top: 16px;
+}
+
+.dicaCampo {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Acompanha .alert-box do index.css. */
+.alerta {
+  margin-top: 8px;
+}
+
+.acoesForm {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+/* Acompanha .btn-primary: acao principal do formulario. */
+.btnSalvar {
+  padding: 12px 32px;
+}

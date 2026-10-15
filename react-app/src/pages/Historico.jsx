@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { GlassPanel } from '../components/GlassPanel'
 import { Search, X, FileText } from 'lucide-react'
 import { useDatabase } from '../hooks/useDatabase'
+import css from './Historico.module.css'
 
 export function Historico() {
   const { clientes, veiculos, ordensServico, loading } = useDatabase()
@@ -48,7 +49,7 @@ export function Historico() {
 
   return (
     <div className="dashboard-grid">
-      <section className="welcome-section stagger-1" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      <section className={`welcome-section stagger-1 ${css.topo}`}>
         <div>
           <h2>Histórico de Serviços</h2>
           <p>Consulte o histórico completo de ordens de serviço da oficina.</p>
@@ -56,12 +57,12 @@ export function Historico() {
       </section>
 
       <GlassPanel className="panel stagger-2">
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: '200px', position: 'relative' }}>
-            <Search size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: 14, top: 13 }} />
-            <input type="text" className="form-control" placeholder="Buscar cliente, placa, nº OS..." value={busca} onChange={e => setBusca(e.target.value)} style={{ paddingLeft: '40px' }} />
+        <div className={css.filtros}>
+          <div className={css.busca}>
+            <Search size={16} color="var(--text-secondary)" className={css.buscaIcone} />
+            <input type="text" className={`form-control ${css.buscaInput}`} placeholder="Buscar cliente, placa, nº OS..." value={busca} onChange={e => setBusca(e.target.value)} />
           </div>
-          <select className="form-control" value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)} style={{ width: '160px' }}>
+          <select className={`form-control ${css.campoFiltro}`} value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}>
             <option value="Todos">Todos</option>
             <option value="concluida">Concluída</option>
             <option value="Concluído">Concluída (leg.)</option>
@@ -69,15 +70,15 @@ export function Historico() {
             <option value="aberta">Aberta</option>
             <option value="em_andamento">Em Andamento</option>
           </select>
-          <input type="date" className="form-control" value={dataInicio} onChange={e => setDataInicio(e.target.value)} style={{ width: '160px' }} title="Data início" />
-          <input type="date" className="form-control" value={dataFim} onChange={e => setDataFim(e.target.value)} style={{ width: '160px' }} title="Data fim" />
+          <input type="date" className={`form-control ${css.campoFiltro}`} value={dataInicio} onChange={e => setDataInicio(e.target.value)} title="Data início" />
+          <input type="date" className={`form-control ${css.campoFiltro}`} value={dataFim} onChange={e => setDataFim(e.target.value)} title="Data fim" />
         </div>
 
         <div className="tech-table-container">
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-secondary)' }}>Carregando histórico...</div>
+            <div className={css.vazio}>Carregando histórico...</div>
           ) : filtrados.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-secondary)' }}>Nenhuma O.S. encontrada com os filtros aplicados.</div>
+            <div className={css.vazio}>Nenhuma O.S. encontrada com os filtros aplicados.</div>
           ) : (
             <table className="tech-table">
               <thead>
@@ -96,38 +97,33 @@ export function Historico() {
                 {filtrados.map(os => (
                   <tr key={os.id}>
                     <td>
-                      <strong style={{ color: 'var(--neon-orange)', fontFamily: 'var(--font-display)' }}>
+                      <strong className={css.numero}>
                         #{os.numero_os || os.id?.slice(-4)?.toUpperCase()}
                       </strong>
                     </td>
                     <td>
-                      <span style={{ display: 'block', fontWeight: '600' }}>{os.clienteNome}</span>
-                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{os.veiculoInfo}</span>
+                      <span className={css.cliente}>{os.clienteNome}</span>
+                      <span className={css.veiculo}>{os.veiculoInfo}</span>
                     </td>
-                    <td><span style={{ fontWeight: '600', color: 'var(--neon-orange)', letterSpacing: '1px' }}>{os.placa}</span></td>
+                    <td><span className={css.placa}>{os.placa}</span></td>
                     <td>
-                      <span style={{
-                        padding: '4px 10px', borderRadius: '100px', fontSize: '11px', fontWeight: '600',
-                        color: STATUS_COLORS[os.status] || 'var(--text-secondary)',
-                        background: 'var(--bg-subtle)', border: '1px solid var(--border-color)'
-                      }}>
+                      <span className={css.badgeStatus} style={{ color: STATUS_COLORS[os.status] || 'var(--text-secondary)' }}>
                         {STATUS_MAP[os.status] || os.status}
                       </span>
                     </td>
-                    <td style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    <td className={css.celulaTextoMenor}>
                       {(() => { const d = new Date(os.data_abertura || os.criado_em); return isNaN(d) ? '—' : d.toLocaleDateString('pt-BR') })()}
                     </td>
-                    <td style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    <td className={css.celulaTextoMenor}>
                       {os.data_encerramento ? new Date(os.data_encerramento).toLocaleDateString('pt-BR') : '—'}
                     </td>
-                    <td style={{ fontFamily: 'var(--font-display)', fontWeight: '600', color: 'var(--neon-orange)' }}>
+                    <td className={css.valor}>
                       {os.valor_total || os.preco_final ? `R$ ${Number(os.valor_total || os.preco_final).toLocaleString('pt-BR')}` : '—'}
                     </td>
                     <td>
                       <button
-                        className="btn-secondary"
+                        className={`btn-secondary ${css.btnDetalhes}`}
                         onClick={() => setDetalheModal(os)}
-                        style={{ padding: '6px 10px', fontSize: '12px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '4px' }}
                       >
                         <FileText size={12} /> Detalhes
                       </button>
@@ -143,13 +139,13 @@ export function Historico() {
       {/* Modal de detalhes */}
       {detalheModal && (
         <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '700px' }}>
+          <div className={`modal-content ${css.modal}`}>
             <div className="modal-header">
               <h3>O.S. #{detalheModal.numero_os || detalheModal.id?.slice(-4)?.toUpperCase()} — Detalhes</h3>
-              <button onClick={() => setDetalheModal(null)} style={{ color: 'var(--text-secondary)' }}><X size={20} /></button>
+              <button onClick={() => setDetalheModal(null)} className={css.btnFechar}><X size={20} /></button>
             </div>
             <div className="modal-body">
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '20px' }}>
+              <div className={css.grade}>
                 {[
                   ['Veículo', `${detalheModal.veiculo?.marca || ''} ${detalheModal.veiculo?.modelo || ''}`],
                   ['Placa', detalheModal.placa],
@@ -160,28 +156,28 @@ export function Historico() {
                   ['Abertura', (() => { const d = new Date(detalheModal.data_abertura || detalheModal.criado_em); return isNaN(d) ? '—' : d.toLocaleString('pt-BR') })()],
                   ['Encerramento', detalheModal.data_encerramento ? new Date(detalheModal.data_encerramento).toLocaleString('pt-BR') : '—'],
                 ].map(([k, v]) => (
-                  <div key={k} style={{ padding: '10px', background: 'var(--bg-subtle)', borderRadius: 'var(--radius-sm)' }}>
-                    <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>{k}</div>
-                    <div style={{ fontWeight: '600', fontSize: '13px' }}>{v}</div>
+                  <div key={k} className={css.dado}>
+                    <div className={css.rotulo}>{k}</div>
+                    <div className={css.dadoValor}>{v}</div>
                   </div>
                 ))}
               </div>
               {detalheModal.descricao && (
-                <div style={{ marginBottom: '12px' }}>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Queixa do Cliente</div>
-                  <div style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: '1.5' }}>{detalheModal.descricao}</div>
+                <div className={css.bloco}>
+                  <div className={css.blocoRotulo}>Queixa do Cliente</div>
+                  <div className={css.blocoTexto}>{detalheModal.descricao}</div>
                 </div>
               )}
               {detalheModal.diagnostico && (
-                <div style={{ marginBottom: '12px' }}>
-                  <div style={{ fontSize: '11px', color: 'var(--electric-blue)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>Diagnóstico Técnico</div>
-                  <div style={{ color: 'var(--text-secondary)', fontSize: '13px', lineHeight: '1.5' }}>{detalheModal.diagnostico}</div>
+                <div className={css.bloco}>
+                  <div className={css.blocoRotuloTecnico}>Diagnóstico Técnico</div>
+                  <div className={css.blocoTexto}>{detalheModal.diagnostico}</div>
                 </div>
               )}
               {(detalheModal.valor_total || detalheModal.preco_final) > 0 && (
-                <div style={{ padding: '16px', background: 'var(--color-primary-tint)', border: '1px solid var(--color-primary-border)', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>Valor Total</div>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: '28px', fontWeight: '600', color: 'var(--neon-orange)' }}>
+                <div className={css.totalBox}>
+                  <div className={css.rotulo}>Valor Total</div>
+                  <div className={css.totalValor}>
                     R$ {Number(detalheModal.valor_total || detalheModal.preco_final).toLocaleString('pt-BR', { minimumFractionDigits: 2 })}
                   </div>
                 </div>

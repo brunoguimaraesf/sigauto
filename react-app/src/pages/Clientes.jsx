@@ -5,6 +5,7 @@ import { Plus, Search, Trash2, Edit2, X, Car } from 'lucide-react'
 import { maskCpfCnpj, maskTelefone } from '../utils/masks'
 import { UFS, maskCep, cepValido, buscarCep, formatarEndereco } from '../utils/endereco'
 import { validarCpfCnpj, validarEmail } from '../utils/validacao'
+import css from './Clientes.module.css'
 
 const enderecoEmBranco = {
   cep: '', logradouro: '', numero: '', complemento: '',
@@ -137,42 +138,41 @@ export function Clientes() {
 
   return (
     <div className="dashboard-grid">
-      <section className="welcome-section stagger-1" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      <section className={`welcome-section stagger-1 ${css.topo}`}>
         <div>
           <h2>Base de Clientes</h2>
           <p>Gerenciamento e diretório de proprietários de veículos cadastrados.</p>
         </div>
-        <button className="btn-primary" onClick={handleOpenAdd} style={{ borderRadius: 'var(--radius-sm)', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <button className={`btn-primary ${css.btnNovo}`} onClick={handleOpenAdd}>
           <Plus size={16} /> Novo Cliente
         </button>
       </section>
 
       <GlassPanel className="panel stagger-2">
-        <div className="panel-header" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '16px', marginBottom: '24px' }}>
-          <div style={{ position: 'relative', width: '100%' }}>
+        <div className={`panel-header ${css.panelHeader}`}>
+          <div className={css.busca}>
             <input 
               type="text" 
-              className="form-control" 
-              placeholder="Buscar clientes por nome, e-mail, telefone, CPF/CNPJ ou endereço..." 
+              className={`form-control ${css.buscaInput}`}
+              placeholder="Buscar clientes por nome, e-mail, telefone, CPF/CNPJ ou endereço..."
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
-              style={{ paddingLeft: '40px' }}
             />
-            <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: 16, top: 13 }} />
+            <Search size={18} color="var(--text-secondary)" className={css.buscaIcone} />
           </div>
         </div>
 
         <div className="tech-table-container">
           {databaseError ? (
-            <div style={{ color: 'var(--neon-orange)', textAlign: 'center', padding: '24px' }}>
+            <div className={css.erro}>
               Falha ao carregar clientes do banco: {databaseError}
             </div>
           ) : loading ? (
-            <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '24px' }}>
+            <div className={css.aviso}>
               Carregando diretório de clientes...
             </div>
           ) : filteredClientes.length === 0 ? (
-            <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '24px' }}>
+            <div className={css.aviso}>
               Nenhum cliente cadastrado ou correspondente encontrado.
             </div>
           ) : (
@@ -193,46 +193,35 @@ export function Clientes() {
                   
                   return (
                     <tr key={c.id}>
-                      <td style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--color-primary-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--neon-orange)', fontWeight: 'bold' }}>
+                      <td className={css.celulaNome}>
+                        <div className={css.avatar}>
                           {c.nome?.charAt(0) || 'C'}
                         </div>
                         <div>
-                          <strong style={{ fontSize: '15px' }}>{c.nome}</strong>
-                          <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-secondary)' }}>
+                          <strong className={css.nome}>{c.nome}</strong>
+                          <span className={css.documento}>
                             {c.tipo_pessoa === 'juridica' ? 'CNPJ' : 'CPF'}: {c.cpf_cnpj || 'Nao informado'}
                           </span>
                         </div>
                       </td>
                       <td>
-                        <span style={{ display: 'block', fontSize: '13px', color: 'var(--text-primary)' }}>{c.telefone}</span>
-                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{c.email}</span>
+                        <span className={css.telefone}>{c.telefone}</span>
+                        <span className={css.email}>{c.email}</span>
                         {formatarEndereco(c.endereco_estruturado, c.endereco) && (
-                          <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                          <span className={css.endereco}>
                             {formatarEndereco(c.endereco_estruturado, c.endereco)}
                           </span>
                         )}
                       </td>
                       <td>
                         {clientCars.length === 0 ? (
-                          <span style={{ color: 'var(--text-muted)', fontSize: '12px' }}>Nenhum veículo na garagem</span>
+                          <span className={css.semVeiculo}>Nenhum veículo na garagem</span>
                         ) : (
-                          <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                          <div className={css.garagem}>
                             {clientCars.map(car => (
                               <span 
-                                key={car.id} 
-                                style={{ 
-                                  padding: '2px 8px', 
-                                  background: 'var(--color-primary-tint)',
-                                  border: '1px solid var(--color-primary-border)',
-                                  borderRadius: 'var(--radius-sm)', 
-                                  fontSize: '11px', 
-                                  color: 'var(--neon-orange)',
-                                  fontWeight: '600',
-                                  display: 'flex',
-                                  alignItems: 'center',
-                                  gap: '4px'
-                                }}
+                                key={car.id}
+                                className={css.veiculo}
                                 title={`${car.marca} ${car.modelo}`}
                               >
                                 <Car size={10} /> {car.placa}
@@ -241,26 +230,24 @@ export function Clientes() {
                           </div>
                         )}
                       </td>
-                      <td style={{ fontFamily: 'var(--font-display)', fontWeight: '600', fontSize: '15px' }}>
+                      <td className={css.contagem}>
                         {clientCars.length}
                       </td>
                       <td>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button 
-                            className="btn-secondary" 
+                        <div className={css.acoes}>
+                          <button
+                            className={`btn-secondary ${css.btnAcao}`}
                             onClick={() => handleOpenEdit(c)}
-                            style={{ padding: '6px 10px', borderRadius: 'var(--radius-sm)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
                           >
                             <Edit2 size={12} /> Editar
                           </button>
                           <button 
-                            className="btn-danger" 
+                            className={`btn-danger ${css.btnIcone}`}
                             onClick={() => {
                               if (confirm(`Tem certeza que deseja excluir o cliente ${c.nome}?`)) {
                                 deleteCliente(c.id)
                               }
                             }}
-                            style={{ padding: '6px' }}
                           >
                             <Trash2 size={14} />
                           </button>
@@ -281,7 +268,7 @@ export function Clientes() {
           <div className="modal-content">
             <div className="modal-header">
               <h3>{editingId ? 'Editar Dados do Cliente' : 'Cadastrar Novo Proprietário'}</h3>
-              <button onClick={() => setModalOpen(false)} style={{ color: 'var(--text-secondary)' }}><X size={20} /></button>
+              <button onClick={() => setModalOpen(false)} className={css.btnFechar}><X size={20} /></button>
             </div>
 
             <form onSubmit={handleSubmit}>
@@ -351,7 +338,7 @@ export function Clientes() {
                 <div className="form-group">
                   <label>Endereço</label>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '140px 1fr', gap: '12px' }}>
+                  <div className={css.linhaCep}>
                     <div>
                       <input
                         type="text"
@@ -367,10 +354,10 @@ export function Clientes() {
                         onBlur={(e) => handleBuscarCep(e.target.value)}
                       />
                       {buscandoCep && (
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Buscando…</span>
+                        <span className={css.dicaCep}>Buscando…</span>
                       )}
                       {erroCep && (
-                        <span style={{ fontSize: '11px', color: 'var(--text-secondary)' }}>{erroCep}</span>
+                        <span className={css.statusCep}>{erroCep}</span>
                       )}
                     </div>
                     <input
@@ -382,7 +369,7 @@ export function Clientes() {
                     />
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '120px 1fr 1fr', gap: '12px', marginTop: '12px' }}>
+                  <div className={css.linhaNumero}>
                     <input
                       type="text"
                       className="form-control"
@@ -406,7 +393,7 @@ export function Clientes() {
                     />
                   </div>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 90px', gap: '12px', marginTop: '12px' }}>
+                  <div className={css.linhaCidade}>
                     <input
                       type="text"
                       className="form-control"
@@ -427,15 +414,14 @@ export function Clientes() {
 
                   <input
                     type="text"
-                    className="form-control"
+                    className={`form-control ${css.campoReferencia}`}
                     placeholder="Ponto de referência"
-                    style={{ marginTop: '12px' }}
                     value={endereco.ponto_referencia}
                     onChange={(e) => setCampoEndereco('ponto_referencia', e.target.value)}
                   />
 
                   {enderecoLegado && (
-                    <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)', marginTop: '8px' }}>
+                    <span className={css.enderecoLegado}>
                       Cadastro anterior: {enderecoLegado}
                     </span>
                   )}

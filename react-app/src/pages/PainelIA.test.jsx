@@ -1,8 +1,9 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent, waitFor } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'
 import { PainelIA, MSG_IA_INDISPONIVEL } from './PainelIA'
 import { useDatabase } from '../hooks/useDatabase'
+import cssComparacao from '../components/ia/ComparacaoPeriodo.module.css'
 
 vi.mock('../hooks/useDatabase', () => ({ useDatabase: vi.fn() }))
 
@@ -128,11 +129,17 @@ describe('Painel de IA', () => {
     const modelos = screen.getByRole('table', { name: /Modelos de veículo mais frequentes/i })
     const servicos = screen.getByRole('table', { name: /Serviços mais frequentes/i })
 
-    expect(indicadores).toHaveStyle({ tableLayout: 'fixed', width: '100%' })
-    expect(modelos).toHaveStyle({ tableLayout: 'fixed', width: '100%' })
-    expect(servicos).toHaveStyle({ tableLayout: 'fixed', width: '100%' })
+    // `table-layout: fixed` e `width: 100%` moraram no estilo inline e hoje
+    // moram em ComparacaoPeriodo.module.css. O jsdom nao aplica a folha, entao
+    // o que da para verificar aqui e que as tres tabelas usam a mesma classe;
+    // os valores em si ficam no CSS.
+    expect(indicadores).toHaveClass(cssComparacao.tabela)
+    expect(modelos).toHaveClass(cssComparacao.tabela)
+    expect(servicos).toHaveClass(cssComparacao.tabela)
     expect(indicadores.querySelectorAll('col')).toHaveLength(5)
     expect(modelos.querySelectorAll('col')).toHaveLength(5)
+    expect(within(indicadores).getByRole('columnheader', { name: 'Atual' })).toHaveClass(cssComparacao.num)
+    expect(within(modelos).getByRole('columnheader', { name: 'Variação' })).toHaveClass(cssComparacao.num)
   })
 
   it('exibe sem base anterior e sem consumo para valores nulos', async () => {

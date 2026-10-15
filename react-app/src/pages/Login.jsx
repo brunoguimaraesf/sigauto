@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabase } from '../supabaseClient'
+import css from './Login.module.css'
 
 export function Login() {
   const { login } = useAuth()
@@ -76,57 +77,23 @@ export function Login() {
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: 'var(--bg-base)',
-      display: 'flex',
-      alignItems: 'center',
-      justifyContent: 'center',
-      position: 'relative',
-      overflow: 'hidden',
-      fontFamily: 'var(--font-body)'
-    }}>
+    <div className={css.tela}>
 
-      <div className="glass stagger-1" style={{
-        width: '100%', maxWidth: '440px',
-        margin: '24px',
-        padding: '48px 40px',
-        position: 'relative',
-        overflow: 'hidden'
-      }}>
+      <div className={`glass stagger-1 ${css.cartao}`}>
         {/* Linha decorativa no topo */}
-        <div style={{
-          position: 'absolute', top: 0, left: 0, width: '100%', height: '2px',
-          background: 'var(--color-primary)'
-        }} />
+        <div className={css.filete} />
 
         {/* Brand */}
-        <div style={{ textAlign: 'center', marginBottom: '40px' }}>
-          <div style={{
-            display: 'inline-flex', alignItems: 'center', justifyContent: 'center',
-            width: '104px', height: '104px',
-            background: '#fff',
-            border: '1px solid var(--border-color)',
-            borderRadius: '16px',
-            marginBottom: '18px',
-            overflow: 'hidden'
-          }}>
+        <div className={css.marca}>
+          <div className={css.logoCaixa}>
             <img
               src="/logo-sigauto.png"
               alt="Logo SIGAUTO"
-              style={{ width: '100%', height: '100%', objectFit: 'cover', transform: 'scale(1.12)' }}
+              className={css.logo}
             />
           </div>
-          <h1 style={{
-            fontFamily: 'var(--font-display)',
-            fontSize: '28px',
-            fontWeight: '700',
-            letterSpacing: '1px',
-            textTransform: 'uppercase',
-            color: 'var(--text-primary)',
-            marginBottom: '8px'
-          }}>SIGAUTO</h1>
-          <p style={{ color: 'var(--text-secondary)', fontSize: '14px' }}>
+          <h1 className={css.titulo}>SIGAUTO</h1>
+          <p className={css.subtitulo}>
             Sistema Inteligente de Gestão de Oficinas
           </p>
         </div>
@@ -134,18 +101,17 @@ export function Login() {
         {/* Formulário */}
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <label className={css.rotulo}>
               E-mail
             </label>
-            <div style={{ position: 'relative' }}>
-              <Mail size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 14, top: 14, pointerEvents: 'none' }} />
+            <div className={css.campo}>
+              <Mail size={16} color="var(--text-muted)" className={css.campoIcone} />
               <input
                 type="email"
-                className="form-control"
+                className={`form-control ${css.campoEmail}`}
                 placeholder="seu@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                style={{ paddingLeft: '42px' }}
                 required
                 disabled={loading || estaBloqueado}
               />
@@ -153,28 +119,24 @@ export function Login() {
           </div>
 
           <div className="form-group">
-            <label style={{ fontSize: '12px', fontWeight: '600', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <label className={css.rotulo}>
               Senha
             </label>
-            <div style={{ position: 'relative' }}>
-              <Lock size={16} color="var(--text-muted)" style={{ position: 'absolute', left: 14, top: 14, pointerEvents: 'none' }} />
+            <div className={css.campo}>
+              <Lock size={16} color="var(--text-muted)" className={css.campoIcone} />
               <input
                 type={mostrarSenha ? 'text' : 'password'}
-                className="form-control"
+                className={`form-control ${css.campoSenha}`}
                 placeholder="••••••••"
                 value={senha}
                 onChange={(e) => setSenha(e.target.value)}
-                style={{ paddingLeft: '42px', paddingRight: '42px' }}
                 required
                 disabled={loading || estaBloqueado}
               />
               <button
                 type="button"
                 onClick={() => setMostrarSenha(v => !v)}
-                style={{
-                  position: 'absolute', right: 12, top: 10,
-                  color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer'
-                }}
+                className={css.btnOlho}
               >
                 {mostrarSenha ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -182,59 +144,37 @@ export function Login() {
           </div>
 
           {erro && (
-            <div style={{
-              padding: '12px 16px',
-              background: 'var(--color-primary-tint)',
-              border: '1px solid var(--color-primary-border)',
-              borderRadius: 'var(--radius-sm)',
-              color: 'var(--color-primary)',
-              fontSize: '13px',
-              marginBottom: '20px',
-              lineHeight: '1.4'
-            }}>
+            <div className={css.erro}>
               {erro}
             </div>
           )}
 
           <button
             type="submit"
-            className="btn-primary"
-            style={{ width: '100%', padding: '14px', fontSize: '15px', borderRadius: 'var(--radius-sm)', marginTop: '8px' }}
+            className={`btn-primary ${css.btnEntrar}`}
             disabled={loading || estaBloqueado}
           >
             {loading ? (
-              <span style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px' }}>
-                <span style={{
-                  width: '16px', height: '16px', borderRadius: '50%',
-                  border: '2px solid var(--border-color)',
-                  borderTopColor: '#fff',
-                  display: 'inline-block',
-                  animation: 'spin 0.8s linear infinite'
-                }} />
+              <span className={css.carregando}>
+                <span className={css.spinner} />
                 Autenticando...
               </span>
             ) : 'Entrar no Sistema'}
           </button>
         </form>
 
-        <div style={{ textAlign: 'center', marginTop: '20px' }}>
+        <div className={css.esqueci}>
           <button
-            className="btn-link"
+            className={`btn-link ${css.btnEsqueci}`}
             onClick={() => { setModalEsqueci(true); setResetEnviado(false); setEmailReset('') }}
-            style={{ fontSize: '13px' }}
           >
             Esqueci minha senha
           </button>
         </div>
 
         {/* Contas de demonstração */}
-        <div style={{
-          marginTop: '28px', padding: '14px 16px',
-          background: 'var(--color-primary-tint)',
-          border: '1px solid var(--color-primary-border)',
-          borderRadius: 'var(--radius-sm)'
-        }}>
-          <p style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '10px', fontWeight: '600' }}>
+        <div className={css.demo}>
+          <p className={css.demoTitulo}>
             Contas de demonstração
           </p>
           {[
@@ -246,26 +186,18 @@ export function Login() {
               key={u.email}
               type="button"
               onClick={() => { setEmail(u.email); setSenha(u.senha); setErro('') }}
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                width: '100%', padding: '7px 10px', marginBottom: '4px',
-                background: 'var(--bg-subtle)', border: '1px solid var(--border-color)',
-                borderRadius: 'var(--radius-sm)', cursor: 'pointer', fontFamily: 'var(--font-body)',
-                transition: 'border-color 0.15s'
-              }}
-              onMouseEnter={e => e.currentTarget.style.borderColor = 'var(--color-primary)'}
-              onMouseLeave={e => e.currentTarget.style.borderColor = 'var(--border-color)'}
+              className={css.demoAccount}
             >
-              <span style={{ fontSize: '12px', color: 'var(--text-secondary)', fontFamily: 'monospace' }}>{u.email}</span>
-              <span style={{ fontSize: '10px', fontWeight: '700', color: u.cor, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{u.perfil}</span>
+              <span className={css.demoEmail}>{u.email}</span>
+              <span className={css.demoPerfil} style={{ color: u.cor }}>{u.perfil}</span>
             </button>
           ))}
-          <p style={{ fontSize: '10px', color: 'var(--text-muted)', marginTop: '6px' }}>
+          <p className={css.demoDica}>
             Clique para preencher automaticamente
           </p>
         </div>
 
-        <p style={{ textAlign: 'center', color: 'var(--text-muted)', fontSize: '11px', marginTop: '20px' }}>
+        <p className={css.rodape}>
           TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
         </p>
       </div>
@@ -273,31 +205,23 @@ export function Login() {
       {/* Modal Esqueci a Senha */}
       {modalEsqueci && (
         <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '400px' }}>
+          <div className={`modal-content ${css.modal}`}>
             <div className="modal-header">
               <h3>Recuperar Senha</h3>
-              <button onClick={() => setModalEsqueci(false)} style={{ color: 'var(--text-secondary)' }}>
+              <button onClick={() => setModalEsqueci(false)} className={css.btnFechar}>
                 <X size={20} />
               </button>
             </div>
             {resetEnviado ? (
               <div className="modal-body">
-                <div style={{
-                  padding: '16px',
-                  background: 'var(--color-success-tint)',
-                  border: '1px solid var(--color-success-border)',
-                  borderRadius: 'var(--radius-sm)',
-                  color: 'var(--status-done)',
-                  fontSize: '14px',
-                  textAlign: 'center'
-                }}>
+                <div className={css.resetEnviado}>
                   Se este e-mail estiver cadastrado, você receberá as instruções em breve.
                 </div>
               </div>
             ) : (
               <form onSubmit={handleResetSenha}>
                 <div className="modal-body">
-                  <p style={{ color: 'var(--text-secondary)', fontSize: '14px', marginBottom: '16px' }}>
+                  <p className={css.resetTexto}>
                     Informe seu e-mail para receber o link de redefinição de senha.
                   </p>
                   <div className="form-group">
@@ -326,9 +250,6 @@ export function Login() {
         </div>
       )}
 
-      <style>{`
-        @keyframes spin { to { transform: rotate(360deg); } }
-      `}</style>
     </div>
   )
 }

@@ -3,6 +3,7 @@ import { GlassPanel } from '../components/GlassPanel'
 import { useDatabase } from '../hooks/useDatabase'
 import { Plus, Search, Trash2, Edit2, CarFront, X } from 'lucide-react'
 import { normalizarPlaca, formatarPlaca, placaValida } from '../utils/placa'
+import css from './Veiculos.module.css'
 
 export function Veiculos() {
   const { clientes, veiculos, loading, addVeiculo, updateVeiculo, deleteVeiculo } = useDatabase()
@@ -109,36 +110,35 @@ export function Veiculos() {
 
   return (
     <div className="dashboard-grid">
-      <section className="welcome-section stagger-1" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      <section className={`welcome-section stagger-1 ${css.topo}`}>
         <div>
           <h2>Veículos</h2>
           <p>Gerenciamento completo dos veiculos cadastrados no sistema.</p>
         </div>
-        <button className="btn-primary" onClick={handleOpenAdd} style={{ borderRadius: 'var(--radius-sm)', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <button className={`btn-primary ${css.btnNovo}`} onClick={handleOpenAdd}>
           <Plus size={16} /> Adicionar Veiculo
         </button>
       </section>
 
       <GlassPanel className="panel stagger-2">
-        <div className="panel-header" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '16px', marginBottom: '24px' }}>
-          <div style={{ position: 'relative', width: '100%' }}>
+        <div className={`panel-header ${css.panelHeader}`}>
+          <div className={css.busca}>
             <input
               type="text"
-              className="form-control"
+              className={`form-control ${css.buscaInput}`}
               placeholder="Buscar veiculo por modelo, marca, placa, proprietario ou observacao..."
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
-              style={{ paddingLeft: '40px' }}
             />
-            <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: 16, top: 13 }} />
+            <Search size={18} color="var(--text-secondary)" className={css.buscaIcone} />
           </div>
         </div>
 
         <div className="tech-table-container">
           {loading ? (
-            <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '24px' }}>Buscando veiculos...</div>
+            <div className={css.aviso}>Buscando veiculos...</div>
           ) : filteredVeiculos.length === 0 ? (
-            <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '24px' }}>Nenhum veiculo encontrado.</div>
+            <div className={css.aviso}>Nenhum veiculo encontrado.</div>
           ) : (
             <table className="tech-table">
               <thead>
@@ -156,36 +156,36 @@ export function Veiculos() {
                   const client = clientes.find(c => c.id === (v.cliente_id || v.id_cliente)) || { nome: 'Desconhecido' }
                   return (
                     <tr key={v.id}>
-                      <td style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                        <div style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-sm)', background: 'var(--color-primary-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--neon-orange)' }}>
+                      <td className={css.celulaNome}>
+                        <div className={css.icone}>
                           <CarFront size={18} />
                         </div>
                         <div>
-                          <strong style={{ fontSize: '15px' }}>{v.marca} {v.modelo}</strong>
+                          <strong className={css.nome}>{v.marca} {v.modelo}</strong>
                           {v.observacoes && (
-                            <span style={{ display: 'block', fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px' }}>
+                            <span className={css.observacao}>
                               {v.observacoes}
                             </span>
                           )}
                         </div>
                       </td>
                       <td>
-                        <span style={{ color: 'var(--neon-orange)', fontWeight: '600', fontSize: '13px', display: 'block' }}>{v.placa}</span>
-                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{v.ano} - {v.cor}</span>
+                        <span className={css.placa}>{v.placa}</span>
+                        <span className={css.anoCor}>{v.ano} - {v.cor}</span>
                       </td>
                       <td>{client.nome}</td>
-                      <td>{v.servico_atual || <span style={{ color: 'var(--text-muted)' }}>Nenhum ativo</span>}</td>
+                      <td>{v.servico_atual || <span className={css.semServico}>Nenhum ativo</span>}</td>
                       <td>
                         <span className={`status-badge ${v.status === 'Concluido' || v.status === 'Concluído' ? 'status-done' : v.status === 'Em Andamento' ? 'status-progress' : 'status-pending'}`}>
                           {v.status || 'Pendente'}
                         </span>
                       </td>
                       <td>
-                        <div style={{ display: 'flex', gap: '8px' }}>
-                          <button className="btn-secondary" onClick={() => handleOpenEdit(v)} style={{ padding: '6px 10px', borderRadius: 'var(--radius-sm)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <div className={css.acoes}>
+                          <button className={`btn-secondary ${css.btnAcao}`} onClick={() => handleOpenEdit(v)}>
                             <Edit2 size={12} /> Editar
                           </button>
-                          <button className="btn-danger" onClick={() => confirm(`Excluir ${v.marca} ${v.modelo} (${v.placa})?`) && deleteVeiculo(v.id)} style={{ padding: '6px' }}>
+                          <button className={`btn-danger ${css.btnIcone}`} onClick={() => confirm(`Excluir ${v.marca} ${v.modelo} (${v.placa})?`) && deleteVeiculo(v.id)}>
                             <Trash2 size={14} />
                           </button>
                         </div>
@@ -204,7 +204,7 @@ export function Veiculos() {
           <div className="modal-content">
             <div className="modal-header">
               <h3>{editingId ? 'Editar Veiculo' : 'Cadastrar Novo Veiculo'}</h3>
-              <button onClick={() => setModalOpen(false)} style={{ color: 'var(--text-secondary)' }}><X size={20} /></button>
+              <button onClick={() => setModalOpen(false)} className={css.btnFechar}><X size={20} /></button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
@@ -220,12 +220,11 @@ export function Veiculos() {
                   <label>Placa do veiculo</label>
                   <input
                     type="text"
-                    className="form-control"
+                    className={`form-control ${css.campoPlaca}`}
                     placeholder="Ex: ABC1D23 ou ABC-1234"
                     value={placa}
                     onChange={(e) => setPlaca(formatarPlaca(e.target.value))}
                     maxLength={8}
-                    style={{ letterSpacing: '2px', fontWeight: 'bold', fontSize: '16px', textTransform: 'uppercase' }}
                     required
                   />
                 </div>

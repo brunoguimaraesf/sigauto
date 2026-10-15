@@ -5,6 +5,7 @@ import { useDatabase } from '../hooks/useDatabase'
 import { maskCNPJ, maskTelefone } from '../utils/masks'
 import { UFS, maskCep, cepValido, buscarCep } from '../utils/endereco'
 import { validarCNPJ, validarEmail } from '../utils/validacao'
+import css from './ConfiguracaoOficina.module.css'
 
 // RF05: dados que identificam a oficina no cabecalho da O.S. em PDF.
 // Escrita restrita ao gestor pelo RLS da migracao 18; a rota tambem e de gestor.
@@ -50,7 +51,7 @@ export function ConfiguracaoOficina() {
 
       {carregandoOficina ? (
         <GlassPanel className="panel">
-          <p style={{ color: 'var(--text-secondary)' }}>Carregando configuração da oficina...</p>
+          <p className={css.subtitulo}>Carregando configuração da oficina...</p>
         </GlassPanel>
       ) : (
         <>
@@ -127,7 +128,7 @@ function FormularioOficina({ oficina, setStatus }) {
     <GlassPanel className="panel stagger-2">
       <form onSubmit={handleSubmit} noValidate>
         <div className="panel-header">
-          <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <h3 className={css.tituloPainel}>
             <Building2 size={20} color="var(--neon-orange)" /> Identificação
           </h3>
         </div>
@@ -158,7 +159,7 @@ function FormularioOficina({ oficina, setStatus }) {
           </div>
         </div>
 
-        <div className="panel-header" style={{ marginTop: '8px' }}>
+        <div className={`panel-header ${css.panelHeaderEspacado}`}>
           <h3>Endereço</h3>
         </div>
 
@@ -178,11 +179,11 @@ function FormularioOficina({ oficina, setStatus }) {
               }}
               aria-describedby="of-cep-aviso"
             />
-            <span id="of-cep-aviso" style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+            <span id="of-cep-aviso" className={css.avisoCep}>
               {buscandoCep ? 'Buscando endereço…' : avisoCep}
             </span>
           </div>
-          <div className="form-group" style={{ gridColumn: 'span 2' }}>
+          <div className={`form-group ${css.campoLargo}`}>
             <label htmlFor="of-logradouro">Logradouro</label>
             <input id="of-logradouro" className="form-control" maxLength={160} value={form.logradouro} onChange={e => set('logradouro', e.target.value)} />
           </div>
@@ -227,13 +228,13 @@ function FormularioOficina({ oficina, setStatus }) {
             value={form.texto_rodape}
             onChange={e => set('texto_rodape', e.target.value)}
           />
-          <span style={{ fontSize: '12px', color: 'var(--text-muted)', alignSelf: 'flex-end' }}>
+          <span className={css.contador}>
             {form.texto_rodape.length}/{LIMITE_RODAPE}
           </span>
         </div>
 
-        <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-          <button type="submit" className="btn-primary" disabled={salvando} style={{ borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className={css.acoesForm}>
+          <button type="submit" className={`btn-primary ${css.btnSalvar}`} disabled={salvando}>
             <Save size={16} /> {salvando ? 'Salvando...' : 'Salvar dados'}
           </button>
         </div>
@@ -301,35 +302,26 @@ function PainelLogo({ oficina, setStatus }) {
   return (
     <GlassPanel className="panel stagger-3">
       <div className="panel-header">
-        <h3 style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <h3 className={css.tituloPainel}>
           <ImageUp size={20} color="var(--neon-orange)" /> Logotipo
         </h3>
       </div>
 
-      <div style={{ display: 'flex', gap: '24px', alignItems: 'center', flexWrap: 'wrap' }}>
-        <div style={{
-          width: '160px', height: '96px', borderRadius: 'var(--radius-sm)',
-          border: '1px dashed var(--border-highlight)', display: 'flex',
-          alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-          background: 'var(--bg-subtle)', flexShrink: 0,
-        }}>
+      <div className={css.logoArea}>
+        <div className={css.logoPrevia}>
           {previa
-            ? <img src={previa} alt={`Logotipo de ${oficina?.nome_fantasia || 'oficina'}`} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-            : <span style={{ fontSize: '12px', color: 'var(--text-muted)', textAlign: 'center', padding: '8px' }}>{logoPath ? 'Carregando...' : 'Sem logotipo'}</span>}
+            ? <img src={previa} alt={`Logotipo de ${oficina?.nome_fantasia || 'oficina'}`} className={css.logoImg} />
+            : <span className={css.logoVazio}>{logoPath ? 'Carregando...' : 'Sem logotipo'}</span>}
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', flex: 1, minWidth: '220px' }}>
-          <p style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>
+        <div className={css.logoControles}>
+          <p className={css.logoTexto}>
             PNG, JPEG ou WebP, até 2 MB. {!oficina && 'Salve os dados da oficina antes de enviar o logotipo.'}
           </p>
-          <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap' }}>
+          <div className={css.logoBotoes}>
             <label
               htmlFor="of-logo"
-              className="btn-secondary"
-              style={{
-                borderRadius: 'var(--radius-sm)', padding: '8px 16px', cursor: oficina && !enviando ? 'pointer' : 'not-allowed',
-                opacity: oficina && !enviando ? 1 : 0.5,
-              }}
+              className={`btn-secondary ${css.labelUpload}${oficina && !enviando ? '' : ` ${css.labelUploadDesabilitado}`}`}
             >
               {enviando ? 'Enviando...' : logoPath ? 'Trocar logotipo' : 'Enviar logotipo'}
             </label>
@@ -340,10 +332,10 @@ function PainelLogo({ oficina, setStatus }) {
               aria-label="Enviar logotipo"
               onChange={handleArquivo}
               disabled={!oficina || enviando}
-              style={{ position: 'absolute', width: 1, height: 1, opacity: 0, pointerEvents: 'none' }}
+              className={css.inputArquivo}
             />
             {logoPath && (
-              <button type="button" className="btn-danger" onClick={handleRemover} disabled={enviando} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <button type="button" className={`btn-danger ${css.btnRemover}`} onClick={handleRemover} disabled={enviando}>
                 <Trash2 size={14} /> Remover
               </button>
             )}

@@ -4,6 +4,7 @@ import { useDatabase } from '../hooks/useDatabase'
 import { BarChart3, TrendingUp, Package, Users, Wrench, Download, Percent } from 'lucide-react'
 import { calcOSCommissions, calcOSTotals, formatCurrency, resolveEquipe } from '../utils/osFinance'
 import { supabaseDb } from '../supabaseClient'
+import css from './Relatorios.module.css'
 
 const TIPOS = [
   { id: 'faturamento', label: 'Faturamento', icon: TrendingUp, desc: 'Receita por periodo' },
@@ -276,67 +277,62 @@ export function Relatorios() {
         <p>Analise de desempenho da oficina por periodo.</p>
       </section>
 
-      <section style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }} className="stagger-2">
+      <section className={`stagger-2 ${css.tipos}`}>
         {TIPOS.map(t => {
           const CardIcon = t.icon
           return (
             <GlassPanel
               key={t.id}
-              className="metric-card"
+              className={`metric-card ${css.cardTipo}${tipoSel === t.id ? ` ${css.cardTipoAtivo}` : ''}`}
               onClick={() => setTipoSel(t.id)}
               role="button"
               tabIndex={0}
               onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && setTipoSel(t.id)}
-              style={{
-                cursor: 'pointer', padding: '16px 20px', flex: '1', minWidth: '160px', textAlign: 'center',
-                borderColor: tipoSel === t.id ? 'var(--color-primary)' : 'var(--border-color)',
-                background: tipoSel === t.id ? 'var(--color-primary-tint)' : 'var(--bg-surface)',
-              }}
             >
-              <CardIcon size={20} color={tipoSel === t.id ? 'var(--neon-orange)' : 'var(--text-secondary)'} style={{ marginBottom: '8px' }} />
-              <div style={{ fontWeight: '600', fontSize: '13px', color: tipoSel === t.id ? 'var(--neon-orange)' : 'var(--text-primary)', marginBottom: '2px' }}>{t.label}</div>
-              <div style={{ fontSize: '11px', color: 'var(--text-muted)' }}>{t.desc}</div>
+              <CardIcon size={20} color={tipoSel === t.id ? 'var(--neon-orange)' : 'var(--text-secondary)'} className={css.cardIcone} />
+              <div className={`${css.cardLabel}${tipoSel === t.id ? ` ${css.cardLabelAtivo}` : ''}`}>{t.label}</div>
+              <div className={css.cardDesc}>{t.desc}</div>
             </GlassPanel>
           )
         })}
       </section>
 
       <GlassPanel className="panel stagger-3">
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', gap: '12px', flex: 1 }}>
-            <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
+        <div className={css.filtros}>
+          <div className={css.filtrosCampos}>
+            <div className={`form-group ${css.campo}`}>
               <label>Data Inicio</label>
               <input type="date" className="form-control" value={dataInicio} onChange={e => setDataInicio(e.target.value)} />
             </div>
-            <div className="form-group" style={{ marginBottom: 0, flex: 1 }}>
+            <div className={`form-group ${css.campo}`}>
               <label>Data Fim</label>
               <input type="date" className="form-control" value={dataFim} onChange={e => setDataFim(e.target.value)} />
             </div>
           </div>
-          <button className="btn-secondary" onClick={exportarCSV} style={{ padding: '10px 16px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '8px', alignSelf: 'flex-end' }}>
+          <button className={`btn-secondary ${css.btnExportar}`} onClick={exportarCSV}>
             <Download size={14} /> Exportar CSV
           </button>
         </div>
       </GlassPanel>
 
       <GlassPanel className="panel stagger-4">
-        <div className="panel-header" style={{ marginBottom: '24px' }}>
-          <h3><Icon size={18} style={{ marginRight: '8px', verticalAlign: 'middle', color: 'var(--neon-orange)' }} />{dados.titulo}</h3>
+        <div className={`panel-header ${css.panelHeader}`}>
+          <h3><Icon size={18} className={css.tituloIcone} />{dados.titulo}</h3>
         </div>
 
         {dados.totais.length > 0 && (
-          <div style={{ display: 'flex', gap: '16px', marginBottom: '24px', flexWrap: 'wrap' }}>
+          <div className={css.totais}>
             {dados.totais.map((t, i) => (
-              <div key={i} style={{ padding: '16px 20px', background: 'var(--bg-subtle)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', flex: 1, minWidth: '140px', textAlign: 'center' }}>
-                <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '6px' }}>{t.label}</div>
-                <div style={{ fontFamily: 'var(--font-display)', fontSize: '22px', fontWeight: '600', color: 'var(--neon-orange)' }}>{t.valor}</div>
+              <div key={i} className={css.total}>
+                <div className={css.totalLabel}>{t.label}</div>
+                <div className={css.totalValor}>{t.valor}</div>
               </div>
             ))}
           </div>
         )}
 
         {dados.linhas.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-secondary)' }}>Nenhum dado encontrado para o periodo selecionado.</div>
+          <div className={css.vazio}>Nenhum dado encontrado para o periodo selecionado.</div>
         ) : (
           <div className="tech-table-container">
             <table className="tech-table">

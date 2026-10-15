@@ -1,0 +1,181 @@
+/* Item da lista de notificacoes do Header. */
+.notifItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 16px;
+  background: transparent;
+  /* Sem borda: o estilo inline anterior definia border-bottom e depois
+     border: none, que no objeto JS sobrescrevia a borda inteira. */
+  border: none;
+  cursor: pointer;
+  text-align: left;
+  transition: background 0.12s;
+}
+
+.notifItem:hover,
+.notifItem:focus-visible {
+  background: var(--bg-subtle);
+}
+
+/* A especificidade extra impede que .top-header, carregado depois, recoloque
+   o unico item do cabecalho no canto esquerdo. */
+:global(.top-header).header {
+  justify-content: flex-end;
+}
+
+/* Ancora o dropdown de notificacoes. */
+.wrapper {
+  position: relative;
+  margin-left: auto;
+}
+
+/* Acompanha .btn-icon do index.css. */
+.bell {
+  position: relative;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background 0.15s;
+  background: transparent;
+  color: var(--text-secondary);
+}
+
+/* Estado aberto do sino. */
+.bellOpen {
+  background: var(--color-primary-tint);
+  color: var(--neon-orange);
+}
+
+.badge {
+  position: absolute;
+  top: 4px;
+  right: 4px;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--neon-orange);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.dropdown {
+  position: absolute;
+  top: calc(100% + 10px);
+  right: 0;
+  width: 340px;
+  background: var(--bg-surface);
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: 200;
+  overflow: hidden;
+}
+
+.dropHeader {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dropTitulo {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  font-family: var(--font-display);
+}
+
+.dropContador {
+  font-size: 11px;
+  color: var(--neon-orange);
+  font-weight: 600;
+}
+
+.lista {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.vazio {
+  padding: 32px 16px;
+  text-align: center;
+}
+
+.vazioIcone {
+  margin-bottom: 10px;
+  opacity: 0.7;
+}
+
+.vazioTexto {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.notifIcone {
+  margin-top: 2px;
+  flex-shrink: 0;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--bg-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.notifTexto {
+  flex: 1;
+  min-width: 0;
+}
+
+.notifTitulo {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.notifDesc {
+  font-size: 11px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* A cor do ponto vem do status da O.S. e continua inline. */
+.notifDot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  margin-top: 6px;
+}
+
+.rodape {
+  padding: 10px 16px;
+  border-top: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.rodapeInfo {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Acompanha .btn-link do index.css. */
+.rodapeBtn {
+  font-size: 11px;
+}

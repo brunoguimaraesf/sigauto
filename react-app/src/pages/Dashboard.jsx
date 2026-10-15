@@ -3,6 +3,7 @@ import { GlassPanel } from '../components/GlassPanel'
 import { useDatabase } from '../hooks/useDatabase'
 import { Wrench, Users, CarFront, FileText, ClipboardList, Trash2, CheckCircle, Clock, XCircle, Hourglass } from 'lucide-react'
 import { statusOSLabel, statusOSClasse } from '../utils/os'
+import css from './Dashboard.module.css'
 
 export function Dashboard() {
   const {
@@ -136,7 +137,7 @@ export function Dashboard() {
 
   if (loading) {
     return (
-      <div style={{ padding: '48px', color: 'var(--text-secondary)', textAlign: 'center' }}>
+      <div className={css.carregando}>
         <h2>Carregando painel...</h2>
       </div>
     )
@@ -144,23 +145,21 @@ export function Dashboard() {
 
   return (
     <div className="dashboard-grid">
-      <section className="welcome-section stagger-1" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      <section className={`welcome-section stagger-1 ${css.topo}`}>
         <div>
           <h2>Visão Geral</h2>
           <p>Resumo da operação da oficina.</p>
         </div>
-        <div style={{ display: 'flex', gap: '12px' }}>
+        <div className={css.abas}>
           <button
-            className={`btn-secondary ${activeTab === 'overview' ? 'active' : ''}`}
+            className={`btn-secondary ${css.btnAba} ${activeTab === 'overview' ? 'active' : ''}`}
             onClick={() => setActiveTab('overview')}
-            style={{ borderRadius: 'var(--radius-sm)', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}
           >
             <ClipboardList size={16} /> Visão Geral
           </button>
           <button
-            className={`btn-secondary ${activeTab === 'orders' ? 'active' : ''}`}
+            className={`btn-secondary ${css.btnAba} ${activeTab === 'orders' ? 'active' : ''}`}
             onClick={() => setActiveTab('orders')}
-            style={{ borderRadius: 'var(--radius-sm)', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}
           >
             <FileText size={16} /> Ordens de Serviço
           </button>
@@ -173,30 +172,30 @@ export function Dashboard() {
           <section className="metrics-grid">
             <GlassPanel className="metric-card metric-card--accent stagger-2">
               <div className="metric-header">
-                <span className="metric-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className={`metric-title ${css.metricTitulo}`}>
                   <CarFront size={16} className="metric-icon" /> Veículos Cadastrados
                 </span>
-                <span className="metric-trend positive" style={{ fontSize: '10px' }}>ATIVOS</span>
+                <span className={`metric-trend positive ${css.metricTrend}`}>ATIVOS</span>
               </div>
               <div className="metric-value">{activeVehiclesCount}</div>
             </GlassPanel>
             
             <GlassPanel className="metric-card metric-card--info stagger-3">
               <div className="metric-header">
-                <span className="metric-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className={`metric-title ${css.metricTitulo}`}>
                   <Wrench size={16} className="metric-icon" /> Em Manutenção
                 </span>
-                <span className="metric-trend metric-context" style={{ fontSize: '10px' }}>EM BOX</span>
+                <span className={`metric-trend metric-context ${css.metricTrend}`}>EM BOX</span>
               </div>
               <div className="metric-value">{maintenanceCount}</div>
             </GlassPanel>
 
             <GlassPanel className="metric-card metric-card--success stagger-4 highlight-card">
               <div className="metric-header">
-                <span className="metric-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <span className={`metric-title ${css.metricTitulo}`}>
                   <Users size={16} className="metric-icon" /> Faturamento
                 </span>
-                <span className="metric-trend positive" style={{ fontSize: '10px' }}>RECEITA</span>
+                <span className={`metric-trend positive ${css.metricTrend}`}>RECEITA</span>
               </div>
               <div className="metric-value">R$ {(totalRevenue / 1000).toFixed(1)}k</div>
               <div className="metric-progress-bar">
@@ -214,25 +213,25 @@ export function Dashboard() {
 
               <div className="list-container">
                 {recentOrders.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '40px 24px', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '12px' }}>
+                  <div className={css.listaVazia}>
                     <FileText size={28} color="var(--text-muted)" />
-                    <span style={{ color: 'var(--text-secondary)' }}>Nenhuma O.S. aberta esta semana.</span>
-                    <button className="btn-primary" onClick={() => setActiveTab('orders')} style={{ marginTop: '4px' }}>Abrir nova O.S.</button>
+                    <span className={css.listaVaziaTexto}>Nenhuma O.S. aberta esta semana.</span>
+                    <button className={`btn-primary ${css.btnListaVazia}`} onClick={() => setActiveTab('orders')}>Abrir nova O.S.</button>
                   </div>
                 ) : (
                   recentOrders.map((os) => (
                     <div key={os.id} className="list-item">
-                      <div className="car-indicator" style={{ backgroundColor: 'var(--color-accent-tint)', borderColor: 'var(--color-accent-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', color: 'var(--neon-orange)' }}>
+                      <div className={`car-indicator ${css.inicialVeiculo}`}>
                         {os.veiculoInfo?.charAt(0) || 'V'}
                       </div>
                       <div className="item-details">
                         <h4>{os.veiculoInfo}</h4>
-                        <span style={{ display: 'block', marginBottom: '2px' }}>{os.veiculoPlaca} • {os.clienteNome}</span>
-                        <span style={{ color: 'var(--neon-orange)', fontSize: '12px', fontWeight: '600' }}>{os.servicoNome}</span>
+                        <span className={css.itemPlaca}>{os.veiculoPlaca} • {os.clienteNome}</span>
+                        <span className={css.itemServico}>{os.servicoNome}</span>
                       </div>
                       
-                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
-                        <span style={{ fontFamily: 'var(--font-display)', fontWeight: '600', fontSize: '14px' }}>
+                      <div className={css.itemLateral}>
+                        <span className={css.itemValor}>
                           {os.valorExibido > 0 ? `R$ ${os.valorExibido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
                         </span>
                         <div className={`status-badge ${statusOSClasse(os.status)}`}>
@@ -248,29 +247,29 @@ export function Dashboard() {
             <GlassPanel className="panel stagger-6">
               <div className="panel-header">
                 <h3>Situação da Oficina</h3>
-                <span style={{ fontSize: '11px', color: 'var(--text-muted)', fontFamily: 'var(--font-display)' }}>
+                <span className={css.totalOS}>
                   {osStats.total} OS total
                 </span>
               </div>
 
               {/* Mini-cards: veículos e clientes */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px', marginBottom: '20px' }}>
-                <div className="resumo-oficina--accent" style={{ padding: '10px 12px', borderRadius: 'var(--radius-sm)' }}>
-                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+              <div className={css.resumoGrade}>
+                <div className={`resumo-oficina--accent ${css.resumoCard}`}>
+                  <div className={css.resumoRotulo}>
                     <CarFront size={10} /> Veículos
                   </div>
-                  <div style={{ fontSize: '24px', fontWeight: '700', fontVariantNumeric: 'tabular-nums', color: 'var(--neon-orange)' }}>{veiculos.length}</div>
+                  <div className={css.resumoValorAccent}>{veiculos.length}</div>
                 </div>
-                <div className="resumo-oficina--info" style={{ padding: '10px 12px', borderRadius: 'var(--radius-sm)' }}>
-                  <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                <div className={`resumo-oficina--info ${css.resumoCard}`}>
+                  <div className={css.resumoRotulo}>
                     <Users size={10} /> Clientes
                   </div>
-                  <div style={{ fontSize: '24px', fontWeight: '700', fontVariantNumeric: 'tabular-nums', color: 'var(--status-progress)' }}>{clientes.length}</div>
+                  <div className={css.resumoValorInfo}>{clientes.length}</div>
                 </div>
               </div>
 
               {/* Barras de status por OS */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+              <div className={css.statusLista}>
                 {[
                   { label: 'Abertas',       count: osStats.abertas,     color: 'var(--status-pending)', Icon: Clock },
                   { label: 'Em Andamento',  count: osStats.emAndamento,  color: 'var(--status-progress)', Icon: Wrench },
@@ -281,16 +280,16 @@ export function Dashboard() {
                   const pct = osStats.total > 0 ? Math.round((count / osStats.total) * 100) : 0
                   return (
                     <div key={label}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '5px' }}>
-                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <div className={css.statusLinha}>
+                        <span className={css.statusRotulo}>
                           <Icon size={12} color={color} /> {label}
                         </span>
-                        <span style={{ fontSize: '12px', fontWeight: '700', color, fontVariantNumeric: 'tabular-nums' }}>
-                          {count} <span style={{ fontSize: '10px', fontWeight: '400', color: 'var(--text-muted)' }}>({pct}%)</span>
+                        <span className={css.statusContagem} style={{ color }}>
+                          {count} <span className={css.statusPercentual}>({pct}%)</span>
                         </span>
                       </div>
-                      <div style={{ height: '4px', background: 'var(--bg-subtle)', borderRadius: '2px', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${pct}%`, background: color, borderRadius: '2px', transition: 'width 0.5s ease' }} />
+                      <div className={css.statusBarra}>
+                        <div className={css.statusBarraPreenchida} style={{ width: `${pct}%`, background: color }} />
                       </div>
                     </div>
                   )
@@ -299,9 +298,9 @@ export function Dashboard() {
 
               {/* Taxa de conclusão */}
               {osStats.total > 0 && (
-                <div style={{ marginTop: '16px', paddingTop: '14px', borderTop: '1px solid var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Taxa de conclusão</span>
-                  <span style={{ fontSize: '16px', fontVariantNumeric: 'tabular-nums', fontWeight: '700', color: 'var(--status-done)' }}>
+                <div className={css.taxaConclusao}>
+                <span className={css.taxaRotulo}>Taxa de conclusão</span>
+                  <span className={css.taxaValor}>
                     {Math.round((osStats.concluidas / osStats.total) * 100)}%
                   </span>
                 </div>
@@ -314,14 +313,14 @@ export function Dashboard() {
       {/* --- ABA 2: LISTAGEM DE ORDENS DE SERVIÇO --- */}
       {activeTab === 'orders' && (
         <GlassPanel className="panel stagger-2">
-          <div className="panel-header" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '16px', marginBottom: '24px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <div className={`panel-header ${css.panelHeader}`}>
+            <div className={css.headerLinha}>
               <h3>Todas as Ordens de Serviço</h3>
               <button className="btn-primary" onClick={() => setActiveTab('new-order')}>+ Nova O.S.</button>
             </div>
             
-            <div style={{ display: 'flex', gap: '16px', flexWrap: 'wrap', marginTop: '8px' }}>
-              <div style={{ flex: 1, minWidth: '240px' }}>
+            <div className={css.filtros}>
+              <div className={css.filtroBusca}>
                 <input 
                   type="text" 
                   className="form-control" 
@@ -330,7 +329,7 @@ export function Dashboard() {
                   onChange={(e) => setSearchFilter(e.target.value)}
                 />
               </div>
-              <div style={{ width: '180px' }}>
+              <div className={css.filtroStatus}>
                 <select
                   className="form-control"
                   value={statusFilter}
@@ -350,7 +349,7 @@ export function Dashboard() {
 
           <div className="tech-table-container">
             {filteredOrders.length === 0 ? (
-              <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '48px' }}>
+              <div className={css.vazio}>
                 Nenhuma O.S. encontrada com os filtros aplicados.
               </div>
             ) : (
@@ -370,12 +369,12 @@ export function Dashboard() {
                   {filteredOrders.map((os) => (
                     <tr key={os.id}>
                       <td>
-                        <strong style={{ color: 'var(--neon-orange)', display: 'block', fontSize: '13px' }}>{os.veiculoPlaca}</strong>
-                        <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{os.veiculoInfo}</span>
+                        <strong className={css.placa}>{os.veiculoPlaca}</strong>
+                        <span className={css.veiculo}>{os.veiculoInfo}</span>
                       </td>
                       <td>{os.clienteNome}</td>
                       <td>{os.servicoNome}</td>
-                      <td style={{ fontFamily: 'var(--font-display)', fontWeight: '600' }}>
+                      <td className={css.valor}>
                         {os.valorExibido > 0 ? `R$ ${os.valorExibido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
                       </td>
                       <td>
@@ -383,18 +382,17 @@ export function Dashboard() {
                           {statusOSLabel(os.status)}
                         </div>
                       </td>
-                      <td style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      <td className={css.celulaTextoMenor}>
                         {(() => { const d = new Date(os.data_abertura || os.criado_em); return isNaN(d) ? '—' : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) })()}
                       </td>
                       <td>
                         <button 
-                          className="btn-danger" 
+                          className={`btn-danger ${css.btnIcone}`}
                           onClick={() => {
                             if(confirm('Tem certeza que deseja excluir esta Ordem de Serviço?')) {
                               deleteOrdemServico(os.id)
                             }
                           }}
-                          style={{ padding: '6px' }}
                           title="Excluir O.S."
                         >
                           <Trash2 size={14} />
@@ -414,10 +412,10 @@ export function Dashboard() {
         <GlassPanel className="panel stagger-2">
           <div className="panel-header">
             <h3>Abertura de Nova Ordem de Serviço</h3>
-            <button className="btn-secondary" onClick={() => setActiveTab('overview')} style={{ padding: '8px 16px' }}>Cancelar</button>
+            <button className={`btn-secondary ${css.btnCancelar}`} onClick={() => setActiveTab('overview')}>Cancelar</button>
           </div>
 
-          <form onSubmit={handleSubmitOS} style={{ marginTop: '16px' }}>
+          <form onSubmit={handleSubmitOS} className={css.formulario}>
             <div className="form-row">
               <div className="form-group">
                 <label>Cliente Proprietário</label>
@@ -452,7 +450,7 @@ export function Dashboard() {
                   ))}
                 </select>
                 {!selectedCliente && (
-                  <span style={{ fontSize: '11px', color: 'var(--text-muted)' }}>Escolha um cliente primeiro.</span>
+                  <span className={css.dicaCampo}>Escolha um cliente primeiro.</span>
                 )}
               </div>
             </div>
@@ -509,13 +507,13 @@ export function Dashboard() {
               />
             </div>
 
-            <div className="alert-box" style={{ marginTop: '8px' }}>
+            <div className={`alert-box ${css.alerta}`}>
               Ao abrir a Ordem de Serviço, o status do veículo correspondente será automaticamente atualizado para **"{orderStatus}"** e o serviço atual dele será atualizado reativamente na frota.
             </div>
 
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+            <div className={css.acoesForm}>
               <button type="button" className="btn-secondary" onClick={() => setActiveTab('overview')}>Cancelar</button>
-              <button type="submit" className="btn-primary" style={{ padding: '12px 32px' }}>Confirmar O.S.</button>
+              <button type="submit" className={`btn-primary ${css.btnSalvar}`}>Confirmar O.S.</button>
             </div>
           </form>
         </GlassPanel>

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { GlassPanel } from '../components/GlassPanel'
 import { Plus, Edit2, UserX, X, Shield, User, Wrench, Search, RefreshCw } from 'lucide-react'
 import { supabase, supabaseDb } from '../supabaseClient'
+import css from './Usuarios.module.css'
 
 const PERFIL_ICONS = { gestor: Shield, atendente: User, mecanico: Wrench }
 const PERFIL_COLORS = {
@@ -145,32 +146,32 @@ export function Usuarios() {
 
   return (
     <div className="dashboard-grid">
-      <section className="welcome-section stagger-1" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      <section className={`welcome-section stagger-1 ${css.topo}`}>
         <div>
           <h2>Gestao de Usuarios</h2>
           <p>Controle de acesso e perfis do sistema SIGAuto.</p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn-secondary" onClick={carregarUsuarios} style={{ borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className={css.acoesTopo}>
+          <button className={`btn-secondary ${css.btnAtualizar}`} onClick={carregarUsuarios}>
             <RefreshCw size={16} /> Atualizar
           </button>
-          <button className="btn-primary" onClick={abrirNovo} style={{ borderRadius: 'var(--radius-sm)', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button className={`btn-primary ${css.btnNovo}`} onClick={abrirNovo}>
             <Plus size={16} /> Novo Usuario
           </button>
         </div>
       </section>
 
       <GlassPanel className="panel stagger-2">
-        <div style={{ position: 'relative', marginBottom: '24px' }}>
-          <Search size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: 14, top: 13 }} />
-          <input type="text" className="form-control" placeholder="Buscar por nome, e-mail ou perfil..." value={busca} onChange={e => setBusca(e.target.value)} style={{ paddingLeft: '40px' }} />
+        <div className={css.busca}>
+          <Search size={16} color="var(--text-secondary)" className={css.buscaIcone} />
+          <input type="text" className={`form-control ${css.buscaInput}`} placeholder="Buscar por nome, e-mail ou perfil..." value={busca} onChange={e => setBusca(e.target.value)} />
         </div>
 
         <div className="tech-table-container">
           {carregando ? (
-            <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-secondary)' }}>Carregando usuarios...</div>
+            <div className={css.vazio}>Carregando usuarios...</div>
           ) : filtrados.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-secondary)' }}>Nenhum usuario encontrado.</div>
+            <div className={css.vazio}>Nenhum usuario encontrado.</div>
           ) : (
             <table className="tech-table">
               <thead>
@@ -190,32 +191,32 @@ export function Usuarios() {
                   return (
                     <tr key={u.id}>
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700', flexShrink: 0 }}>
+                        <div className={css.celulaNome}>
+                          <div className={css.avatar}>
                             {u.nome?.charAt(0)?.toUpperCase()}
                           </div>
-                          <strong style={{ fontSize: '14px' }}>{u.nome}</strong>
+                          <strong className={css.nome}>{u.nome}</strong>
                         </div>
                       </td>
-                      <td style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{u.email}</td>
-                      <td style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{u.telefone || '-'}</td>
+                      <td className={css.celulaTexto}>{u.email}</td>
+                      <td className={css.celulaTexto}>{u.telefone || '-'}</td>
                       <td>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 10px', borderRadius: '100px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: pc.color, background: pc.bg, border: `1px solid ${pc.border}` }}>
+                        <span className={css.perfil} style={{ color: pc.color, background: pc.bg, border: `1px solid ${pc.border}` }}>
                           <PerfilIcon size={11} /> {u.perfil}
                         </span>
                       </td>
                       <td>
-                        <span style={{ padding: '4px 10px', borderRadius: '100px', fontSize: '11px', fontWeight: '600', color: u.ativo ? 'var(--status-done)' : 'var(--text-muted)', background: u.ativo ? 'var(--color-success-tint)' : 'var(--text-secondary)', border: `1px solid ${u.ativo ? 'var(--color-success-border)' : 'var(--border-color)'}` }}>
+                        <span className={css.status} style={{ color: u.ativo ? 'var(--status-done)' : 'var(--text-muted)', background: u.ativo ? 'var(--color-success-tint)' : 'var(--text-secondary)', border: `1px solid ${u.ativo ? 'var(--color-success-border)' : 'var(--border-color)'}` }}>
                           {u.ativo ? 'Ativo' : 'Inativo'}
                         </span>
                       </td>
                       <td>
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                          <button className="btn-secondary" onClick={() => abrirEditar(u)} style={{ padding: '5px 10px', fontSize: '12px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <div className={css.acoes}>
+                          <button className={`btn-secondary ${css.btnEditar}`} onClick={() => abrirEditar(u)}>
                             <Edit2 size={11} /> Editar
                           </button>
                           {u.ativo && (
-                            <button className="btn-danger" onClick={() => handleInativar(u.id)} style={{ padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px' }}>
+                            <button className={`btn-danger ${css.btnInativar}`} onClick={() => handleInativar(u.id)}>
                               <UserX size={11} /> Inativar
                             </button>
                           )}
@@ -235,7 +236,7 @@ export function Usuarios() {
           <div className="modal-content">
             <div className="modal-header">
               <h3>{editandoId ? 'Editar Usuario' : 'Novo Usuario'}</h3>
-              <button onClick={() => setModalAberto(false)} style={{ color: 'var(--text-secondary)' }}><X size={20} /></button>
+              <button onClick={() => setModalAberto(false)} className={css.btnFechar}><X size={20} /></button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
@@ -269,15 +270,15 @@ export function Usuarios() {
                     </div>
                   )}
                 </div>
-                <div className="alert-box" style={{ marginBottom: '12px', fontSize: '12px' }}>
+                <div className={`alert-box ${css.alertaCompacto}`}>
                   A <strong>comissão</strong> agora é configurada em <strong>Funcionários</strong>, vinculada ao colaborador.
                 </div>
                 {erroForm && (
-                  <div style={{ padding: '10px', background: 'var(--color-primary-tint)', border: '1px solid var(--color-primary-border)', borderRadius: 'var(--radius-sm)', color: 'var(--neon-orange)', fontSize: '13px' }}>
+                  <div className={css.erroForm}>
                     {erroForm}
                   </div>
                 )}
-                <div className="alert-box" style={{ marginTop: '12px' }}>
+                <div className={`alert-box ${css.alertaRodape}`}>
                   <strong>Perfis de acesso:</strong> <strong>Gestor</strong> tem acesso completo. <strong>Atendente</strong> gerencia OS, clientes e veiculos. <strong>Mecanico</strong> acessa diagnosticos e consultas tecnicas.
                 </div>
               </div>

@@ -1,0 +1,193 @@
+/* Padroes comuns das telas de listagem e do formulario de O.S. */
+.topo { composes: topo from '../listaPagina.module.css'; }
+.btnVoltar { composes: btnVoltar from './osForm.module.css'; }
+.secaoHeader { composes: secaoHeader from './osForm.module.css'; }
+.secaoTitulo { composes: secaoTitulo from './osForm.module.css'; }
+.iconeRotulo { composes: iconeRotulo from './osForm.module.css'; }
+.btnAtalho { composes: btnAtalho from './osForm.module.css'; }
+.campoSemMargem { composes: campoSemMargem from './osForm.module.css'; }
+.divisor { composes: divisor from './osForm.module.css'; }
+.colunas { composes: colunas from './osForm.module.css'; }
+.acoesForm { composes: acoesForm from './osForm.module.css'; }
+.btnCancelar { composes: btnCancelar from './osForm.module.css'; }
+.btnConfirmar { composes: btnConfirmar from './osForm.module.css'; }
+.resumoCliente { composes: resumo from './osForm.module.css'; }
+.resumoNome { composes: resumoNome from './osForm.module.css'; }
+.linhaPropria { composes: linhaPropria from './osForm.module.css'; }
+
+/* ── Tela de confirmacao, depois de abrir a O.S. ── */
+
+/* Acompanha .panel. */
+.painelSucesso {
+  text-align: center;
+  padding: 64px 48px;
+}
+
+.iconeSucesso {
+  margin-bottom: 20px;
+}
+
+.tituloSucesso {
+  font-family: var(--font-display);
+  margin-bottom: 12px;
+}
+
+.numeroSucesso {
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.dadosSucesso {
+  color: var(--neon-orange);
+  font-weight: 700;
+  margin-bottom: 32px;
+}
+
+.acoesSucesso {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+/* ── Busca de cliente ── */
+
+/* Acompanha .btn-link: nao quebra linha no meio de "Trocar". */
+.btnTrocar {
+  font-size: 11px;
+  white-space: nowrap;
+}
+
+.busca {
+  position: relative;
+}
+
+.buscaIcone {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+/* Acompanha .form-control: abre espaco para a lupa mesmo quando o estilo
+   global do campo e carregado depois deste modulo. */
+:global(.form-control).buscaInput {
+  padding-left: 32px;
+}
+
+.semResultado {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+}
+
+.resultados {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.resultado {
+  width: 100%;
+  text-align: left;
+  padding: 8px 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  cursor: pointer;
+  color: var(--text-primary);
+  font-size: 13px;
+}
+
+.resultado:hover,
+.resultado:focus-visible {
+  background: var(--bg-subtle);
+}
+
+.resultadoDetalhe {
+  display: block;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* Acompanha .btn-link: atalho do cliente generico de balcao. */
+.btnConsumidor {
+  font-size: 11px;
+  margin-top: 8px;
+}
+
+/* ── Cadastro rapido de cliente e de veiculo ── */
+.cadastroRapido {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.linha2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.linha3 {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 8px;
+}
+
+/* Acompanha .btn-secondary: salva o cadastro rapido sem enviar a O.S. */
+.btnSalvarRapido {
+  align-self: flex-start;
+  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  font-size: 12px;
+}
+
+.semVeiculo {
+  font-size: 12px;
+  color: var(--neon-orange);
+  margin-top: 6px;
+}
+
+.resumoVeiculo {
+  margin-top: 8px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.placaVeiculo {
+  color: var(--neon-orange);
+}
+
+/* ── Detalhes da O.S. ── */
+.gradeEquipe {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+/* Acompanha .form-group. */
+.campoQueixa {
+  margin-bottom: 12px;
+}
+
+/* Acompanha .form-control. */
+.textarea {
+  min-height: 72px;
+}
+
+.gradeDetalhes {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 12px;
+}

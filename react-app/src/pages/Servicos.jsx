@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { GlassPanel } from '../components/GlassPanel'
+import css from './Servicos.module.css'
 import { useDatabase } from '../hooks/useDatabase'
 import { Plus, Search, Trash2, Edit2, Wrench, X } from 'lucide-react'
 
@@ -69,38 +70,37 @@ export function Servicos() {
 
   return (
     <div className="dashboard-grid">
-      <section className="welcome-section stagger-1" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      <section className={`welcome-section stagger-1 ${css.topo}`}>
         <div>
           <h2>Catálogo de Serviços</h2>
           <p>Gerencie a tabela de preços e os pacotes de serviços da sua oficina.</p>
         </div>
-        <button className="btn-primary" onClick={handleOpenAdd} style={{ borderRadius: 'var(--radius-sm)', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <button className={`btn-primary ${css.btnNovo}`} onClick={handleOpenAdd}>
           <Plus size={16} /> Novo Serviço
         </button>
       </section>
 
       <GlassPanel className="panel stagger-2">
-        <div className="panel-header" style={{ flexDirection: 'column', alignItems: 'stretch', gap: '16px', marginBottom: '24px' }}>
-          <div style={{ position: 'relative', width: '100%' }}>
+        <div className={`panel-header ${css.panelHeader}`}>
+          <div className={css.busca}>
             <input 
               type="text" 
-              className="form-control" 
+              className={`form-control ${css.buscaInput}`}
               placeholder="Buscar serviço por nome ou descrição técnica..." 
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
-              style={{ paddingLeft: '40px' }}
             />
-            <Search size={18} color="var(--text-secondary)" style={{ position: 'absolute', left: 16, top: 13 }} />
+            <Search size={18} color="var(--text-secondary)" className={css.buscaIcone} />
           </div>
         </div>
 
         <div className="tech-table-container">
           {loading ? (
-            <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '24px' }}>
+            <div className={css.aviso}>
               Carregando catálogo de serviços...
             </div>
           ) : filteredServicos.length === 0 ? (
-            <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '24px' }}>
+            <div className={css.aviso}>
               Nenhum serviço catalogado ou correspondente encontrado.
             </div>
           ) : (
@@ -116,37 +116,35 @@ export function Servicos() {
               <tbody>
                 {filteredServicos.map((s) => (
                   <tr key={s.id}>
-                    <td style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <div style={{ width: '36px', height: '36px', borderRadius: 'var(--radius-sm)', background: 'var(--color-primary-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--neon-orange)' }}>
+                    <td className={css.celulaNome}>
+                      <div className={css.icone}>
                         <Wrench size={18} />
                       </div>
                       <div>
-                        <strong style={{ fontSize: '15px', color: 'var(--text-primary)' }}>{s.nome}</strong>
+                        <strong className={css.nome}>{s.nome}</strong>
                       </div>
                     </td>
-                    <td style={{ fontSize: '13px', color: 'var(--text-secondary)', maxWidth: '400px', lineHeight: '1.4' }}>
+                    <td className={css.descricao}>
                       {s.descricao}
                     </td>
-                    <td style={{ fontFamily: 'var(--font-display)', fontWeight: '600', fontSize: '16px', color: 'var(--neon-orange)' }}>
+                    <td className={css.preco}>
                       R$ {s.preco.toLocaleString('pt-BR')}
                     </td>
                     <td>
-                      <div style={{ display: 'flex', gap: '8px' }}>
+                      <div className={css.acoes}>
                         <button 
-                          className="btn-secondary" 
+                          className={`btn-secondary ${css.btnAcao}`}
                           onClick={() => handleOpenEdit(s)}
-                          style={{ padding: '6px 10px', borderRadius: 'var(--radius-sm)', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}
                         >
                           <Edit2 size={12} /> Editar
                         </button>
                         <button 
-                          className="btn-danger" 
+                          className={`btn-danger ${css.btnIcone}`}
                           onClick={() => {
                             if (confirm(`Tem certeza que deseja remover o serviço ${s.nome} do catálogo?`)) {
                               deleteServico(s.id)
                             }
                           }}
-                          style={{ padding: '6px' }}
                         >
                           <Trash2 size={14} />
                         </button>
@@ -166,7 +164,7 @@ export function Servicos() {
           <div className="modal-content">
             <div className="modal-header">
               <h3>{editingId ? 'Editar Detalhes do Serviço' : 'Cadastrar Novo Serviço no Catálogo'}</h3>
-              <button onClick={() => setModalOpen(false)} style={{ color: 'var(--text-secondary)' }}><X size={20} /></button>
+              <button onClick={() => setModalOpen(false)} className={css.btnFechar}><X size={20} /></button>
             </div>
 
             <form onSubmit={handleSubmit}>
@@ -183,7 +181,7 @@ export function Servicos() {
                       required 
                     />
                   </div>
-                  <div className="form-group" style={{ maxWidth: '200px' }}>
+                  <div className={`form-group ${css.campoCurto}`}>
                     <label>Preço Base (R$)</label>
                     <input 
                       type="number" 

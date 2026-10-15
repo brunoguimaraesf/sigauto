@@ -4,6 +4,7 @@ import { GlassPanel } from '../../components/GlassPanel'
 import { Plus, Search, Filter, Eye, CheckCircle } from 'lucide-react'
 import { useDatabase } from '../../hooks/useDatabase'
 import { calcOSTotals, formatCurrency, resolveEquipe } from '../../utils/osFinance'
+import css from './ListaOS.module.css'
 
 const STATUS_COLORS = {
   aberta: { color: 'var(--status-pending)', border: 'var(--color-warning-border)', bg: 'var(--color-warning-border)', label: 'Aberta' },
@@ -69,10 +70,7 @@ export function ListaOS() {
   const StatusBadge = ({ status }) => {
     const cfg = STATUS_COLORS[status] || STATUS_COLORS['aberta']
     return (
-      <span style={{
-        padding: '4px 10px', borderRadius: '100px', fontSize: '11px', fontWeight: '600',
-        color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.border}`
-      }}>
+      <span className={css.badgeStatus} style={{ color: cfg.color, background: cfg.bg, border: `1px solid ${cfg.border}` }}>
         {cfg.label}
       </span>
     )
@@ -81,10 +79,7 @@ export function ListaOS() {
   const PrioridadeBadge = ({ prioridade }) => {
     const cfg = PRIORIDADE_COLORS[prioridade] || PRIORIDADE_COLORS['normal']
     return (
-      <span style={{
-        padding: '4px 10px', borderRadius: '4px', fontSize: '11px', fontWeight: '700',
-        color: cfg.color, background: cfg.bg, textTransform: 'uppercase', letterSpacing: '0.5px'
-      }}>
+      <span className={css.badgePrioridade} style={{ color: cfg.color, background: cfg.bg }}>
         {cfg.label}
       </span>
     )
@@ -92,40 +87,37 @@ export function ListaOS() {
 
   return (
     <div className="dashboard-grid">
-      <section className="welcome-section stagger-1" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      <section className={`welcome-section stagger-1 ${css.topo}`}>
         <div>
           <h2>Ordens de Serviço</h2>
           <p>Gerencie todas as ordens de serviço da oficina.</p>
         </div>
         <button
-          className="btn-primary"
+          className={`btn-primary ${css.btnNovo}`}
           onClick={() => navigate('/ordens-servico/nova')}
-          style={{ borderRadius: 'var(--radius-sm)', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}
         >
           <Plus size={16} /> Nova O.S.
         </button>
       </section>
 
       <GlassPanel className="panel stagger-2">
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap' }}>
-          <div style={{ flex: 1, minWidth: '240px', position: 'relative' }}>
-            <Search size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: 14, top: 13 }} />
+        <div className={css.filtros}>
+          <div className={css.busca}>
+            <Search size={16} color="var(--text-secondary)" className={css.buscaIcone} />
             <input
               type="text"
-              className="form-control"
+              className={`form-control ${css.buscaInput}`}
               placeholder="Buscar por OS, cliente, placa..."
               value={busca}
               onChange={e => setBusca(e.target.value)}
-              style={{ paddingLeft: '40px' }}
             />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <div className={css.filtroStatus}>
             <Filter size={14} color="var(--text-secondary)" />
             <select
-              className="form-control"
+              className={`form-control ${css.selectStatus}`}
               value={filtroStatus}
               onChange={e => setFiltroStatus(e.target.value)}
-              style={{ width: '180px' }}
             >
               <option value="Todos">Todos os status</option>
               <option value="aberta">Aberta</option>
@@ -141,11 +133,11 @@ export function ListaOS() {
 
         <div className="tech-table-container">
           {loading ? (
-            <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-secondary)' }}>
+            <div className={css.vazio}>
               Carregando ordens de serviço...
             </div>
           ) : filtradas.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-secondary)' }}>
+            <div className={css.vazio}>
               Nenhuma O.S. encontrada.
             </div>
           ) : (
@@ -167,51 +159,48 @@ export function ListaOS() {
                 {filtradas.map(os => (
                   <tr key={os.id}>
                     <td>
-                      <strong style={{ color: 'var(--neon-orange)', fontFamily: 'var(--font-display)', fontSize: '15px' }}>
+                      <strong className={css.numero}>
                         #{os.numero_os}
                       </strong>
                     </td>
                     <td>
-                      <span style={{ display: 'block', fontWeight: '600' }}>{os.clienteNome}</span>
-                      <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{os.veiculoInfo}</span>
+                      <span className={css.cliente}>{os.clienteNome}</span>
+                      <span className={css.veiculo}>{os.veiculoInfo}</span>
                       {os.descricao && (
-                        <span style={{ fontSize: '11px', color: 'var(--text-muted)', display: 'block', marginTop: '2px', maxWidth: '220px', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
-                          title={os.descricao}>
+                        <span className={css.descricao} title={os.descricao}>
                           {os.descricao}
                         </span>
                       )}
                     </td>
                     <td>
-                      <span style={{ fontWeight: '600', color: 'var(--neon-orange)', letterSpacing: '1px' }}>{os.placa}</span>
+                      <span className={css.placa}>{os.placa}</span>
                     </td>
                     <td><PrioridadeBadge prioridade={os.prioridade} /></td>
-                    <td style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      <span style={{ display: 'block' }}>Mec.: {os.mecanicoNome}</span>
-                      <span style={{ display: 'block' }}>At.: {os.atendenteNome}</span>
+                    <td className={css.celulaTextoMenor}>
+                      <span className={css.linha}>Mec.: {os.mecanicoNome}</span>
+                      <span className={css.linha}>At.: {os.atendenteNome}</span>
                     </td>
                     <td><StatusBadge status={os.status} /></td>
-                    <td style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      <span style={{ display: 'block' }}>Serv.: {formatCurrency(os.valorServicos)}</span>
-                      <span style={{ display: 'block' }}>Pecas: {formatCurrency(os.valorPecas)}</span>
-                      <strong style={{ color: 'var(--status-done)' }}>{formatCurrency(os.valorTotal)}</strong>
+                    <td className={css.celulaTextoMenor}>
+                      <span className={css.linha}>Serv.: {formatCurrency(os.valorServicos)}</span>
+                      <span className={css.linha}>Pecas: {formatCurrency(os.valorPecas)}</span>
+                      <strong className={css.total}>{formatCurrency(os.valorTotal)}</strong>
                     </td>
-                    <td style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                    <td className={css.celulaTextoMenor}>
                       {(() => { const d = new Date(os.data_abertura || os.criado_em); return isNaN(d) ? '—' : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) })()}
                     </td>
                     <td>
-                      <div style={{ display: 'flex', gap: '6px' }}>
+                      <div className={css.acoes}>
                         <button
-                          className="btn-secondary"
+                          className={`btn-secondary ${css.btnAcao}`}
                           onClick={() => navigate(`/ordens-servico/${os.id}`)}
-                          style={{ padding: '6px 10px', fontSize: '12px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '4px' }}
                         >
                           <Eye size={12} /> Ver
                         </button>
                         {(os.status !== 'concluida' && os.status !== 'cancelada' && os.status !== 'Concluído') && (
                           <button
-                            className="btn-secondary"
+                            className={`btn-secondary ${css.btnEncerrar}`}
                             onClick={() => navigate(`/ordens-servico/${os.id}/encerrar`)}
-                            style={{ padding: '6px 10px', fontSize: '12px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--status-done)', borderColor: 'var(--color-success)' }}
                           >
                             <CheckCircle size={12} /> Encerrar
                           </button>

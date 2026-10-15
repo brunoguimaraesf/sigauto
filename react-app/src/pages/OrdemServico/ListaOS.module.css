@@ -1,0 +1,108 @@
+/* Padroes comuns das telas de listagem. */
+.topo { composes: topo from '../listaPagina.module.css'; }
+.btnNovo { composes: btnNovo from '../listaPagina.module.css'; }
+.buscaInput { composes: buscaInput from '../listaPagina.module.css'; }
+.vazio { composes: vazio from '../listaPagina.module.css'; }
+.celulaTextoMenor { composes: celulaTexto from '../listaPagina.module.css'; }
+.acoes { composes: acoesCompactas from '../listaPagina.module.css'; }
+.btnAcao { composes: btnEditar from '../listaPagina.module.css'; }
+
+/* Proprio desta tela. */
+
+/* As cores vem do status e da prioridade e continuam inline. */
+.badgeStatus {
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.badgePrioridade {
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Linha de filtros: busca elastica mais o seletor de status. */
+.filtros {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.busca {
+  flex: 1;
+  min-width: 240px;
+  position: relative;
+}
+
+.buscaIcone {
+  position: absolute;
+  left: 14px;
+  top: 13px;
+}
+
+.filtroStatus {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Acompanha .form-control. */
+.selectStatus {
+  width: 180px;
+}
+
+.numero {
+  color: var(--neon-orange);
+  font-family: var(--font-display);
+  font-size: 15px;
+}
+
+.cliente {
+  display: block;
+  font-weight: 600;
+}
+
+.veiculo {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+/* Descricao da O.S. numa linha so; o texto completo fica no title. */
+.descricao {
+  font-size: 11px;
+  color: var(--text-muted);
+  display: block;
+  margin-top: 2px;
+  max-width: 220px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.placa {
+  font-weight: 600;
+  color: var(--neon-orange);
+  letter-spacing: 1px;
+}
+
+/* Cada valor da celula em sua propria linha. */
+.linha {
+  display: block;
+}
+
+.total {
+  color: var(--status-done);
+}
+
+/* Acompanha .btn-secondary: encerrar e a acao de conclusao. */
+.btnEncerrar {
+  composes: btnEditar from '../listaPagina.module.css';
+  color: var(--status-done);
+  border-color: var(--color-success);
+}

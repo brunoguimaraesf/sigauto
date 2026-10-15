@@ -3,6 +3,7 @@ import { NavLink, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, CarFront, Users, Wrench, BarChart3, FileText, Package, Brain, UserCog, HardHat, History, LogOut, Building2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabaseDb } from '../supabaseClient'
+import css from './Sidebar.module.css'
 
 const PERFIL_COLORS = {
   gestor: { color: 'var(--color-primary)', label: 'Gestor' },
@@ -60,11 +61,11 @@ export function Sidebar() {
             <li className="sidebar-item"><NavLink to="/clientes" className={nc}><Users size={20} /> Clientes</NavLink></li>
             <li className="sidebar-item"><NavLink to="/veiculos" className={nc}><CarFront size={20} /> Veiculos</NavLink></li>
             <li className="sidebar-item"><NavLink to="/servicos" className={nc}><Wrench size={20} /> Servicos</NavLink></li>
-            <li className="sidebar-item" style={{ position: 'relative' }}>
+            <li className={`sidebar-item ${css.itemEstoque}`}>
               <NavLink to="/estoque" className={nc}>
                 <Package size={20} /> Estoque
                 {qtdAlertas > 0 && (
-                  <span style={{ marginLeft: 'auto', background: 'var(--color-warning)', color: 'var(--text-inverse)', borderRadius: '100px', fontSize: '10px', fontWeight: '700', padding: '1px 6px' }}>
+                  <span className={css.badgeAlertas}>
                     {qtdAlertas}
                   </span>
                 )}
@@ -85,14 +86,12 @@ export function Sidebar() {
 
       <div className="user-profile">
         <div className="avatar"></div>
-        <div className="user-info" style={{ flex: 1 }}>
+        <div className={`user-info ${css.userInfo}`}>
           <span className="user-name">{user?.user_metadata?.nome || user?.email?.split('@')[0] || 'Usuario'}</span>
           <span className="user-role" style={{ color: pc.color }}>{pc.label}</span>
         </div>
         {isAuthenticated && (
-          <button onClick={handleLogout} title="Sair" style={{ color: 'var(--text-muted)', background: 'none', border: 'none', cursor: 'pointer', padding: '4px', flexShrink: 0 }}
-            onMouseEnter={e => e.currentTarget.style.color = 'var(--color-danger)'}
-            onMouseLeave={e => e.currentTarget.style.color = 'var(--text-muted)'}>
+          <button onClick={handleLogout} title="Sair" className={css.logout}>
             <LogOut size={16} />
           </button>
         )}

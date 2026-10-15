@@ -1,0 +1,139 @@
+/* Padroes comuns das telas de listagem. */
+.topo { composes: topo from './listaPagina.module.css'; }
+.btnNovo { composes: btnNovo from './listaPagina.module.css'; }
+.panelHeader { composes: panelHeader from './listaPagina.module.css'; }
+.busca { composes: busca from './listaPagina.module.css'; }
+.buscaInput { composes: buscaInput from './listaPagina.module.css'; }
+.buscaIcone { composes: buscaIcone from './listaPagina.module.css'; }
+.aviso { composes: aviso from './listaPagina.module.css'; }
+.celulaNome { composes: celulaNome from './listaPagina.module.css'; }
+.acoes { composes: acoes from './listaPagina.module.css'; }
+.btnAcao { composes: btnAcao from './listaPagina.module.css'; }
+.btnIcone { composes: btnIcone from './listaPagina.module.css'; }
+.btnFechar { composes: btnFechar from './listaPagina.module.css'; }
+
+/* Proprio desta tela. */
+
+/* Erro de carregamento, em laranja em vez do cinza de .aviso. */
+.erro {
+  composes: aviso from './listaPagina.module.css';
+  color: var(--neon-orange);
+}
+
+/* Inicial do nome num circulo, aqui com a inicial em negrito. */
+.avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--color-primary-tint);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--neon-orange);
+  font-weight: bold;
+}
+
+.nome {
+  font-size: 15px;
+}
+
+.documento {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.telefone {
+  display: block;
+  font-size: 13px;
+  color: var(--text-primary);
+}
+
+.email {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.endereco {
+  display: block;
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+.semVeiculo {
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.garagem {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Etiqueta de um veiculo na garagem do cliente. */
+.veiculo {
+  padding: 2px 8px;
+  background: var(--color-primary-tint);
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--radius-sm);
+  font-size: 11px;
+  color: var(--neon-orange);
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.contagem {
+  font-family: var(--font-display);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+/* ── Formulario de endereco no modal ──
+   Grades proprias por linha: CEP mais logradouro, numero/complemento/bairro e
+   cidade mais UF. */
+.linhaCep {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 12px;
+}
+
+.linhaNumero {
+  display: grid;
+  grid-template-columns: 120px 1fr 1fr;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.linhaCidade {
+  display: grid;
+  grid-template-columns: 1fr 90px;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.dicaCep {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+.statusCep {
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+
+/* Acompanha .form-control: ponto de referencia vem depois da linha de cidade. */
+.campoReferencia {
+  margin-top: 12px;
+}
+
+/* Endereco em texto livre de cadastro antigo, antes da migracao 13. */
+.enderecoLegado {
+  display: block;
+  font-size: 11px;
+  color: var(--text-muted);
+  margin-top: 8px;
+}

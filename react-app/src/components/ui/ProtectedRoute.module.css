@@ -1,0 +1,39 @@
+/* Telas de espera e de acesso negado, ambas ocupando a viewport inteira. */
+.tela {
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-base);
+  color: var(--text-secondary);
+  font-family: var(--font-body);
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Variante de acesso negado: acompanha .tela. */
+.negado {
+  text-align: center;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 3px solid var(--color-primary-border);
+  border-top-color: var(--neon-orange);
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.icone {
+  font-size: 48px;
+}
+
+.titulo {
+  font-family: var(--font-display);
+  color: var(--text-primary);
+}
