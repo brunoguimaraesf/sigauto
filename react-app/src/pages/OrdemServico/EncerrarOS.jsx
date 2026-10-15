@@ -10,7 +10,7 @@ import { PAGAMENTO_LABEL } from '../../utils/osPdf'
 
 function Chip({ label, value, tone }) {
   return (
-    <div style={{ flex: 1, padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.02)' }}>
+    <div style={{ flex: 1, padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', background: 'var(--bg-subtle)' }}>
       <div style={{ color: 'var(--text-muted)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '3px' }}>{label}</div>
       <div style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: '600', color: tone || 'var(--text-primary)' }}>{formatCurrency(value)}</div>
     </div>
@@ -269,13 +269,13 @@ export function EncerrarOS() {
                 {descontoValor > 0 && (
                   <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)', display: 'flex', justifyContent: 'space-between' }}>
                     <span>Desconto aplicado</span>
-                    <span style={{ color: '#f87171', fontWeight: '600' }}>− {formatCurrency(descontoValor)}</span>
+                    <span style={{ color: 'var(--color-danger)', fontWeight: '600' }}>− {formatCurrency(descontoValor)}</span>
                   </div>
                 )}
               </div>
 
               {/* Valor final calculado */}
-              <div style={{ padding: '16px', background: 'rgba(232,89,12,0.06)', border: '1px solid rgba(232,89,12,0.2)', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
+              <div style={{ padding: '16px', background: 'var(--color-primary-tint)', border: '1px solid var(--color-primary-border)', borderRadius: 'var(--radius-sm)', textAlign: 'center' }}>
                 <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>Valor final</div>
                 <div style={{ fontFamily: 'var(--font-display)', fontSize: '32px', fontWeight: '700', color: 'var(--neon-orange)' }}>
                   {formatCurrency(valorFinal)}
@@ -312,7 +312,7 @@ export function EncerrarOS() {
               </div>
 
               {confirmando && (
-                <div className="alert-box" style={{ borderColor: 'rgba(255,179,0,0.3)', fontSize: '13px' }}>
+                <div className="alert-box" style={{ borderColor: 'var(--color-warning)', fontSize: '13px' }}>
                   Confirmar finalização com <strong>{formatCurrency(valorFinal)}</strong>
                   {descontoValor > 0 && <> (desconto {formatCurrency(descontoValor)})</>}
                   {' '}via <strong>{PAGAMENTO_LABEL[formaPagamento] || formaPagamento}</strong>. Esta ação não pode ser desfeita sem reabrir a O.S.
@@ -324,7 +324,7 @@ export function EncerrarOS() {
                   <>
                     <button type="button" className="btn-secondary" onClick={() => setConfirmando(false)}>Revisar</button>
                     <AcoesDocumentoOS os={os} cliente={cliente} veiculo={veiculo} extra={extraDocumento} compacto />
-                    <button type="submit" className="btn-primary" style={{ padding: '10px 24px', background: 'linear-gradient(135deg, var(--status-done), #00cc66)' }}>
+                    <button type="submit" className="btn-primary" style={{ padding: '10px 24px', background: 'var(--color-success)' }}>
                       <CheckCircle size={15} style={{ marginRight: '6px' }} /> Confirmar finalização
                     </button>
                   </>

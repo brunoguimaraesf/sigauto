@@ -6,9 +6,9 @@ import { supabaseDb } from '../supabaseClient'
 
 const CARGO_ICONS = { gestor: Shield, atendente: User, mecanico: Wrench }
 const CARGO_COLORS = {
-  gestor: { color: 'var(--neon-orange)', bg: 'rgba(232, 89, 12, 0.08)', border: 'rgba(232, 89, 12, 0.2)' },
-  atendente: { color: 'var(--electric-blue)', bg: 'rgba(0, 229, 255, 0.08)', border: 'rgba(0, 229, 255, 0.2)' },
-  mecanico: { color: 'var(--status-done)', bg: 'rgba(0, 255, 136, 0.08)', border: 'rgba(0, 255, 136, 0.2)' },
+  gestor: { color: 'var(--color-primary)', bg: 'var(--color-primary-tint)', border: 'var(--color-primary-border)' },
+  atendente: { color: 'var(--color-warning)', bg: 'var(--color-warning-tint)', border: 'var(--color-warning-border)' },
+  mecanico: { color: 'var(--color-success)', bg: 'var(--color-success-tint)', border: 'var(--color-success-border)' },
 }
 
 const isUuid = (v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v || '')
@@ -153,7 +153,7 @@ export function Funcionarios() {
                     <tr key={f.id}>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--neon-orange), var(--electric-blue))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700', flexShrink: 0 }}>
+                          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700', flexShrink: 0 }}>
                             {f.nome?.charAt(0)?.toUpperCase()}
                           </div>
                           <strong style={{ fontSize: '14px' }}>{f.nome}</strong>
@@ -225,7 +225,7 @@ export function Funcionarios() {
                   </div>
                 </div>
 
-                <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '14px', marginBottom: '14px', background: 'rgba(255,255,255,0.02)' }}>
+                <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '14px', marginBottom: '14px', background: 'var(--bg-subtle)' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
                     <Percent size={15} /> Comissao
                   </div>
@@ -249,7 +249,7 @@ export function Funcionarios() {
                 </div>
 
                 {erroForm && (
-                  <div style={{ padding: '10px', background: 'rgba(232, 89, 12, 0.08)', border: '1px solid rgba(232, 89, 12, 0.2)', borderRadius: 'var(--radius-sm)', color: 'var(--neon-orange)', fontSize: '13px' }}>
+                  <div style={{ padding: '10px', background: 'var(--color-primary-tint)', border: '1px solid var(--color-primary-border)', borderRadius: 'var(--radius-sm)', color: 'var(--neon-orange)', fontSize: '13px' }}>
                     {erroForm}
                   </div>
                 )}

@@ -5,9 +5,9 @@ import { supabase, supabaseDb } from '../supabaseClient'
 
 const PERFIL_ICONS = { gestor: Shield, atendente: User, mecanico: Wrench }
 const PERFIL_COLORS = {
-  gestor: { color: 'var(--neon-orange)', bg: 'rgba(232, 89, 12, 0.08)', border: 'rgba(232, 89, 12, 0.2)' },
-  atendente: { color: 'var(--electric-blue)', bg: 'rgba(0, 229, 255, 0.08)', border: 'rgba(0, 229, 255, 0.2)' },
-  mecanico: { color: 'var(--status-done)', bg: 'rgba(0, 255, 136, 0.08)', border: 'rgba(0, 255, 136, 0.2)' },
+  gestor: { color: 'var(--color-primary)', bg: 'var(--color-primary-tint)', border: 'var(--color-primary-border)' },
+  atendente: { color: 'var(--color-warning)', bg: 'var(--color-warning-tint)', border: 'var(--color-warning-border)' },
+  mecanico: { color: 'var(--color-success)', bg: 'var(--color-success-tint)', border: 'var(--color-success-border)' },
 }
 
 export function Usuarios() {
@@ -191,7 +191,7 @@ export function Usuarios() {
                     <tr key={u.id}>
                       <td>
                         <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'linear-gradient(135deg, var(--neon-orange), var(--electric-blue))', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700', flexShrink: 0 }}>
+                          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700', flexShrink: 0 }}>
                             {u.nome?.charAt(0)?.toUpperCase()}
                           </div>
                           <strong style={{ fontSize: '14px' }}>{u.nome}</strong>
@@ -205,7 +205,7 @@ export function Usuarios() {
                         </span>
                       </td>
                       <td>
-                        <span style={{ padding: '4px 10px', borderRadius: '100px', fontSize: '11px', fontWeight: '600', color: u.ativo ? 'var(--status-done)' : 'var(--text-muted)', background: u.ativo ? 'rgba(0, 255, 136, 0.06)' : 'rgba(255,255,255,0.02)', border: `1px solid ${u.ativo ? 'rgba(0, 255, 136, 0.2)' : 'rgba(255,255,255,0.06)'}` }}>
+                        <span style={{ padding: '4px 10px', borderRadius: '100px', fontSize: '11px', fontWeight: '600', color: u.ativo ? 'var(--status-done)' : 'var(--text-muted)', background: u.ativo ? 'var(--color-success-tint)' : 'var(--text-secondary)', border: `1px solid ${u.ativo ? 'var(--color-success-border)' : 'var(--border-color)'}` }}>
                           {u.ativo ? 'Ativo' : 'Inativo'}
                         </span>
                       </td>
@@ -273,7 +273,7 @@ export function Usuarios() {
                   A <strong>comissão</strong> agora é configurada em <strong>Funcionários</strong>, vinculada ao colaborador.
                 </div>
                 {erroForm && (
-                  <div style={{ padding: '10px', background: 'rgba(232, 89, 12, 0.08)', border: '1px solid rgba(232, 89, 12, 0.2)', borderRadius: 'var(--radius-sm)', color: 'var(--neon-orange)', fontSize: '13px' }}>
+                  <div style={{ padding: '10px', background: 'var(--color-primary-tint)', border: '1px solid var(--color-primary-border)', borderRadius: 'var(--radius-sm)', color: 'var(--neon-orange)', fontSize: '13px' }}>
                     {erroForm}
                   </div>
                 )}

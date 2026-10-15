@@ -13,7 +13,7 @@ TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
 
 | Ferramenta | Uso | Situação |
 |---|---|---|
-| **Vitest** | Testes unitários e de componente (frontend e backend) | **Implementado — 235 testes** |
+| **Vitest** | Testes unitários, de integração e de componente (frontend e backend) | **Implementado — 477 testes medidos** |
 | **React Testing Library** | Testes de componente React (renderização isolada) | **Implementado** |
 | **Supertest** | Testes de integração da API Express | **Implementado** |
 | **ESLint** | Análise estática de código | Configurado (`npm run lint`). No backend, com **plugin de segurança** (`backend/eslint.config.js`) e execução na integração contínua |
@@ -24,7 +24,7 @@ TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
 
 ### 2.1 Testes automatizados (Vitest)
 
-- **Backend (104 testes, 11 arquivos)**:
+- **Backend (286 testes, 13 arquivos)**:
   - `validators.test.js` — CPF, CNPJ, placa, e-mail, senha.
   - `security.test.js` — hardening de cabeçalhos, CORS e limites de payload.
   - `comRetry.test.js` — retry da IA em erros transitórios 503/429 (com timers falsos).
@@ -41,14 +41,28 @@ TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
   - `iaController.test.js` e `chatbotController.test.js` — contrato das rotas de IA.
   - `app.integration.test.js` (Supertest) — `/health`, rota 404, bloqueio 401 sem token,
     token inválido e o rate limit dedicado das rotas de IA.
-- **Frontend (179 testes, 27 arquivos)**:
+  - **Painel IA gerencial (RF12/RN40/RN41/RN43/RN44)** —
+    `metricasPainelIA.test.js` verifica janelas temporais semiabertas, uso de
+    `data_encerramento` para conclusões, fronteiras inclusiva/exclusiva, base anterior
+    zero, estoque por movimentação de saída, cobertura/reposição, item parado,
+    produtividade, mediana, rankings comparativos de modelos de veículo e serviços
+    frequentes e comparações sem `NaN`/`Infinity`.
+    `recomendacoesExplicaveis.test.js` verifica allow-lists, evidências do catálogo
+    (chave, valor, unidade e período), descarte de texto quantitativo livre e resistência
+    a propriedades herdadas/acessores. `iaController.test.js` verifica coleta mínima,
+    falha fechada das consultas, sanitização de dados quantitativos e PII antes do Gemini
+    e da persistência, precedência das métricas calculadas, paginação e histórico.
+    `app.integration.test.js` confirma bloqueio gestor-only e o limite de requisições da IA.
+- **Frontend (191 testes, 27 arquivos)**:
   - Funções puras (`utils/*.test.js`) — placa, estoque (alerta/saldo/moeda/resumo),
     endereço/CEP, finanças da OS e status de OS.
   - **Componente (React Testing Library)** — 16 suítes, entre elas `GlassPanel.test.jsx`,
     `Servicos.test.jsx`, `Usuarios.test.jsx`, `Funcionarios.test.jsx`,
     `Chatbot.test.jsx` e `Chatbot.origem.test.jsx` (indisponibilidade da IA por bolha,
     status da sidebar e região viva para leitor de tela) e `PainelIA.test.jsx`
-    (**nenhum número exibido quando a IA cai**).
+    (**15 testes**): blocos gerenciais completos, comparações sem base anterior, cobertura
+    sem consumo, listas vazias, recomendações com evidências, indisponibilidade sem números
+    e histórico sob demanda, somente leitura e isolado de falhas da análise atual.
   - **Configuração da oficina e documento da O.S. (RF05)** — adicionados em 14/10/2026:
     - `hooks/useDatabase.test.jsx` — singleton da oficina (ausente = `null`, sem registro
       fabricado quando a consulta falha), normalização de CNPJ/CEP/UF, upsert que só altera o
@@ -77,7 +91,7 @@ TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
   - `fluxos.spec.js` — busca de clientes, modal de novo cliente, dependência cliente→veículo na
     nova O.S. e a disponibilidade de **Salvar PDF / Imprimir** na O.S. aberta e na concluída
     (sem baixar arquivo; o conteúdo do PDF é coberto por `utils/osPdf.test.js`).
-- **Total: 283 testes unitários/integração/componente (179 frontend + 104 backend), 100% passando**, medidos em 14/10/2026 — mais os **14 E2E** do Playwright, também medidos e passando na mesma data.
+- **Total: 477 testes unitários/integração/componente (191 frontend + 286 backend), todos aprovados**, medidos em 15/10/2026. O Playwright coletou **14 E2E**: **12 aprovados e 2 falhas** fora do escopo do Painel IA, ambas por divergência entre o rótulo esperado `Salvar PDF` e o rótulo atual `Visualizar PDF` no fluxo de PDF/OS. Portanto, esta medição não declara aprovação geral de 100%.
 - **Como executar:** `npm test` (unitários, em `backend/` e `react-app/`) e
   `npm run test:e2e` (E2E em `react-app/`, requer o app rodando).
 
@@ -127,7 +141,7 @@ A divergência está registrada em [`DER.md`](DER.md), seção de divergências 
 | UC10 | RF13 | Manter serviços | Servicos.jsx | Implementado | Teste unitário + UAT |
 | UC11 | RF10 | Movimentar estoque (entrada/saída) | movimentacao_estoque + utils/estoque | Implementado | Teste unitário (saldo) |
 | UC12 | RF11 | Responder via chatbot | `Chatbot.jsx` + `iaService.js` (Gemini) | Implementado | `Chatbot.test.jsx`, `Chatbot.origem.test.jsx`, `chatbotController.test.js` |
-| UC13 | RF12 | Gerar recomendações da IA | PainelIA + iaController (Gemini) | Implementado | Teste de API + validação com orientador |
+| UC13 | RF12 | Gerar recomendações gerenciais da IA | `PainelIA.jsx`, componentes `components/ia/*`, `iaController`, `metricasPainelIA` e `recomendacoesExplicaveis` | Implementado | `metricasPainelIA.test.js`, `recomendacoesExplicaveis.test.js`, `iaController.test.js`, `PainelIA.test.jsx` (15 testes), `app.integration.test.js` e validação com orientador |
 | UC14 | RF14 | Manter usuários | Usuarios.jsx | Implementado | Teste unitário (Usuarios.test.jsx) + UAT |
 | UC15 | RF15 | Manter funcionários (regras de comissão) | Funcionarios.jsx + utils/osFinance | Implementado | Teste unitário (Funcionarios.test.jsx, osFinance.test.js) |
 
@@ -140,6 +154,15 @@ A divergência está registrada em [`DER.md`](DER.md), seção de divergências 
 > estavam invertidos nas linhas do UC10 e do UC13, e foram corrigidos. As linhas de
 > **RF14** (manter usuários) e **RF15** (manter funcionários) faltavam e foram incluídas.
 
+### 4.1 Rastreabilidade complementar do Painel IA
+
+| Regra | Implementação verificada | Testes/cenários verificados |
+|---|---|---|
+| RN40 | `calcularMetricasPainelIA` calcula os indicadores dos períodos atual e anterior; `iaController` entrega as métricas calculadas sobre a redação do modelo. | Fronteiras temporais, conclusão por `data_encerramento`, médias/medianas, estoque/produtividade e comparação sem base anterior em `metricasPainelIA.test.js` e `iaController.test.js`. |
+| RN41 | `recomendacoesExplicaveis` só aceita recomendações consultivas com período e evidência coincidente com o catálogo calculado; a interface mostra ação, impacto qualitativo, período e evidências. | Chave, valor, unidade e período adulterados são descartados; recomendações válidas e exibição no `PainelIA.test.jsx` são cobertas. |
+| RN43 | O controller coleta somente campos mínimos, remove PII e linhas individuais antes do Gemini/persistência; números livres do modelo não são devolvidos à interface. | Sentinelas de CPF/CNPJ, placa, telefone, e-mail, endereço, motivo, IDs/nomes de funcionários e alegações quantitativas livres em `iaController.test.js` e `recomendacoesExplicaveis.test.js`. |
+| RN44 | Rotas de IA usam autenticação, `requireRole('gestor')` e `iaRateLimiter`; o histórico é paginado, sob demanda e somente leitura. | Integração confirma `401`, `403/SEM_PERMISSAO` para atendente/mecânico e `429/RATE_LIMIT_IA`; `PainelIA.test.jsx` cobre consulta e detalhe de histórico sem reexecução. |
+
 ## 5. Como executar os testes
 
 ```bash
@@ -150,4 +173,4 @@ cd backend && npm test
 cd react-app && npm test
 ```
 
-Saída esperada: **207 testes aprovados** (74 backend + 133 frontend), mais os 11 E2E, que rodam à parte com `npx playwright test` e exigem o app no ar.
+Saída medida em 15/10/2026: **477 testes unitários/integração/componente aprovados** (286 backend + 191 frontend). O Playwright coleta 14 E2E; na última execução, 12 aprovaram e 2 falharam fora do escopo do Painel IA pelo rótulo esperado `Salvar PDF` versus o rótulo atual `Visualizar PDF`.

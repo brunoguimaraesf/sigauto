@@ -2,20 +2,38 @@ import { describe, it, expect, vi } from 'vitest'
 import request from 'supertest'
 
 // Mocka o cliente Supabase para não tocar em rede/banco real.
-vi.mock('./services/supabaseClient.js', () => ({
-  supabase: {
-    auth: {
-      getUser: vi.fn(async (token) =>
-        token === 'valido'
-          ? { data: { user: { id: 'u1' } }, error: null }
-          : { data: { user: null }, error: new Error('invalid') },
-      ),
+vi.mock('./services/supabaseClient.js', () => {
+  const perfisPorToken = new Map([
+    ['token-atendente', 'atendente'],
+    ['token-mecanico', 'mecanico'],
+  ])
+
+  return {
+    supabase: {
+      auth: {
+        getUser: vi.fn(async (token) => {
+          const perfil = perfisPorToken.get(token)
+          return perfil
+            ? { data: { user: { id: `u-${perfil}` } }, error: null }
+            : { data: { user: null }, error: new Error('invalid') }
+        }),
+      },
+      from: () => ({
+        select: () => ({
+          eq: (_coluna, id) => ({
+            single: async () => {
+              const perfil = id === 'u-atendente' ? 'atendente' : 'mecanico'
+              return {
+                data: { id, perfil, email: `${perfil}@teste.local`, ativo: true },
+                error: null,
+              }
+            },
+          }),
+        }),
+      }),
     },
-    from: () => ({
-      select: () => ({ eq: () => ({ single: async () => ({ data: null, error: null }) }) }),
-    }),
-  },
-}))
+  }
+})
 
 const { default: app } = await import('./app.js')
 
@@ -52,6 +70,18 @@ describe('API — autenticação', () => {
     const res = await request(app).post('/api/v1/ia/analisar')
     expect(res.status).toBe(401)
   })
+
+  it.each(['atendente', 'mecanico'])(
+    'JWT válido de %s recebe 403 nas rotas exclusivas do gestor',
+    async (perfil) => {
+      const res = await request(app)
+        .get('/api/v1/ia/recomendacoes')
+        .set('Authorization', `Bearer token-${perfil}`)
+
+      expect(res.status).toBe(403)
+      expect(res.body.codigo).toBe('SEM_PERMISSAO')
+    },
+  )
 })
 
 describe('API — rate limit dedicado da IA', () => {

@@ -42,7 +42,7 @@ export function ConfiguracaoOficina() {
         <div
           role={status.tipo === 'erro' ? 'alert' : 'status'}
           className="alert-box"
-          style={status.tipo === 'ok' ? { borderColor: 'rgba(16, 185, 129, 0.3)', background: 'rgba(16, 185, 129, 0.05)' } : undefined}
+          style={status.tipo === 'ok' ? { borderColor: 'var(--color-success)', background: 'var(--color-success-tint)' } : undefined}
         >
           {status.texto}
         </div>
@@ -311,7 +311,7 @@ function PainelLogo({ oficina, setStatus }) {
           width: '160px', height: '96px', borderRadius: 'var(--radius-sm)',
           border: '1px dashed var(--border-highlight)', display: 'flex',
           alignItems: 'center', justifyContent: 'center', overflow: 'hidden',
-          background: 'rgba(255, 255, 255, 0.02)', flexShrink: 0,
+          background: 'var(--bg-subtle)', flexShrink: 0,
         }}>
           {previa
             ? <img src={previa} alt={`Logotipo de ${oficina?.nome_fantasia || 'oficina'}`} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />

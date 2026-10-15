@@ -107,7 +107,7 @@ export function Analytics() {
             <span className="metric-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
               <TrendingUp size={16} color="var(--electric-blue)" /> Ticket Médio por O.S.
             </span>
-            <span className="metric-trend positive" style={{ background: 'rgba(0, 229, 255, 0.1)', color: 'var(--electric-blue)' }}>MÉDIA</span>
+            <span className="metric-trend positive" style={{ background: 'var(--color-primary-tint)', color: 'var(--electric-blue)' }}>MÉDIA</span>
           </div>
           <div className="metric-value">R$ {ticketMedio.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</div>
           <span style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '8px', display: 'block' }}>
@@ -152,11 +152,11 @@ export function Analytics() {
                     <span style={{ color: 'var(--text-primary)' }}>{item.brand}</span>
                     <span style={{ color: 'var(--neon-orange)' }}>{item.count} carro(s) ({item.percentage.toFixed(0)}%)</span>
                   </div>
-                  <div style={{ width: '100%', height: '8px', background: 'rgba(255, 255, 255, 0.05)', borderRadius: '4px', overflow: 'hidden' }}>
+                  <div style={{ width: '100%', height: '8px', background: 'var(--bg-subtle)', borderRadius: '4px', overflow: 'hidden' }}>
                     <div 
                       style={{ 
                         height: '100%', 
-                        background: 'linear-gradient(90deg, var(--neon-orange), #C2410C)',
+                        background: 'var(--color-primary)',
                         boxShadow: '0 0 8px var(--neon-orange-glow)',
                         width: `${item.percentage}%`,
                         transition: 'width 0.5s ease-out'
@@ -186,8 +186,8 @@ export function Analytics() {
                   key={idx} 
                   style={{ 
                     padding: '12px 16px', 
-                    background: 'rgba(255,255,255,0.01)', 
-                    border: '1px solid rgba(255,255,255,0.03)', 
+                    background: 'var(--bg-subtle)',
+                    border: '1px solid var(--border-color)',
                     borderRadius: 'var(--radius-sm)',
                     display: 'flex',
                     justifyContent: 'space-between',

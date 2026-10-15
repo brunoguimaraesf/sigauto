@@ -9,7 +9,7 @@ import { calcOSCommissions, calcOSTotals, formatCurrency, getLineTotal, resolveE
 
 function SummaryChip({ label, value, tone }) {
   return (
-    <div style={{ padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', background: 'rgba(255,255,255,0.02)', flex: 1 }}>
+    <div style={{ padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', background: 'var(--bg-subtle)', flex: 1 }}>
       <div style={{ color: 'var(--text-muted)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '3px' }}>{label}</div>
       <div style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: '600', color: tone || 'var(--text-primary)' }}>{formatCurrency(value)}</div>
     </div>
@@ -243,7 +243,7 @@ export function AtualizarOS() {
               <SummaryChip label="Total" value={totals.valorTotal} tone="var(--status-done)" />
             </div>
             {os.descricao && (
-              <div style={{ padding: '10px 12px', background: 'rgba(255,255,255,0.02)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }}>
+              <div style={{ padding: '10px 12px', background: 'var(--bg-subtle)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }}>
                 <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>Queixa do cliente</div>
                 <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>{os.descricao}</p>
               </div>
