@@ -2,6 +2,7 @@
 import { GlassPanel } from '../components/GlassPanel'
 import { useDatabase } from '../hooks/useDatabase'
 import { TrendingUp, DollarSign, Activity, Wrench, Award } from 'lucide-react'
+import css from './Analytics.module.css'
 
 export function Analytics() {
   const {
@@ -13,7 +14,7 @@ export function Analytics() {
 
   if (loading) {
     return (
-      <div style={{ padding: '48px', color: 'var(--text-secondary)', textAlign: 'center' }}>
+      <div className={css.carregando}>
         <h2>Carregando relatórios...</h2>
       </div>
     )
@@ -91,33 +92,33 @@ export function Analytics() {
       <section className="metrics-grid">
         <GlassPanel className="metric-card stagger-2">
           <div className="metric-header">
-            <span className="metric-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className={`metric-title ${css.metricTitulo}`}>
               <DollarSign size={16} color="var(--neon-orange)" /> Receita Bruta Total
             </span>
             <span className="metric-trend positive">FUNDO</span>
           </div>
           <div className="metric-value">R$ {totalRevenue.toLocaleString('pt-BR')}</div>
-          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '8px', display: 'block' }}>
+          <span className={css.metricNota}>
             R$ {completedRevenue.toLocaleString('pt-BR')} concluídos em serviços entregues.
           </span>
         </GlassPanel>
 
         <GlassPanel className="metric-card stagger-3">
           <div className="metric-header">
-            <span className="metric-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className={`metric-title ${css.metricTitulo}`}>
               <TrendingUp size={16} color="var(--electric-blue)" /> Ticket Médio por O.S.
             </span>
-            <span className="metric-trend positive" style={{ background: 'var(--color-primary-tint)', color: 'var(--electric-blue)' }}>MÉDIA</span>
+            <span className={`metric-trend positive ${css.metricTrendAzul}`}>MÉDIA</span>
           </div>
           <div className="metric-value">R$ {ticketMedio.toLocaleString('pt-BR', { maximumFractionDigits: 0 })}</div>
-          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '8px', display: 'block' }}>
+          <span className={css.metricNota}>
             Média de receita calculada sobre as {totalOrdersCount} ordens.
           </span>
         </GlassPanel>
 
         <GlassPanel className="metric-card stagger-4 highlight-card">
           <div className="metric-header">
-            <span className="metric-title" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <span className={`metric-title ${css.metricTitulo}`}>
               <Activity size={16} color="var(--neon-orange)" /> Eficiência Operacional
             </span>
             <span className="metric-trend positive">CONCLUÍDO</span>
@@ -126,7 +127,7 @@ export function Analytics() {
           <div className="metric-progress-bar">
             <div className="progress" style={{ width: `${completionRate}%` }}></div>
           </div>
-          <span style={{ fontSize: '12px', color: 'var(--text-secondary)', marginTop: '8px', display: 'block' }}>
+          <span className={css.metricNota}>
             {completedOrders.length} concluídas de {totalOrdersCount} ordens de serviço.
           </span>
         </GlassPanel>
@@ -136,32 +137,24 @@ export function Analytics() {
       <section className="content-split">
         {/* Gráfico de Barras de Distribuição de Marcas */}
         <GlassPanel className="panel stagger-5">
-          <div className="panel-header" style={{ marginBottom: '24px' }}>
-            <h3><Award size={18} color="var(--neon-orange)" style={{ marginRight: '8px', verticalAlign: 'middle' }} /> Distribuição por Marca</h3>
+          <div className={`panel-header ${css.panelHeader}`}>
+              <h3><Award size={18} color="var(--neon-orange)" className={css.tituloIcone} /> Distribuição por Marca</h3>
           </div>
           
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                      <div className={css.ranking}>
             {brandDistribution.length === 0 ? (
-              <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '24px' }}>
+              <div className={css.aviso}>
                 Nenhum veículo cadastrado para gerar a análise.
               </div>
             ) : (
               brandDistribution.map((item) => (
-                <div key={item.brand} style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: '600' }}>
-                    <span style={{ color: 'var(--text-primary)' }}>{item.brand}</span>
-                    <span style={{ color: 'var(--neon-orange)' }}>{item.count} carro(s) ({item.percentage.toFixed(0)}%)</span>
+                                  <div key={item.brand} className={css.rankingItem}>
+                    <div className={css.rankingLinha}>
+                      <span className={css.rankingMarca}>{item.brand}</span>
+                      <span className={css.rankingValor}>{item.count} carro(s) ({item.percentage.toFixed(0)}%)</span>
                   </div>
-                  <div style={{ width: '100%', height: '8px', background: 'var(--bg-subtle)', borderRadius: '4px', overflow: 'hidden' }}>
-                    <div 
-                      style={{ 
-                        height: '100%', 
-                        background: 'var(--color-primary)',
-                        boxShadow: '0 0 8px var(--neon-orange-glow)',
-                        width: `${item.percentage}%`,
-                        transition: 'width 0.5s ease-out'
-                      }}
-                    ></div>
+                                      <div className={css.barra}>
+                    <div className={css.barraPreenchida} style={{ width: `${item.percentage}%` }}></div>
                   </div>
                 </div>
               ))
@@ -171,34 +164,25 @@ export function Analytics() {
 
         {/* Tabela de Serviços mais Rentáveis */}
         <GlassPanel className="panel stagger-6">
-          <div className="panel-header" style={{ marginBottom: '20px' }}>
-            <h3><Wrench size={18} color="var(--electric-blue)" style={{ marginRight: '8px', verticalAlign: 'middle' }} /> Rentabilidade de Serviços</h3>
+          <div className={`panel-header ${css.panelHeaderCompacto}`}>
+              <h3><Wrench size={18} color="var(--electric-blue)" className={css.tituloIcone} /> Rentabilidade de Serviços</h3>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+                      <div className={css.servicos}>
             {popularServices.length === 0 ? (
-              <div style={{ color: 'var(--text-secondary)', textAlign: 'center', padding: '24px' }}>
+              <div className={css.aviso}>
                 Nenhum serviço registrado nas ordens para calcular faturamento.
               </div>
             ) : (
               popularServices.map((service, idx) => (
                 <div 
-                  key={idx} 
-                  style={{ 
-                    padding: '12px 16px', 
-                    background: 'var(--bg-subtle)',
-                    border: '1px solid var(--border-color)',
-                    borderRadius: 'var(--radius-sm)',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center'
-                  }}
+                  key={idx} className={css.servico}
                 >
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-                    <strong style={{ fontSize: '14px', color: 'var(--text-primary)' }}>{service.nome}</strong>
-                    <span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{service.count} solicitações no total</span>
+                                      <div className={css.servicoTexto}>
+                      <strong className={css.servicoNome}>{service.nome}</strong>
+                                          <span className={css.servicoDetalhe}>{service.count} solicitações no total</span>
                   </div>
-                  <div style={{ fontFamily: 'var(--font-display)', fontWeight: '600', color: 'var(--neon-orange)', fontSize: '15px' }}>
+                                      <div className={css.servicoValor}>
                     R$ {service.totalValue.toLocaleString('pt-BR')}
                   </div>
                 </div>

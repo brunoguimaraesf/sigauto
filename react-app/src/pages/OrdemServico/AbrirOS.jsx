@@ -5,6 +5,7 @@ import { GlassPanel } from '../../components/GlassPanel'
 import { useDatabase } from '../../hooks/useDatabase'
 import { maskCpfCnpj, maskTelefone, maskPlaca } from '../../utils/masks'
 import { filtrarClientesPorTermo, descreverResultado } from '../../utils/clienteBusca'
+import css from './AbrirOS.module.css'
 
 const CONSUMIDOR_ID = 'cliente-consumidor'
 
@@ -219,14 +220,14 @@ export function AbrirOS() {
   if (successModal) {
     return (
       <div className="dashboard-grid">
-        <GlassPanel className="panel stagger-1" style={{ textAlign: 'center', padding: '64px 48px' }}>
-          <CheckCircle size={44} color="var(--status-done)" style={{ marginBottom: '20px' }} />
-          <h2 style={{ fontFamily: 'var(--font-display)', marginBottom: '12px' }}>O.S. Aberta com Sucesso</h2>
-          <p style={{ color: 'var(--text-secondary)', marginBottom: '8px' }}>{successModal.numero}</p>
-          <p style={{ color: 'var(--neon-orange)', fontWeight: 700, marginBottom: '32px' }}>
+        <GlassPanel className={`panel stagger-1 ${css.painelSucesso}`}>
+          <CheckCircle size={44} color="var(--status-done)" className={css.iconeSucesso} />
+          <h2 className={css.tituloSucesso}>O.S. Aberta com Sucesso</h2>
+          <p className={css.numeroSucesso}>{successModal.numero}</p>
+          <p className={css.dadosSucesso}>
             {successModal.cliente.nome} - {successModal.veiculo.placa} {successModal.veiculo.marca} {successModal.veiculo.modelo}
           </p>
-          <div style={{ display: 'flex', gap: '12px', justifyContent: 'center', flexWrap: 'wrap' }}>
+          <div className={css.acoesSucesso}>
             <button className="btn-secondary" onClick={() => navigate('/ordens-servico')}>Ver O.S.</button>
             <button className="btn-primary" onClick={() => {
               setSuccessModal(null)
@@ -247,12 +248,12 @@ export function AbrirOS() {
 
   return (
     <div className="dashboard-grid">
-      <section className="welcome-section stagger-1" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      <section className={`welcome-section stagger-1 ${css.topo}`}>
         <div>
           <h2>Abrir Nova O.S.</h2>
           <p>Selecione o cliente, escolha o veiculo e registre a entrada.</p>
         </div>
-        <button className="btn-secondary" onClick={() => navigate('/ordens-servico')} style={{ padding: '8px 16px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <button className={`btn-secondary ${css.btnVoltar}`} onClick={() => navigate('/ordens-servico')}>
           <ArrowLeft size={16} /> Voltar
         </button>
       </section>
@@ -261,15 +262,15 @@ export function AbrirOS() {
         <GlassPanel className="panel stagger-2">
 
           {/* ── Linha 1: Cliente | Veículo ── */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px', marginBottom: '20px' }}>
+          <div className={css.colunas}>
 
             {/* CLIENTE */}
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  <User size={12} style={{ marginRight: '6px' }} />Cliente
+              <div className={css.secaoHeader}>
+                <span className={css.secaoTitulo}>
+                  <User size={12} className={css.iconeRotulo} />Cliente
                 </span>
-                <button type="button" className="btn-link" style={{ fontSize: '11px' }} onClick={() => setNovoCliente(v => !v)}>
+                <button type="button" className={`btn-link ${css.btnAtalho}`} onClick={() => setNovoCliente(v => !v)}>
                   {novoCliente ? 'Usar existente' : '+ Novo'}
                 </button>
               </div>
@@ -277,15 +278,14 @@ export function AbrirOS() {
               {!novoCliente ? (
                 <>
                   {clienteSelecionado ? (
-                    <div style={{ padding: '10px 12px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', fontSize: '12px', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '12px' }}>
+                    <div className={css.resumoCliente}>
                       <div>
-                        <strong style={{ color: 'var(--text-primary)' }}>{clienteSelecionado.nome}</strong>
-                        <span style={{ display: 'block' }}>{clienteSelecionado.telefone || '—'}</span>
+                        <strong className={css.resumoNome}>{clienteSelecionado.nome}</strong>
+                        <span className={css.linhaPropria}>{clienteSelecionado.telefone || '—'}</span>
                       </div>
                       <button
                         type="button"
-                        className="btn-link"
-                        style={{ fontSize: '11px', whiteSpace: 'nowrap' }}
+                        className={`btn-link ${css.btnTrocar}`}
                         onClick={() => { setClienteId(''); setVeiculoId(''); setBuscaCliente('') }}
                       >
                         Trocar
@@ -293,12 +293,11 @@ export function AbrirOS() {
                     </div>
                   ) : (
                     <>
-                      <div style={{ position: 'relative' }}>
-                        <Search size={14} style={{ position: 'absolute', left: '10px', top: '50%', transform: 'translateY(-50%)', color: 'var(--text-muted)', pointerEvents: 'none' }} />
+                      <div className={css.busca}>
+                        <Search size={14} className={css.buscaIcone} />
                         <input
                           type="text"
-                          className="form-control"
-                          style={{ paddingLeft: '32px' }}
+                          className={`form-control ${css.buscaInput}`}
                           placeholder="Buscar por nome, CPF/CNPJ ou placa"
                           value={buscaCliente}
                           onChange={e => setBuscaCliente(e.target.value)}
@@ -307,22 +306,22 @@ export function AbrirOS() {
                       </div>
 
                       {buscaCliente.trim() && resultadosBusca.length === 0 && (
-                        <div style={{ marginTop: '8px', fontSize: '12px', color: 'var(--text-muted)' }}>
+                        <div className={css.semResultado}>
                           Nenhum cliente encontrado. Use <strong>+ Novo</strong> para cadastrar.
                         </div>
                       )}
 
                       {resultadosBusca.length > 0 && (
-                        <ul style={{ listStyle: 'none', margin: '8px 0 0', padding: 0, border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', overflow: 'hidden' }}>
+                        <ul className={css.resultados}>
                           {resultadosBusca.map(resultado => (
                             <li key={resultado.cliente.id}>
                               <button
                                 type="button"
                                 onClick={() => { setClienteId(resultado.cliente.id); setVeiculoId(''); setBuscaCliente('') }}
-                                style={{ width: '100%', textAlign: 'left', padding: '8px 12px', background: 'transparent', border: 'none', borderBottom: '1px solid var(--border-color)', cursor: 'pointer', color: 'var(--text-primary)', fontSize: '13px' }}
+                                className={css.resultado}
                               >
                                 {resultado.cliente.nome}
-                                <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-secondary)' }}>
+                                <span className={css.resultadoDetalhe}>
                                   {descreverResultado(resultado)}
                                 </span>
                               </button>
@@ -335,8 +334,7 @@ export function AbrirOS() {
                       {!buscaCliente.trim() && (
                         <button
                           type="button"
-                          className="btn-link"
-                          style={{ fontSize: '11px', marginTop: '8px' }}
+                          className={`btn-link ${css.btnConsumidor}`}
                           onClick={() => { setClienteId(CONSUMIDOR_ID); setVeiculoId('') }}
                         >
                           Usar &quot;Consumidor&quot;
@@ -346,14 +344,14 @@ export function AbrirOS() {
                   )}
                 </>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div className={css.cadastroRapido}>
                   <input className="form-control" placeholder="Nome *" value={clienteForm.nome} onChange={e => setClienteForm(f => ({ ...f, nome: e.target.value }))} />
                   <input className="form-control" placeholder="(00) 00000-0000" value={clienteForm.telefone} onChange={e => setClienteForm(f => ({ ...f, telefone: maskTelefone(e.target.value) }))} />
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div className={css.linha2}>
                     <input className="form-control" type="email" placeholder="E-mail" value={clienteForm.email} onChange={e => setClienteForm(f => ({ ...f, email: e.target.value }))} />
                     <input className="form-control" placeholder="CPF/CNPJ" value={clienteForm.cpf_cnpj} onChange={e => setClienteForm(f => ({ ...f, cpf_cnpj: maskCpfCnpj(e.target.value, f.tipo_pessoa) }))} />
                   </div>
-                  <button type="button" className="btn-secondary" onClick={salvarClienteRapido} style={{ alignSelf: 'flex-start', borderRadius: 'var(--radius-sm)', padding: '6px 12px', fontSize: '12px' }}>
+                  <button type="button" className={`btn-secondary ${css.btnSalvarRapido}`} onClick={salvarClienteRapido}>
                     Salvar cliente
                   </button>
                 </div>
@@ -362,11 +360,11 @@ export function AbrirOS() {
 
             {/* VEÍCULO */}
             <div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <span style={{ fontSize: '12px', fontWeight: '700', color: 'var(--text-secondary)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                  <Car size={12} style={{ marginRight: '6px' }} />Veículo
+              <div className={css.secaoHeader}>
+                <span className={css.secaoTitulo}>
+                  <Car size={12} className={css.iconeRotulo} />Veículo
                 </span>
-                <button type="button" className="btn-link" style={{ fontSize: '11px' }} onClick={() => setNovoVeiculo(v => !v)} disabled={!clienteId && !novoCliente}>
+                <button type="button" className={`btn-link ${css.btnAtalho}`} onClick={() => setNovoVeiculo(v => !v)} disabled={!clienteId && !novoCliente}>
                   {novoVeiculo ? 'Usar cadastrado' : '+ Novo'}
                 </button>
               </div>
@@ -378,29 +376,29 @@ export function AbrirOS() {
                     {veiculosDoCliente.map(v => <option key={v.id} value={v.id}>{v.placa} — {v.marca} {v.modelo}</option>)}
                   </select>
                   {clienteId && veiculosDoCliente.length === 0 && (
-                    <p style={{ fontSize: '12px', color: 'var(--neon-orange)', marginTop: '6px' }}>Nenhum veículo. Use <strong>+ Novo</strong> para cadastrar.</p>
+                    <p className={css.semVeiculo}>Nenhum veículo. Use <strong>+ Novo</strong> para cadastrar.</p>
                   )}
                   {veiculoSelecionado && (
-                    <div style={{ marginTop: '8px', padding: '8px 12px', border: '1px solid var(--color-primary-border)', borderRadius: 'var(--radius-sm)', fontSize: '12px', color: 'var(--text-secondary)' }}>
-                      <strong style={{ color: 'var(--neon-orange)' }}>{veiculoSelecionado.placa}</strong>
+                    <div className={css.resumoVeiculo}>
+                      <strong className={css.placaVeiculo}>{veiculoSelecionado.placa}</strong>
                       <span> — {veiculoSelecionado.marca} {veiculoSelecionado.modelo}</span>
-                      <span style={{ display: 'block' }}>{veiculoSelecionado.ano} · {veiculoSelecionado.cor}</span>
+                      <span className={css.linhaPropria}>{veiculoSelecionado.ano} · {veiculoSelecionado.cor}</span>
                     </div>
                   )}
                 </>
               ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                <div className={css.cadastroRapido}>
+                  <div className={css.linha3}>
                     <input className="form-control" placeholder="Placa *" value={veiculoForm.placa} onChange={e => setVeiculoForm(f => ({ ...f, placa: maskPlaca(e.target.value) }))} />
                     <input className="form-control" placeholder="Marca *" value={veiculoForm.marca} onChange={e => setVeiculoForm(f => ({ ...f, marca: e.target.value }))} />
                     <input className="form-control" placeholder="Modelo *" value={veiculoForm.modelo} onChange={e => setVeiculoForm(f => ({ ...f, modelo: e.target.value }))} />
                   </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '8px' }}>
+                  <div className={css.linha3}>
                     <input className="form-control" type="number" placeholder="Ano" value={veiculoForm.ano} onChange={e => setVeiculoForm(f => ({ ...f, ano: e.target.value }))} />
                     <input className="form-control" placeholder="Cor" value={veiculoForm.cor} onChange={e => setVeiculoForm(f => ({ ...f, cor: e.target.value }))} />
                     <input className="form-control" type="number" placeholder="KM atual" value={veiculoForm.km_atual} onChange={e => setVeiculoForm(f => ({ ...f, km_atual: e.target.value }))} />
                   </div>
-                  <button type="button" className="btn-secondary" onClick={() => salvarVeiculoRapido()} style={{ alignSelf: 'flex-start', borderRadius: 'var(--radius-sm)', padding: '6px 12px', fontSize: '12px' }}>
+                  <button type="button" className={`btn-secondary ${css.btnSalvarRapido}`} onClick={() => salvarVeiculoRapido()}>
                     Salvar veículo
                   </button>
                 </div>
@@ -409,18 +407,18 @@ export function AbrirOS() {
           </div>
 
           {/* ── Divisor ── */}
-          <div style={{ borderTop: '1px solid var(--border-color)', margin: '0 0 20px' }} />
+          <div className={css.divisor} />
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px' }}>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label><Wrench size={12} style={{ marginRight: '6px' }} />Mecanico responsavel</label>
+          <div className={css.gradeEquipe}>
+            <div className={`form-group ${css.campoSemMargem}`}>
+              <label><Wrench size={12} className={css.iconeRotulo} />Mecanico responsavel</label>
               <select className="form-control" value={mecanicoId} onChange={e => setMecanicoId(e.target.value)}>
                 <option value="">A definir</option>
                 {mecanicos.map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
               </select>
             </div>
-            <div className="form-group" style={{ marginBottom: 0 }}>
-              <label><User size={12} style={{ marginRight: '6px' }} />Atendente responsavel</label>
+            <div className={`form-group ${css.campoSemMargem}`}>
+              <label><User size={12} className={css.iconeRotulo} />Atendente responsavel</label>
               <select className="form-control" value={atendenteSelecionadoId} onChange={e => setAtendenteId(e.target.value)} required>
                 <option value="">Selecione...</option>
                 {atendentes.map(a => <option key={a.id} value={a.id}>{a.nome}</option>)}
@@ -428,16 +426,16 @@ export function AbrirOS() {
             </div>
           </div>
 
-          <div style={{ borderTop: '1px solid var(--border-color)', margin: '0 0 20px' }} />
+          <div className={css.divisor} />
 
           {/* ── Linha 2: Detalhes da O.S. ── */}
-          <div className="form-group" style={{ marginBottom: '12px' }}>
+          <div className={`form-group ${css.campoQueixa}`}>
             <label>Queixa / Descrição do problema</label>
-            <textarea className="form-control" value={descricao} onChange={e => setDescricao(e.target.value)} minLength={10} required placeholder="Descreva a queixa do cliente e os sintomas observados..." style={{ minHeight: '72px' }} />
+            <textarea className={`form-control ${css.textarea}`} value={descricao} onChange={e => setDescricao(e.target.value)} minLength={10} required placeholder="Descreva a queixa do cliente e os sintomas observados..." />
           </div>
 
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '16px', marginBottom: '12px' }}>
-            <div className="form-group" style={{ marginBottom: 0 }}>
+          <div className={css.gradeDetalhes}>
+            <div className={`form-group ${css.campoSemMargem}`}>
               <label>Prioridade</label>
               <select className="form-control" value={prioridade} onChange={e => setPrioridade(e.target.value)}>
                 <option value="baixa">Baixa</option>
@@ -446,11 +444,11 @@ export function AbrirOS() {
                 <option value="urgente">Urgente</option>
               </select>
             </div>
-            <div className="form-group" style={{ marginBottom: 0 }}>
+            <div className={`form-group ${css.campoSemMargem}`}>
               <label>KM de entrada</label>
               <input type="number" className="form-control" value={kmEntrada} onChange={e => setKmEntrada(e.target.value)} min={0} placeholder={veiculoSelecionado?.km_atual || 'Ex: 45200'} />
             </div>
-            <div className="form-group" style={{ marginBottom: 0 }}>
+            <div className={`form-group ${css.campoSemMargem}`}>
               <label>Forma de pagamento</label>
               <select className="form-control" value={formaPagamento} onChange={e => setFormaPagamento(e.target.value)}>
                 <option value="a_definir">A definir</option>
@@ -462,15 +460,15 @@ export function AbrirOS() {
                 <option value="boleto">Boleto</option>
               </select>
             </div>
-            <div className="form-group" style={{ marginBottom: 0 }}>
+            <div className={`form-group ${css.campoSemMargem}`}>
               <label>Observações internas</label>
               <input className="form-control" value={observacoes} onChange={e => setObservacoes(e.target.value)} placeholder="Opcional" />
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '16px' }}>
-            <button type="button" className="btn-secondary" onClick={() => navigate('/ordens-servico')} style={{ borderRadius: 'var(--radius-sm)' }}>Cancelar</button>
-            <button type="submit" className="btn-primary" disabled={submitting} style={{ borderRadius: 'var(--radius-sm)', padding: '10px 28px' }}>
+          <div className={css.acoesForm}>
+            <button type="button" className={`btn-secondary ${css.btnCancelar}`} onClick={() => navigate('/ordens-servico')}>Cancelar</button>
+            <button type="submit" className={`btn-primary ${css.btnConfirmar}`} disabled={submitting}>
               {submitting ? 'Registrando...' : 'Confirmar Abertura'}
             </button>
           </div>

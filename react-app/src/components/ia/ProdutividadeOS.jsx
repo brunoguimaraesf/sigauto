@@ -1,4 +1,5 @@
 import { GlassPanel } from '../GlassPanel'
+import css from './ProdutividadeOS.module.css'
 
 const ROTULOS_STATUS = {
   aberta: 'Abertas',
@@ -32,27 +33,27 @@ export function ProdutividadeOS({ produtividade }) {
       <div className="panel-header"><h3>Produtividade das OS</h3></div>
       <div className="metrics-grid" aria-label="Totais por status">
         {Object.entries(ROTULOS_STATUS).map(([status, rotulo]) => (
-          <div key={status} className="metric-card" style={{ padding: '14px' }}>
+          <div key={status} className={`metric-card ${css.card}`}>
             <span className="metric-title">{rotulo}</span>
-            <div className="metric-value" style={{ fontSize: '22px' }}>{numero(totais[status] ?? 0)}</div>
+            <div className={`metric-value ${css.valor}`}>{numero(totais[status] ?? 0)}</div>
           </div>
         ))}
       </div>
-      <div className="metrics-grid" style={{ marginTop: '16px' }}>
-        <div className="metric-card" style={{ padding: '14px' }}><span className="metric-title">Taxa de conclusão</span><div className="metric-value" style={{ fontSize: '22px' }}>{produtividade?.taxa_conclusao == null ? '—' : `${numero(produtividade.taxa_conclusao, { maximumFractionDigits: 1 })}%`}</div></div>
-        <div className="metric-card" style={{ padding: '14px' }}><span className="metric-title">Tempo médio</span><div className="metric-value" style={{ fontSize: '22px' }}>{horas(produtividade?.tempo_medio_horas)}</div></div>
-        <div className="metric-card" style={{ padding: '14px' }}><span className="metric-title">Tempo mediano</span><div className="metric-value" style={{ fontSize: '22px' }}>{horas(produtividade?.tempo_mediano_horas)}</div></div>
+      <div className={`metrics-grid ${css.gridSecundaria}`}>
+        <div className={`metric-card ${css.card}`}><span className="metric-title">Taxa de conclusão</span><div className={`metric-value ${css.valor}`}>{produtividade?.taxa_conclusao == null ? '—' : `${numero(produtividade.taxa_conclusao, { maximumFractionDigits: 1 })}%`}</div></div>
+        <div className={`metric-card ${css.card}`}><span className="metric-title">Tempo médio</span><div className={`metric-value ${css.valor}`}>{horas(produtividade?.tempo_medio_horas)}</div></div>
+        <div className={`metric-card ${css.card}`}><span className="metric-title">Tempo mediano</span><div className={`metric-value ${css.valor}`}>{horas(produtividade?.tempo_mediano_horas)}</div></div>
       </div>
-      <section style={{ marginTop: '20px' }} aria-label="Ordens abertas há mais tempo">
-        <h4 style={{ marginBottom: '10px' }}>OS abertas há mais tempo</h4>
-        {antigas.length === 0 ? <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Não há OS abertas para listar.</p> : (
-          <div style={{ overflowX: 'auto' }}><table className="data-table" style={{ minWidth: '480px' }}><thead><tr><th>OS</th><th>Status</th><th>Data de abertura</th></tr></thead><tbody>{antigas.map((os, indice) => <tr key={os.id ?? `${os.numero_os}-${indice}`}><td>{os.numero_os ?? '—'}</td><td>{os.status ?? '—'}</td><td>{data(os.data_abertura)}</td></tr>)}</tbody></table></div>
+      <section className={css.secao} aria-label="Ordens abertas há mais tempo">
+        <h4 className={css.secaoTitulo}>OS abertas há mais tempo</h4>
+        {antigas.length === 0 ? <p className={css.vazio}>Não há OS abertas para listar.</p> : (
+          <div className={css.scroll}><table className={`data-table ${css.tabelaAntigas}`}><thead><tr><th>OS</th><th>Status</th><th>Data de abertura</th></tr></thead><tbody>{antigas.map((os, indice) => <tr key={os.id ?? `${os.numero_os}-${indice}`}><td>{os.numero_os ?? '—'}</td><td>{os.status ?? '—'}</td><td>{data(os.data_abertura)}</td></tr>)}</tbody></table></div>
         )}
       </section>
-      <section style={{ marginTop: '20px' }} aria-label="Conclusões por mecânico">
-        <h4 style={{ marginBottom: '10px' }}>Conclusões por mecânico</h4>
-        {porMecanico.length === 0 ? <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Não há conclusões por mecânico no período.</p> : (
-          <div style={{ overflowX: 'auto' }}><table className="data-table" style={{ minWidth: '560px' }}><thead><tr><th>Mecânico</th><th>OS concluídas</th><th>Valor médio</th></tr></thead><tbody>{porMecanico.map((mecanico, indice) => <tr key={mecanico.id_mecanico ?? `${mecanico.nome}-${indice}`}><td>{mecanico.nome || 'Mecânico não identificado'}</td><td>{numero(mecanico.quantidade_concluida)}</td><td>{Number.isFinite(Number(mecanico.valor_medio)) ? Number(mecanico.valor_medio).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—'}</td></tr>)}</tbody></table></div>
+      <section className={css.secao} aria-label="Conclusões por mecânico">
+        <h4 className={css.secaoTitulo}>Conclusões por mecânico</h4>
+        {porMecanico.length === 0 ? <p className={css.vazio}>Não há conclusões por mecânico no período.</p> : (
+          <div className={css.scroll}><table className={`data-table ${css.tabelaMecanicos}`}><thead><tr><th>Mecânico</th><th>OS concluídas</th><th>Valor médio</th></tr></thead><tbody>{porMecanico.map((mecanico, indice) => <tr key={mecanico.id_mecanico ?? `${mecanico.nome}-${indice}`}><td>{mecanico.nome || 'Mecânico não identificado'}</td><td>{numero(mecanico.quantidade_concluida)}</td><td>{Number.isFinite(Number(mecanico.valor_medio)) ? Number(mecanico.valor_medio).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—'}</td></tr>)}</tbody></table></div>
         )}
       </section>
     </GlassPanel>

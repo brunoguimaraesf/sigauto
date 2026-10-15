@@ -1,4 +1,5 @@
 import { GlassPanel } from '../GlassPanel'
+import css from './EstoqueInteligente.module.css'
 
 function numero(valor) {
   return valor !== null && valor !== '' && Number.isFinite(Number(valor))
@@ -14,14 +15,14 @@ function Cobertura({ dias }) {
 
 function Tabela({ titulo, descricao, itens, colunas, vazio }) {
   return (
-    <section style={{ marginTop: '20px' }} aria-label={titulo}>
-      <h4 style={{ color: 'var(--text-primary)', marginBottom: '4px' }}>{titulo}</h4>
-      {descricao && <p style={{ color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '10px' }}>{descricao}</p>}
+    <section className={css.secao} aria-label={titulo}>
+      <h4 className={css.titulo}>{titulo}</h4>
+      {descricao && <p className={css.descricao}>{descricao}</p>}
       {itens.length === 0 ? (
-        <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>{vazio}</p>
+        <p className={css.vazio}>{vazio}</p>
       ) : (
-        <div style={{ overflowX: 'auto' }}>
-          <table className="data-table" style={{ minWidth: '620px' }}>
+        <div className={css.scroll}>
+          <table className={`data-table ${css.tabela}`}>
             <thead><tr>{colunas.map((coluna) => <th key={coluna.titulo}>{coluna.titulo}</th>)}</tr></thead>
             <tbody>
               {itens.map((item, indice) => (
@@ -46,7 +47,7 @@ export function EstoqueInteligente({ estoque }) {
   return (
     <GlassPanel className="panel stagger-2">
       <div className="panel-header"><h3>Estoque inteligente</h3></div>
-      <p style={{ color: 'var(--text-secondary)', fontSize: '12px', lineHeight: 1.5 }}>
+      <p className={css.formula}>
         Reposição sugerida = máximo(0, estoque mínimo + consumo diário × 30 − quantidade atual). A sugestão é apenas consultiva e não altera o estoque.
       </p>
       <Tabela

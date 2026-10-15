@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import css from './AtualizarOS.module.css'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, CheckCircle, Package, Plus, Search, Trash2, Wrench, X } from 'lucide-react'
 import { GlassPanel } from '../../components/GlassPanel'
@@ -9,9 +10,9 @@ import { calcOSCommissions, calcOSTotals, formatCurrency, getLineTotal, resolveE
 
 function SummaryChip({ label, value, tone }) {
   return (
-    <div style={{ padding: '10px 14px', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', background: 'var(--bg-subtle)', flex: 1 }}>
-      <div style={{ color: 'var(--text-muted)', fontSize: '10px', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '3px' }}>{label}</div>
-      <div style={{ fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: '600', color: tone || 'var(--text-primary)' }}>{formatCurrency(value)}</div>
+    <div className={css.chip}>
+      <div className={css.chipRotulo}>{label}</div>
+      <div className={css.chipValor} style={{ color: tone || 'var(--text-primary)' }}>{formatCurrency(value)}</div>
     </div>
   )
 }
@@ -87,9 +88,9 @@ export function AtualizarOS() {
   if (!os) {
     return (
       <div className="dashboard-grid">
-        <GlassPanel className="panel stagger-1" style={{ textAlign: 'center', padding: '64px' }}>
-          <p style={{ color: 'var(--text-secondary)' }}>Ordem de servico nao encontrada.</p>
-          <button className="btn-primary" onClick={() => navigate('/ordens-servico')} style={{ marginTop: '16px' }}>Voltar</button>
+        <GlassPanel className={`panel stagger-1 ${css.painelVazio}`}>
+          <p className={css.textoVazio}>Ordem de servico nao encontrada.</p>
+          <button className={`btn-primary ${css.btnVoltarLista}`} onClick={() => navigate('/ordens-servico')}>Voltar</button>
         </GlassPanel>
       </div>
     )
@@ -205,23 +206,23 @@ export function AtualizarOS() {
     <div className="dashboard-grid">
 
       {/* ── Cabeçalho ── */}
-      <section className="welcome-section stagger-1" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
+      <section className={`welcome-section stagger-1 ${css.topo}`}>
         <div>
           <h2>O.S. #{os.numero_os || os.id?.slice(-4)?.toUpperCase()}</h2>
-          <p style={{ fontSize: '13px' }}>
+          <p className={css.subtitulo}>
             {cliente.nome || 'Cliente não informado'}
             {veiculo.placa ? ` · ${veiculo.placa} ${veiculo.marca} ${veiculo.modelo}` : ''}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'flex-start', flexWrap: 'wrap' }}>
-          <button className="btn-secondary" onClick={() => navigate('/ordens-servico')} style={{ padding: '8px 14px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div className={css.acoesTopo}>
+          <button className={`btn-secondary ${css.btnVoltar}`} onClick={() => navigate('/ordens-servico')}>
             <ArrowLeft size={15} /> Voltar
           </button>
           <AcoesDocumentoOS os={os} cliente={cliente} veiculo={veiculo} compacto />
           {bloqueada ? (
-            <button className="btn-primary" onClick={reabrirOS} style={{ padding: '8px 14px', borderRadius: 'var(--radius-sm)' }}>Reabrir O.S.</button>
+            <button className={`btn-primary ${css.btnAcaoTopo}`} onClick={reabrirOS}>Reabrir O.S.</button>
           ) : (
-            <button className="btn-primary" onClick={() => navigate(`/ordens-servico/${id}/encerrar`)} style={{ padding: '8px 14px', borderRadius: 'var(--radius-sm)' }}>Finalizar O.S.</button>
+            <button className={`btn-primary ${css.btnAcaoTopo}`} onClick={() => navigate(`/ordens-servico/${id}/encerrar`)}>Finalizar O.S.</button>
           )}
         </div>
       </section>
@@ -229,42 +230,42 @@ export function AtualizarOS() {
       {/* ── Painel 1: resumo + formulário lado a lado ── */}
       <GlassPanel className="panel stagger-2">
         {bloqueada && (
-          <div className="alert-box" style={{ marginBottom: '16px' }}>
+          <div className={`alert-box ${css.alerta}`}>
             Esta O.S. está {encerrada ? 'encerrada' : 'cancelada'} e não pode ser alterada. Clique em <strong>Reabrir O.S.</strong> para editar.
           </div>
         )}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+        <div className={css.colunas}>
 
           {/* Coluna esquerda: financeiro + queixa */}
           <div>
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
+            <div className={css.chips}>
               <SummaryChip label="Serviços" value={totals.valorServicos} tone="var(--electric-blue)" />
               <SummaryChip label="Peças" value={totals.valorPecas} tone="var(--neon-orange)" />
               <SummaryChip label="Total" value={totals.valorTotal} tone="var(--status-done)" />
             </div>
             {os.descricao && (
-              <div style={{ padding: '10px 12px', background: 'var(--bg-subtle)', border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)' }}>
-                <div style={{ fontSize: '10px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: '4px' }}>Queixa do cliente</div>
-                <p style={{ fontSize: '13px', color: 'var(--text-secondary)', lineHeight: '1.5', margin: 0 }}>{os.descricao}</p>
+              <div className={css.queixa}>
+                <div className={css.queixaRotulo}>Queixa do cliente</div>
+                <p className={css.queixaTexto}>{os.descricao}</p>
               </div>
             )}
           </div>
 
           {/* Coluna direita: form técnico */}
           <form onSubmit={handleSalvar}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-              <span style={{ fontSize: '13px', fontWeight: '700', color: 'var(--text-primary)' }}>Dados técnicos</span>
-              {saved && <span style={{ color: 'var(--status-done)', fontSize: '12px', fontWeight: '600', display: 'flex', alignItems: 'center', gap: '4px' }}><CheckCircle size={13} /> Salvo</span>}
+            <div className={css.formHeader}>
+              <span className={css.formTitulo}>Dados técnicos</span>
+              {saved && <span className={css.avisoSalvo}><CheckCircle size={13} /> Salvo</span>}
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
-              <div className="form-group" style={{ marginBottom: 0 }}>
+            <div className={css.linhaCampos}>
+              <div className={`form-group ${css.campoSemMargem}`}>
                 <label>Mecanico responsavel</label>
                 <select className="form-control" value={mecanicoId} onChange={e => setMecanicoId(e.target.value)} disabled={bloqueada}>
                   <option value="">A definir</option>
                   {mecanicos.map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
                 </select>
               </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
+              <div className={`form-group ${css.campoSemMargem}`}>
                 <label>Atendente responsavel</label>
                 <select className="form-control" value={atendenteId} onChange={e => setAtendenteId(e.target.value)} disabled={bloqueada}>
                   <option value="">A definir</option>
@@ -272,8 +273,8 @@ export function AtualizarOS() {
                 </select>
               </div>
             </div>
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px', marginBottom: '10px' }}>
-              <div className="form-group" style={{ marginBottom: 0 }}>
+            <div className={css.linhaCampos}>
+              <div className={`form-group ${css.campoSemMargem}`}>
                 <label>Status</label>
                 <select className="form-control" value={status} onChange={e => setStatus(e.target.value)} disabled={bloqueada}>
                   <option value="aberta">Aberta</option>
@@ -283,7 +284,7 @@ export function AtualizarOS() {
                   <option value="cancelada">Cancelada</option>
                 </select>
               </div>
-              <div className="form-group" style={{ marginBottom: 0 }}>
+              <div className={`form-group ${css.campoSemMargem}`}>
                 <label>Forma de pagamento</label>
                 <select className="form-control" value={formaPagamento} onChange={e => setFormaPagamento(e.target.value)} disabled={bloqueada}>
                   <option value="a_definir">A definir</option>
@@ -296,16 +297,16 @@ export function AtualizarOS() {
                 </select>
               </div>
             </div>
-            <div className="form-group" style={{ marginBottom: '10px' }}>
+            <div className={`form-group ${css.campoDiagnostico}`}>
               <label>Diagnóstico técnico</label>
-              <textarea className="form-control" value={diagnostico} onChange={e => setDiagnostico(e.target.value)} disabled={bloqueada} style={{ minHeight: '72px', resize: 'vertical' }} placeholder="Diagnóstico do mecânico..." />
+              <textarea className={`form-control ${css.textareaDiagnostico}`} value={diagnostico} onChange={e => setDiagnostico(e.target.value)} disabled={bloqueada} placeholder="Diagnóstico do mecânico..." />
             </div>
-            <div className="form-group" style={{ marginBottom: '12px' }}>
+            <div className={`form-group ${css.campoObservacoes}`}>
               <label>Observações</label>
-              <textarea className="form-control" value={observacoes} onChange={e => setObservacoes(e.target.value)} disabled={bloqueada} style={{ minHeight: '52px', resize: 'vertical' }} placeholder="Observações internas..." />
+              <textarea className={`form-control ${css.textareaObservacoes}`} value={observacoes} onChange={e => setObservacoes(e.target.value)} disabled={bloqueada} placeholder="Observações internas..." />
             </div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-              <button type="submit" className="btn-primary" disabled={bloqueada} style={{ borderRadius: 'var(--radius-sm)', padding: '8px 20px' }}>Salvar alterações</button>
+            <div className={css.acaoSalvar}>
+              <button type="submit" className={`btn-primary ${css.btnSalvar}`} disabled={bloqueada}>Salvar alterações</button>
             </div>
           </form>
         </div>
@@ -313,14 +314,14 @@ export function AtualizarOS() {
 
       {/* ── Painel 2: serviços + peças lado a lado ── */}
       <GlassPanel className="panel stagger-3">
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '24px' }}>
+        <div className={css.colunas}>
 
           {/* Serviços */}
           <div>
-            <div className="panel-header" style={{ marginBottom: '12px' }}>
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '15px' }}><Wrench size={15} /> Serviços</h3>
+            <div className={`panel-header ${css.itensHeader}`}>
+              <h3 className={css.itensTitulo}><Wrench size={15} /> Serviços</h3>
               {!bloqueada && (
-                <button type="button" className="btn-secondary" onClick={() => abrirModal('servico')} style={{ borderRadius: 'var(--radius-sm)', padding: '5px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <button type="button" className={`btn-secondary ${css.btnAdicionar}`} onClick={() => abrirModal('servico')}>
                   <Plus size={12} /> Adicionar
                 </button>
               )}
@@ -330,10 +331,10 @@ export function AtualizarOS() {
 
           {/* Peças */}
           <div>
-            <div className="panel-header" style={{ marginBottom: '12px' }}>
-              <h3 style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '15px' }}><Package size={15} /> Produtos e peças</h3>
+            <div className={`panel-header ${css.itensHeader}`}>
+              <h3 className={css.itensTitulo}><Package size={15} /> Produtos e peças</h3>
               {!bloqueada && (
-                <button type="button" className="btn-secondary" onClick={() => abrirModal('peca')} style={{ borderRadius: 'var(--radius-sm)', padding: '5px 10px', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <button type="button" className={`btn-secondary ${css.btnAdicionar}`} onClick={() => abrirModal('peca')}>
                   <Plus size={12} /> Adicionar
                 </button>
               )}
@@ -363,7 +364,7 @@ export function AtualizarOS() {
 
 function ItensTable({ items, onRemove, locked }) {
   if (!items.length) {
-    return <p style={{ color: 'var(--text-secondary)', fontSize: '13px', marginTop: '16px' }}>Nenhum item lancado.</p>
+    return <p className={css.semItens}>Nenhum item lancado.</p>
   }
 
   return (
@@ -411,15 +412,15 @@ function ItensModal({ tipo, busca, setBusca, catalogo, selecionados, onAdd, onQt
 
   return (
     <div className="modal-overlay">
-      <div className="modal-content" style={{ maxWidth: '900px' }}>
+      <div className={`modal-content ${css.modal}`}>
         <div className="modal-header">
           <h3>{tipo === 'servico' ? 'Adicionar servicos' : 'Adicionar produtos/pecas'}</h3>
-          <button onClick={onClose} style={{ color: 'var(--text-secondary)' }}><X size={20} /></button>
+          <button onClick={onClose} className={css.btnFechar}><X size={20} /></button>
         </div>
         <div className="modal-body">
-          <div style={{ position: 'relative', marginBottom: '16px' }}>
-            <Search size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: 14, top: 13 }} />
-            <input className="form-control" value={busca} onChange={e => setBusca(e.target.value)} placeholder="Pesquisar por codigo ou nome..." style={{ paddingLeft: '40px' }} />
+          <div className={css.busca}>
+            <Search size={16} color="var(--text-secondary)" className={css.buscaIcone} />
+            <input className={`form-control ${css.buscaInput}`} value={busca} onChange={e => setBusca(e.target.value)} placeholder="Pesquisar por codigo ou nome..." />
           </div>
 
           <div className="tech-table-container">
@@ -440,14 +441,14 @@ function ItensModal({ tipo, busca, setBusca, catalogo, selecionados, onAdd, onQt
                     <td>{item.nome}</td>
                     <td>{formatCurrency(tipo === 'servico' ? item.preco : item.preco_unit)}</td>
                     {tipo === 'peca' && <td>{item.quantidade} {item.unidade}</td>}
-                    <td><button type="button" className="btn-secondary" onClick={() => onAdd(item)} style={{ padding: '6px 10px', borderRadius: 'var(--radius-sm)' }}>Adicionar</button></td>
+                    <td><button type="button" className={`btn-secondary ${css.btnAdicionarItem}`} onClick={() => onAdd(item)}>Adicionar</button></td>
                   </tr>
                 ))}
               </tbody>
             </table>
           </div>
 
-          <h4 style={{ marginTop: '24px', marginBottom: '12px' }}>Selecionados</h4>
+          <h4 className={css.tituloSelecionados}>Selecionados</h4>
           <ItensSelecionados items={selecionados} onQty={onQty} onRemove={onRemove} />
         </div>
         <div className="modal-footer">
@@ -460,7 +461,7 @@ function ItensModal({ tipo, busca, setBusca, catalogo, selecionados, onAdd, onQt
 }
 
 function ItensSelecionados({ items, onQty, onRemove }) {
-  if (!items.length) return <p style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>Nenhum item selecionado.</p>
+  if (!items.length) return <p className={css.semSelecionados}>Nenhum item selecionado.</p>
   return (
     <div className="tech-table-container">
       <table className="tech-table">
@@ -477,7 +478,7 @@ function ItensSelecionados({ items, onQty, onRemove }) {
           {items.map(item => (
             <tr key={item.id}>
               <td>{item.descricao}</td>
-              <td><input className="form-control" type="number" min="0.01" step="0.01" value={item.quantidade} onChange={e => onQty(item.id, e.target.value)} style={{ width: '90px' }} /></td>
+              <td><input className={`form-control ${css.campoQtd}`} type="number" min="0.01" step="0.01" value={item.quantidade} onChange={e => onQty(item.id, e.target.value)} /></td>
               <td>{formatCurrency(item.valor_unitario)}</td>
               <td>{formatCurrency(getLineTotal(item))}</td>
               <td><button type="button" className="btn-danger" onClick={() => onRemove(item.id)}><Trash2 size={12} /></button></td>

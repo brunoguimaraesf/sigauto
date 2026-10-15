@@ -3,6 +3,7 @@ import { GlassPanel } from '../components/GlassPanel'
 import { Plus, Edit2, UserX, X, Shield, User, Wrench, Search, Percent, RefreshCw } from 'lucide-react'
 import { useDatabase } from '../hooks/useDatabase'
 import { supabaseDb } from '../supabaseClient'
+import css from './Funcionarios.module.css'
 
 const CARGO_ICONS = { gestor: Shield, atendente: User, mecanico: Wrench }
 const CARGO_COLORS = {
@@ -103,32 +104,32 @@ export function Funcionarios() {
 
   return (
     <div className="dashboard-grid">
-      <section className="welcome-section stagger-1" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      <section className={`welcome-section stagger-1 ${css.topo}`}>
         <div>
           <h2>Funcionarios</h2>
           <p>Colaboradores da oficina e suas regras de comissao.</p>
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
-          <button className="btn-secondary" onClick={carregar} style={{ borderRadius: 'var(--radius-sm)', padding: '8px 12px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <div className={css.acoesTopo}>
+          <button className={`btn-secondary ${css.btnAtualizar}`} onClick={carregar}>
             <RefreshCw size={16} /> Atualizar
           </button>
-          <button className="btn-primary" onClick={abrirNovo} style={{ borderRadius: 'var(--radius-sm)', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button className={`btn-primary ${css.btnNovo}`} onClick={abrirNovo}>
             <Plus size={16} /> Novo Funcionario
           </button>
         </div>
       </section>
 
       <GlassPanel className="panel stagger-2">
-        <div style={{ position: 'relative', marginBottom: '24px' }}>
-          <Search size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: 14, top: 13 }} />
-          <input type="text" className="form-control" placeholder="Buscar por nome ou cargo..." value={busca} onChange={e => setBusca(e.target.value)} style={{ paddingLeft: '40px' }} />
+        <div className={css.busca}>
+          <Search size={16} color="var(--text-secondary)" className={css.buscaIcone} />
+          <input type="text" className={`form-control ${css.buscaInput}`} placeholder="Buscar por nome ou cargo..." value={busca} onChange={e => setBusca(e.target.value)} />
         </div>
 
         <div className="tech-table-container">
           {carregando ? (
-            <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-secondary)' }}>Carregando funcionarios...</div>
+            <div className={css.vazio}>Carregando funcionarios...</div>
           ) : filtrados.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-secondary)' }}>Nenhum funcionario cadastrado.</div>
+            <div className={css.vazio}>Nenhum funcionario cadastrado.</div>
           ) : (
             <table className="tech-table">
               <thead>
@@ -152,34 +153,34 @@ export function Funcionarios() {
                   return (
                     <tr key={f.id}>
                       <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                          <div style={{ width: '36px', height: '36px', borderRadius: '50%', background: 'var(--color-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '13px', fontWeight: '700', flexShrink: 0 }}>
+                        <div className={css.celulaNome}>
+                          <div className={css.avatar}>
                             {f.nome?.charAt(0)?.toUpperCase()}
                           </div>
-                          <strong style={{ fontSize: '14px' }}>{f.nome}</strong>
+                          <strong className={css.nome}>{f.nome}</strong>
                         </div>
                       </td>
                       <td>
-                        <span style={{ display: 'inline-flex', alignItems: 'center', gap: '5px', padding: '4px 10px', borderRadius: '100px', fontSize: '11px', fontWeight: '700', textTransform: 'uppercase', letterSpacing: '0.5px', color: cc.color, background: cc.bg, border: `1px solid ${cc.border}` }}>
+                        <span className={css.cargo} style={{ color: cc.color, background: cc.bg, border: `1px solid ${cc.border}` }}>
                           <CargoIcon size={11} /> {f.cargo}
                         </span>
                       </td>
-                      <td style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>
+                      <td className={css.celulaTextoMenor}>
                         {Number(f.comissao_percentual || 0) > 0 ? (
                           <>
-                            <strong style={{ color: 'var(--text-primary)' }}>{Number(f.comissao_percentual || 0).toLocaleString('pt-BR')}%</strong>
-                            <span style={{ display: 'block', marginTop: '2px' }}>{bases || 'sem base'}</span>
+                            <strong className={css.comissaoValor}>{Number(f.comissao_percentual || 0).toLocaleString('pt-BR')}%</strong>
+                            <span className={css.comissaoDetalhe}>{bases || 'sem base'}</span>
                           </>
                         ) : '-'}
                       </td>
-                      <td style={{ fontSize: '13px', color: 'var(--text-secondary)' }}>{login?.email || '-'}</td>
+                      <td className={css.celulaTexto}>{login?.email || '-'}</td>
                       <td>
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                          <button className="btn-secondary" onClick={() => abrirEditar(f)} style={{ padding: '5px 10px', fontSize: '12px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                        <div className={css.acoes}>
+                          <button className={`btn-secondary ${css.btnEditar}`} onClick={() => abrirEditar(f)}>
                             <Edit2 size={11} /> Editar
                           </button>
                           {f.ativo !== false && (
-                            <button className="btn-danger" onClick={() => handleInativar(f.id)} style={{ padding: '5px 10px', display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px' }}>
+                            <button className={`btn-danger ${css.btnInativar}`} onClick={() => handleInativar(f.id)}>
                               <UserX size={11} /> Inativar
                             </button>
                           )}
@@ -199,7 +200,7 @@ export function Funcionarios() {
           <div className="modal-content">
             <div className="modal-header">
               <h3>{editandoId ? 'Editar Funcionario' : 'Novo Funcionario'}</h3>
-              <button onClick={() => setModalAberto(false)} style={{ color: 'var(--text-secondary)' }}><X size={20} /></button>
+              <button onClick={() => setModalAberto(false)} className={css.btnFechar}><X size={20} /></button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
@@ -225,8 +226,8 @@ export function Funcionarios() {
                   </div>
                 </div>
 
-                <div style={{ border: '1px solid var(--border-color)', borderRadius: 'var(--radius-sm)', padding: '14px', marginBottom: '14px', background: 'var(--bg-subtle)' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '12px', fontSize: '13px', fontWeight: 700, color: 'var(--text-primary)' }}>
+                <div className={css.blocoComissao}>
+                  <div className={css.blocoComissaoTitulo}>
                     <Percent size={15} /> Comissao
                   </div>
                   <div className="form-row">
@@ -236,11 +237,11 @@ export function Funcionarios() {
                     </div>
                     <div className="form-group">
                       <label>Base de calculo</label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '13px', marginTop: '8px' }}>
+                      <label className={css.opcao}>
                         <input type="checkbox" checked={form.comissao_sobre_servicos} onChange={e => setF('comissao_sobre_servicos', e.target.checked)} />
                         Servicos
                       </label>
-                      <label style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--text-secondary)', fontSize: '13px', marginTop: '8px' }}>
+                      <label className={css.opcao}>
                         <input type="checkbox" checked={form.comissao_sobre_pecas} onChange={e => setF('comissao_sobre_pecas', e.target.checked)} />
                         Pecas e produtos
                       </label>
@@ -249,7 +250,7 @@ export function Funcionarios() {
                 </div>
 
                 {erroForm && (
-                  <div style={{ padding: '10px', background: 'var(--color-primary-tint)', border: '1px solid var(--color-primary-border)', borderRadius: 'var(--radius-sm)', color: 'var(--neon-orange)', fontSize: '13px' }}>
+                  <div className={css.erroForm}>
                     {erroForm}
                   </div>
                 )}

@@ -3,6 +3,7 @@ import { GlassPanel } from '../../components/GlassPanel'
 import { Plus, Search, Bell, AlertTriangle, Edit2, X, Package, TrendingUp, TrendingDown } from 'lucide-react'
 import { supabaseDb } from '../../supabaseClient'
 import { AuthContext } from '../../context/AuthContext'
+import css from './ListaEstoque.module.css'
 
 
 export function ListaEstoque() {
@@ -182,18 +183,18 @@ export function ListaEstoque() {
 
   return (
     <div className="dashboard-grid">
-      <section className="welcome-section stagger-1" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
+      <section className={`welcome-section stagger-1 ${css.topo}`}>
         <div>
           <h2>Controle de Estoque</h2>
           <p>Gerencie peças, insumos e materiais da oficina.</p>
         </div>
-        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+        <div className={css.acoesTopo}>
           {qtdAlertas > 0 && (
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', padding: '6px 12px', background: 'var(--color-primary-tint)', border: '1px solid var(--color-primary-border)', borderRadius: '100px', fontSize: '12px', color: 'var(--neon-orange)', fontWeight: '600' }}>
+            <div className={css.contadorAlerta}>
               <Bell size={12} /> {qtdAlertas} {qtdAlertas === 1 ? 'item' : 'itens'} em alerta
             </div>
           )}
-          <button className="btn-primary" onClick={abrirNovo} style={{ borderRadius: 'var(--radius-sm)', padding: '8px 16px', display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <button className={`btn-primary ${css.btnNovo}`} onClick={abrirNovo}>
             <Plus size={16} /> Novo Item
           </button>
         </div>
@@ -208,20 +209,20 @@ export function ListaEstoque() {
       )}
 
       <GlassPanel className="panel stagger-2">
-        <div style={{ display: 'flex', gap: '12px', marginBottom: '24px', flexWrap: 'wrap', alignItems: 'center' }}>
-          <div style={{ flex: 1, minWidth: '200px', position: 'relative' }}>
-            <Search size={16} color="var(--text-secondary)" style={{ position: 'absolute', left: 14, top: 13 }} />
-            <input type="text" className="form-control" placeholder="Buscar por nome ou código..." value={busca} onChange={e => setBusca(e.target.value)} style={{ paddingLeft: '40px' }} />
+        <div className={css.filtros}>
+          <div className={css.busca}>
+            <Search size={16} color="var(--text-secondary)" className={css.buscaIcone} />
+            <input type="text" className={`form-control ${css.buscaInput}`} placeholder="Buscar por nome ou código..." value={busca} onChange={e => setBusca(e.target.value)} />
           </div>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer', color: somenteAlerta ? 'var(--neon-orange)' : 'var(--text-secondary)', fontSize: '13px', fontWeight: '600' }}>
-            <input type="checkbox" checked={somenteAlerta} onChange={e => setSomenteAlerta(e.target.checked)} style={{ accentColor: 'var(--neon-orange)' }} />
+          <label className={css.filtroAlerta} style={{ color: somenteAlerta ? 'var(--neon-orange)' : 'var(--text-secondary)' }}>
+            <input type="checkbox" checked={somenteAlerta} onChange={e => setSomenteAlerta(e.target.checked)} className={css.caixaAlerta} />
             <AlertTriangle size={14} /> Somente com alerta
           </label>
         </div>
 
         <div className="tech-table-container">
           {filtrados.length === 0 ? (
-            <div style={{ textAlign: 'center', padding: '48px', color: 'var(--text-secondary)' }}>Nenhum item encontrado.</div>
+            <div className={css.vazio}>Nenhum item encontrado.</div>
           ) : (
             <table className="tech-table">
               <thead>
@@ -239,53 +240,50 @@ export function ListaEstoque() {
               <tbody>
                 {filtrados.map(item => (
                   <tr key={item.id}>
-                    <td><span style={{ fontFamily: 'monospace', fontSize: '12px', color: 'var(--text-secondary)' }}>{item.codigo}</span></td>
+                    <td><span className={css.codigo}>{item.codigo}</span></td>
                     <td>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                        <div style={{ width: '32px', height: '32px', borderRadius: 'var(--radius-sm)', background: 'var(--color-primary-tint)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                      <div className={css.celulaNome}>
+                        <div className={css.icone}>
                           <Package size={14} color="var(--neon-orange)" />
                         </div>
                         <div>
-                          <strong style={{ fontSize: '14px' }}>{item.nome}</strong>
-                          {item.descricao && <span style={{ display: 'block', fontSize: '11px', color: 'var(--text-muted)' }}>{item.descricao.slice(0, 50)}{item.descricao.length > 50 ? '...' : ''}</span>}
+                          <strong className={css.nome}>{item.nome}</strong>
+                          {item.descricao && <span className={css.categoria}>{item.descricao.slice(0, 50)}{item.descricao.length > 50 ? '...' : ''}</span>}
                         </div>
                       </div>
                     </td>
-                    <td><span style={{ fontSize: '12px', color: 'var(--text-secondary)' }}>{item.unidade}</span></td>
+                    <td><span className={css.unidade}>{item.unidade}</span></td>
                     <td>
-                      <span style={{
-                        fontFamily: 'var(--font-display)', fontSize: '18px', fontWeight: '600',
-                        color: item.quantidade === 0 ? 'var(--color-danger)' : item.quantidade <= item.qtd_minima ? 'var(--color-warning)' : 'var(--text-primary)'
-                      }}>
+                      <span className={css.quantidade} style={{ color: item.quantidade === 0 ? 'var(--color-danger)' : item.quantidade <= item.qtd_minima ? 'var(--color-warning)' : 'var(--text-primary)' }}>
                         {item.quantidade}
                       </span>
                     </td>
-                    <td style={{ color: 'var(--text-secondary)', fontSize: '13px' }}>{item.qtd_minima}</td>
+                    <td className={css.minimo}>{item.qtd_minima}</td>
                     <td>
                       {item.quantidade === 0 ? (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--color-danger)', fontSize: '12px', fontWeight: '600' }}>
+                        <span className={css.situacaoZerada}>
                           <AlertTriangle size={12} /> CRÍTICO
                         </span>
                       ) : temAlerta(item) ? (
-                        <span style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--neon-orange)', fontSize: '12px', fontWeight: '600' }}>
+                        <span className={css.situacaoAlerta}>
                           <Bell size={12} /> BAIXO
                         </span>
                       ) : (
-                        <span style={{ color: 'var(--status-done)', fontSize: '12px', fontWeight: '600' }}>OK</span>
+                        <span className={css.situacaoNormal}>OK</span>
                       )}
                     </td>
-                    <td style={{ fontFamily: 'var(--font-display)', fontWeight: '600', color: 'var(--neon-orange)' }}>
+                    <td className={css.preco}>
                       {item.preco_unit ? `R$ ${item.preco_unit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
                     </td>
                     <td>
-                      <div style={{ display: 'flex', gap: '4px' }}>
-                        <button className="btn-secondary" onClick={() => abrirEditar(item)} style={{ padding: '5px 8px', fontSize: '11px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <div className={css.acoes}>
+                        <button className={`btn-secondary ${css.btnAcao}`} onClick={() => abrirEditar(item)}>
                           <Edit2 size={11} /> Editar
                         </button>
-                        <button className="btn-secondary" onClick={() => { setModalMovimentacao(item); setMTipo('entrada'); setMQtd(''); setMMotivo('') }} style={{ padding: '5px 8px', fontSize: '11px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--status-done)', borderColor: 'var(--color-success)' }}>
+                        <button className={`btn-secondary ${css.btnEntrada}`} onClick={() => { setModalMovimentacao(item); setMTipo('entrada'); setMQtd(''); setMMotivo('') }}>
                           <TrendingUp size={11} /> Entrada
                         </button>
-                        <button className="btn-secondary" onClick={() => { setModalMovimentacao(item); setMTipo('saida'); setMQtd(''); setMMotivo('') }} style={{ padding: '5px 8px', fontSize: '11px', borderRadius: 'var(--radius-sm)', display: 'flex', alignItems: 'center', gap: '3px', color: 'var(--neon-orange)', borderColor: 'var(--color-primary)' }}>
+                        <button className={`btn-secondary ${css.btnSaida}`} onClick={() => { setModalMovimentacao(item); setMTipo('saida'); setMQtd(''); setMMotivo('') }}>
                           <TrendingDown size={11} /> Saída
                         </button>
                       </div>
@@ -304,7 +302,7 @@ export function ListaEstoque() {
           <div className="modal-content">
             <div className="modal-header">
               <h3>{editingId ? 'Editar Item' : 'Novo Item de Estoque'}</h3>
-              <button onClick={() => setModalItem(null)} style={{ color: 'var(--text-secondary)' }}><X size={20} /></button>
+              <button onClick={() => setModalItem(null)} className={css.btnFechar}><X size={20} /></button>
             </div>
             <form onSubmit={handleSalvarItem}>
               <div className="modal-body">
@@ -353,13 +351,7 @@ export function ListaEstoque() {
                   {podeVerCusto && (
                   <div className="form-group">
                     <label>Margem</label>
-                    <div style={{
-                      height: '42px', display: 'flex', alignItems: 'center', paddingLeft: '14px',
-                      background: 'var(--bg-subtle)', border: '1px solid var(--border-color)',
-                      borderRadius: 'var(--radius-sm)', fontFamily: 'var(--font-display)', fontWeight: '600',
-                      fontSize: '15px',
-                      color: margemPct === null ? 'var(--text-muted)' : margemPct >= 0 ? 'var(--status-done)' : 'var(--color-danger)',
-                    }}>
+                    <div className={css.margem} style={{ color: margemPct === null ? 'var(--text-muted)' : margemPct >= 0 ? 'var(--status-done)' : 'var(--color-danger)' }}>
                       {margemPct === null ? '—' : `${margemPct >= 0 ? '+' : ''}${margemPct.toFixed(1)}%`}
                     </div>
                   </div>
@@ -378,16 +370,16 @@ export function ListaEstoque() {
       {/* Modal Movimentação */}
       {modalMovimentacao && (
         <div className="modal-overlay">
-          <div className="modal-content" style={{ maxWidth: '420px' }}>
+          <div className={`modal-content ${css.modalMovimentacao}`}>
             <div className="modal-header">
               <h3>Movimentação — {modalMovimentacao.nome}</h3>
-              <button onClick={() => setModalMovimentacao(null)} style={{ color: 'var(--text-secondary)' }}><X size={20} /></button>
+              <button onClick={() => setModalMovimentacao(null)} className={css.btnFechar}><X size={20} /></button>
             </div>
             <form onSubmit={handleMovimentacao}>
               <div className="modal-body">
-                <div style={{ padding: '12px', background: 'var(--bg-subtle)', borderRadius: 'var(--radius-sm)', marginBottom: '16px', textAlign: 'center' }}>
-                  <div style={{ fontSize: '11px', color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Saldo Atual</div>
-                  <div style={{ fontFamily: 'var(--font-display)', fontSize: '32px', fontWeight: '600', color: modalMovimentacao.quantidade === 0 ? 'var(--color-danger)' : 'var(--text-primary)' }}>{modalMovimentacao.quantidade} {modalMovimentacao.unidade}</div>
+                <div className={css.saldoAtual}>
+                <div className={css.saldoRotulo}>Saldo Atual</div>
+                  <div className={css.saldoValor} style={{ color: modalMovimentacao.quantidade === 0 ? 'var(--color-danger)' : 'var(--text-primary)' }}>{modalMovimentacao.quantidade} {modalMovimentacao.unidade}</div>
                 </div>
                 <div className="form-group">
                   <label>Tipo de Movimentação</label>
@@ -399,7 +391,7 @@ export function ListaEstoque() {
                 </div>
                 <div className="form-group">
                   <label>Quantidade *</label>
-                  <input type="number" className="form-control" placeholder="0" value={mQtd} onChange={e => setMQtd(e.target.value)} min={1} required style={{ fontSize: '18px', fontWeight: '600' }} />
+                  <input type="number" className={`form-control ${css.campoQuantidade}`} placeholder="0" value={mQtd} onChange={e => setMQtd(e.target.value)} min={1} required />
                 </div>
                 <div className="form-group">
                   <label>Motivo / Observação</label>

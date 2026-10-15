@@ -1,0 +1,63 @@
+/* Padroes comuns das telas de listagem e de cadastro de pessoas. */
+.topo { composes: topo from './listaPagina.module.css'; }
+.btnNovo { composes: btnNovo from './listaPagina.module.css'; }
+.buscaInput { composes: buscaInput from './listaPagina.module.css'; }
+.vazio { composes: vazio from './listaPagina.module.css'; }
+.btnFechar { composes: btnFechar from './listaPagina.module.css'; }
+.acoesTopo { composes: acoesTopo from './listaPagina.module.css'; }
+.btnAtualizar { composes: btnAtualizar from './listaPagina.module.css'; }
+.busca { composes: buscaBarra from './listaPagina.module.css'; }
+.buscaIcone { composes: buscaBarraIcone from './listaPagina.module.css'; }
+.celulaNome { composes: celulaNomeCompacta from './listaPagina.module.css'; }
+.avatar { composes: avatar from './listaPagina.module.css'; }
+.nome { composes: nomeForte from './listaPagina.module.css'; }
+.celulaTexto { composes: celulaTexto from './listaPagina.module.css'; }
+.cargo { composes: badgePill from './listaPagina.module.css'; }
+.acoes { composes: acoesCompactas from './listaPagina.module.css'; }
+.btnEditar { composes: btnEditar from './listaPagina.module.css'; }
+.btnInativar { composes: btnInativar from './listaPagina.module.css'; }
+.erroForm { composes: erroForm from './listaPagina.module.css'; }
+
+/* Proprio desta tela. */
+.celulaTextoMenor {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.comissaoValor {
+  color: var(--text-primary);
+}
+
+.comissaoDetalhe {
+  display: block;
+  margin-top: 2px;
+}
+
+/* Bloco de comissao dentro do modal, destacado do resto do formulario. */
+.blocoComissao {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  margin-bottom: 14px;
+  background: var(--bg-subtle);
+}
+
+.blocoComissaoTitulo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+/* Label de caixa de selecao: o texto fica na mesma linha do controle. */
+.opcao {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-top: 8px;
+}

@@ -3,6 +3,7 @@ import { FileText, Printer } from 'lucide-react'
 import { useDatabase } from '../../hooks/useDatabase'
 import { resolveEquipe } from '../../utils/osFinance'
 import { abrirDocumentoOS, carregarLogoDataUrl, imprimirDocumentoOS } from '../../utils/osPdf'
+import css from './AcoesDocumentoOS.module.css'
 
 // "Visualizar PDF" e "Imprimir" da O.S. (RF05), em qualquer status. As duas
 // acoes montam o mesmo documento pelo gerador unico de utils/osPdf.js.
@@ -46,24 +47,21 @@ export function AcoesDocumentoOS({ os, cliente, veiculo, extra = {}, compacto = 
     }
   }
 
-  const estiloBotao = {
-    display: 'flex', alignItems: 'center', gap: '6px',
-    padding: compacto ? '8px 14px' : '10px 18px', borderRadius: 'var(--radius-sm)',
-  }
+  const classeBotao = `btn-secondary ${css.btn}${compacto ? ` ${css.btnCompacto}` : ''}`
   const desabilitado = Boolean(ocupado) || carregandoOficina
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '6px' }}>
-      <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
-        <button type="button" className="btn-secondary" style={estiloBotao} onClick={() => executar('visualizar')} disabled={desabilitado}>
+    <div className={css.acoes}>
+      <div className={css.grupo}>
+        <button type="button" className={classeBotao} onClick={() => executar('visualizar')} disabled={desabilitado}>
           <FileText size={15} /> {ocupado === 'visualizar' ? 'Gerando...' : 'Visualizar PDF'}
         </button>
-        <button type="button" className="btn-secondary" style={estiloBotao} onClick={() => executar('imprimir')} disabled={desabilitado}>
+        <button type="button" className={classeBotao} onClick={() => executar('imprimir')} disabled={desabilitado}>
           <Printer size={15} /> {ocupado === 'imprimir' ? 'Preparando...' : 'Imprimir'}
         </button>
       </div>
       {erro && (
-        <span role="alert" style={{ fontSize: '12px', color: 'var(--text-secondary)', maxWidth: '360px', textAlign: 'right' }}>
+        <span role="alert" className={css.erro}>
           {erro}
         </span>
       )}

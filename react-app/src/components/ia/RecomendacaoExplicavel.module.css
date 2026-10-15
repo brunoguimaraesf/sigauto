@@ -1,0 +1,102 @@
+/* Selo fixo de carater consultivo: a recomendacao nunca e acao automatica. */
+.aviso {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--color-warning-tint);
+  border: 1px solid var(--color-warning-border);
+  color: var(--color-warning);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 12px;
+}
+
+.corpo {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.icone {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.conteudo {
+  flex: 1;
+}
+
+.cabecalho {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.titulo {
+  font-family: var(--font-display);
+  font-size: 16px;
+}
+
+/* A cor e o fundo vem da prioridade e continuam inline. */
+.prioridade {
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.descricao {
+  color: var(--text-secondary);
+  font-size: 13px;
+  line-height: 1.6;
+  margin-top: 8px;
+}
+
+.lista {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 8px;
+  margin-top: 14px;
+  font-size: 13px;
+}
+
+.rotulo {
+  color: var(--text-muted);
+  font-weight: 700;
+}
+
+.valor {
+  margin: 0;
+}
+
+.valorCapitalizado {
+  margin: 0;
+  text-transform: capitalize;
+}
+
+.evidencias {
+  margin-top: 14px;
+}
+
+.evidenciasTitulo {
+  font-size: 13px;
+}
+
+.evidenciasVazio {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-top: 4px;
+}
+
+.evidenciasLista {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin: 6px 0 0;
+  padding-left: 18px;
+}

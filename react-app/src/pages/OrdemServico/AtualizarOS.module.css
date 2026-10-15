@@ -1,0 +1,260 @@
+/* Padroes comuns das telas de listagem e do formulario de O.S. */
+.btnFechar { composes: btnFechar from '../listaPagina.module.css'; }
+.campoSemMargem { composes: campoSemMargem from './osForm.module.css'; }
+.colunas {
+  composes: colunas from './osForm.module.css';
+  margin-bottom: 0;
+}
+
+/* Proprio desta tela.
+   As classes repetidas preservam a precedencia dos antigos estilos inline
+   sobre as classes globais, independentemente da ordem dos imports. */
+
+.campoSemMargem.campoSemMargem {
+  margin-bottom: 0;
+}
+
+/* Cartao de um total (servicos, pecas, geral). A cor vem do tipo e fica inline. */
+.chip {
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+  flex: 1;
+}
+
+.chipRotulo {
+  color: var(--text-muted);
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 3px;
+}
+
+.chipValor {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 600;
+}
+
+/* ── O.S. inexistente ── */
+
+/* Acompanha .panel. */
+.painelVazio.painelVazio {
+  text-align: center;
+  padding: 64px;
+}
+
+.textoVazio {
+  color: var(--text-secondary);
+}
+
+/* Acompanha .btn-primary. */
+.btnVoltarLista {
+  margin-top: 16px;
+}
+
+/* ── Cabecalho ── */
+.topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.subtitulo.subtitulo {
+  font-size: 13px;
+}
+
+/* As acoes alinham pelo topo porque o bloco de PDF tem duas linhas. */
+.acoesTopo {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+}
+
+/* Acompanha .btn-secondary. */
+.btnVoltar.btnVoltar {
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Acompanha .btn-primary. */
+.btnAcaoTopo.btnAcaoTopo {
+  padding: 8px 14px;
+  border-radius: var(--radius-sm);
+}
+
+/* Acompanha .alert-box do index.css. */
+.alerta {
+  margin-bottom: 16px;
+}
+
+/* ── Coluna esquerda: totais e queixa ── */
+.chips {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.queixa {
+  padding: 10px 12px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+}
+
+.queixaRotulo {
+  font-size: 10px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.queixaTexto {
+  font-size: 13px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ── Coluna direita: dados tecnicos ── */
+.formHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.formTitulo {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.avisoSalvo {
+  color: var(--status-done);
+  font-size: 12px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.linhaCampos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+/* Acompanha .form-group. */
+.campoDiagnostico.campoDiagnostico {
+  margin-bottom: 10px;
+}
+
+.campoObservacoes.campoObservacoes {
+  margin-bottom: 12px;
+}
+
+/* Acompanha .form-control: a altura minima e o arrastar vertical. */
+.textareaDiagnostico.textareaDiagnostico {
+  min-height: 72px;
+  resize: vertical;
+}
+
+.textareaObservacoes.textareaObservacoes {
+  min-height: 52px;
+  resize: vertical;
+}
+
+.acaoSalvar {
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* Acompanha .btn-primary. */
+.btnSalvar.btnSalvar {
+  border-radius: var(--radius-sm);
+  padding: 8px 20px;
+}
+
+/* ── Paineis de itens ── */
+
+/* Acompanha .panel-header. */
+.itensHeader.itensHeader {
+  margin-bottom: 12px;
+}
+
+.itensTitulo.itensTitulo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 15px;
+}
+
+/* Acompanha .btn-secondary. */
+.btnAdicionar.btnAdicionar {
+  border-radius: var(--radius-sm);
+  padding: 5px 10px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.semItens {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-top: 16px;
+}
+
+/* ── Modal de catalogo ── */
+
+/* Acompanha .modal-content: largo, porque mostra tabela e selecionados. */
+.modal.modal {
+  max-width: 900px;
+}
+
+.busca {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.buscaIcone {
+  position: absolute;
+  left: 14px;
+  top: 13px;
+}
+
+/* Acompanha .form-control. */
+.buscaInput.buscaInput {
+  padding-left: 40px;
+}
+
+/* Acompanha .btn-secondary. */
+.btnAdicionarItem.btnAdicionarItem {
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+}
+
+.tituloSelecionados {
+  margin-top: 24px;
+  margin-bottom: 12px;
+}
+
+.semSelecionados {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+/* Acompanha .form-control: quantidade cabe dentro da celula da tabela. */
+.campoQtd.campoQtd {
+  width: 90px;
+}

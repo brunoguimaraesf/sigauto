@@ -1,0 +1,323 @@
+/* Estilos da finalizacao da O.S.; valores e regras do fluxo permanecem no componente. */
+
+.chip { composes: chip from './AtualizarOS.module.css'; }
+
+.chipRotulo { composes: chipRotulo from './AtualizarOS.module.css'; }
+
+.chipValor { composes: chipValor from './AtualizarOS.module.css'; }
+
+.semItens {
+  color: var(--text-muted);
+  font-size: 13px;
+  margin-top: 12px;
+}
+
+.alinhadoDireita {
+  text-align: right;
+}
+
+:global(.tech-table) td.totalItem {
+  text-align: right;
+  color: var(--neon-orange);
+  font-weight: 600;
+}
+
+.painelVazio { composes: painelVazio from './AtualizarOS.module.css'; }
+
+.textoVazio { composes: textoVazio from './AtualizarOS.module.css'; }
+
+.btnVoltarLista { composes: btnVoltarLista from './AtualizarOS.module.css'; }
+
+.painelSucesso { composes: painelSucesso from './AbrirOS.module.css'; }
+
+.iconeSucesso { composes: iconeSucesso from './AbrirOS.module.css'; }
+
+.tituloSucesso { composes: tituloSucesso from './AbrirOS.module.css'; }
+
+.textoReabertura {
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+
+.acoesSucesso { composes: acoesSucesso from './AbrirOS.module.css'; }
+
+.rotuloTotalCobrado {
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.totalCobrado {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--neon-orange);
+  margin-bottom: 8px;
+}
+
+.descontoSucesso {
+  color: var(--text-muted);
+  font-size: 12px;
+  margin-bottom: 4px;
+}
+
+.pagamentoSucesso {
+  color: var(--text-secondary);
+  font-size: 13px;
+  margin-bottom: 32px;
+}
+
+.topo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.subtitulo { composes: subtitulo from './AtualizarOS.module.css'; }
+
+.btnVoltar { composes: btnVoltar from './osForm.module.css'; }
+
+.gradeItens {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.tituloServicos {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  margin-bottom: 12px;
+  color: var(--electric-blue);
+}
+
+.subtotalServicos {
+  text-align: right;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--electric-blue);
+  font-weight: 600;
+}
+
+.tituloPecas {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  margin-bottom: 12px;
+  color: var(--neon-orange);
+}
+
+.subtotalPecas {
+  text-align: right;
+  margin-top: 8px;
+  font-size: 13px;
+  color: var(--neon-orange);
+  font-weight: 600;
+}
+
+.gradeFechamento {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+.tituloResumo {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 14px;
+}
+
+.chips {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.desconto {
+  border-top: 1px solid var(--border-color);
+  padding-top: 16px;
+  margin-bottom: 16px;
+}
+
+.descontoRotulo {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: block;
+  margin-bottom: 8px;
+}
+
+.linhaDesconto {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.tiposDesconto {
+  display: flex;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  flex-shrink: 0;
+}
+
+.tipoDesconto {
+  padding: 7px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  background: transparent;
+  color: var(--text-secondary);
+  transition: background 0.15s;
+}
+
+.campoDesconto {
+  flex: 1;
+}
+
+.descontoAplicado {
+  margin-top: 8px;
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  justify-content: space-between;
+}
+
+.valorDesconto {
+  color: var(--color-danger);
+  font-weight: 600;
+}
+
+.resumoFinal {
+  padding: 16px;
+  background: var(--color-primary-tint);
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--radius-sm);
+  text-align: center;
+}
+
+.valorFinalRotulo {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 4px;
+}
+
+.valorFinal {
+  font-family: var(--font-display);
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--neon-orange);
+}
+
+.pagamento {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.tituloPagamento {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 0;
+}
+
+.campoSemMargem { composes: campoSemMargem from './osForm.module.css'; }
+
+.obrigatorio {
+  color: var(--neon-orange);
+}
+
+.campoObservacoes {
+  margin-bottom: 0;
+  flex: 1;
+}
+
+.textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.alertaConfirmacao {
+  border-color: var(--color-warning);
+  font-size: 13px;
+}
+
+.acoesForm {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: auto;
+  flex-wrap: wrap;
+}
+
+.btnConfirmarFinalizacao {
+  padding: 10px 24px;
+  background: var(--color-success);
+}
+
+.iconeRotulo { composes: iconeRotulo from './osForm.module.css'; }
+
+.btnFinalizar {
+  padding: 10px 24px;
+}
+
+.tipoDescontoAtivo {
+  background: var(--neon-orange);
+  color: #fff;
+}
+
+/* Mantem as prioridades que os estilos inline tinham sobre as regras globais. */
+:global(.welcome-section) .subtitulo {
+  font-size: 13px;
+}
+
+:global(.btn-primary).btnConfirmarFinalizacao:hover,
+:global(.btn-primary).btnConfirmarFinalizacao:active {
+  background: var(--color-success);
+}
+
+/* index.css e carregado depois dos modulos; estes overrides mantem a prioridade
+   dos antigos atributos inline sem modificar os estilos compartilhados. */
+:global(.panel).painelVazio {
+  padding: 64px;
+}
+
+:global(.panel).painelSucesso {
+  padding: 64px 48px;
+}
+
+:global(.btn-secondary).btnVoltar {
+  padding: 8px 16px;
+}
+
+:global(.form-group).campoSemMargem,
+:global(.form-group).campoObservacoes {
+  margin-bottom: 0;
+}
+
+:global(.form-control).textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+:global(.alert-box).alertaConfirmacao {
+  border-color: var(--color-warning);
+  font-size: 13px;
+}
+
+:global(.btn-primary).btnFinalizar,
+:global(.btn-primary).btnConfirmarFinalizacao {
+  padding: 10px 24px;
+}
+
+:global(.btn-primary).btnConfirmarFinalizacao {
+  background: var(--color-success);
+}

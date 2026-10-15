@@ -41,3 +41,20 @@ test('abre o assistente (chatbot)', async ({ page }) => {
   await page.getByRole('button', { name: 'Abrir assistente' }).click()
   await expect(page.getByText(/Assistente SIGAuto/i)).toBeVisible()
 })
+
+test('mantém sino e filtros do histórico alinhados', async ({ page }) => {
+  const sino = page.getByRole('button', { name: 'Notificações' })
+  const caixaSino = await sino.boundingBox()
+  const larguraTela = page.viewportSize()?.width ?? 0
+
+  expect(caixaSino).not.toBeNull()
+  expect(caixaSino.x + caixaSino.width).toBeGreaterThan(larguraTela - 48)
+
+  await page.getByRole('link', { name: 'Historico', exact: true }).click()
+  const busca = page.getByPlaceholder(/Buscar cliente, placa/i)
+  const filtroStatus = page.getByRole('combobox')
+
+  await expect(busca).toBeVisible()
+  expect(await busca.evaluate((elemento) => getComputedStyle(elemento).paddingLeft)).toBe('40px')
+  expect(Math.round((await filtroStatus.boundingBox()).width)).toBe(160)
+})

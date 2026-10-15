@@ -1,0 +1,95 @@
+/* Padroes comuns dos formularios de O.S. (abrir, atualizar e encerrar).
+   Cada tela puxa o que usa com `composes`; alterar aqui muda as tres. */
+
+/* Acompanha .btn-secondary: voltar para a lista de O.S. */
+.btnVoltar {
+  padding: 8px 16px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* Cabecalho de um bloco do formulario: rotulo a esquerda, atalho a direita. */
+.secaoHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.secaoTitulo {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Icone que precede o texto de um rotulo. */
+.iconeRotulo {
+  margin-right: 6px;
+}
+
+/* Acompanha .btn-link: atalhos pequenos dentro do formulario. */
+.btnAtalho {
+  font-size: 11px;
+}
+
+/* Acompanha .form-group: campo dentro de uma grade, sem margem embaixo. */
+.campoSemMargem {
+  margin-bottom: 0;
+}
+
+/* Linha entre blocos do formulario. */
+.divisor {
+  border-top: 1px solid var(--border-color);
+  margin: 0 0 20px;
+}
+
+/* Duas colunas de blocos (cliente e veiculo). */
+.colunas {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+
+.acoesForm {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+/* Acompanha .btn-secondary. */
+.btnCancelar {
+  border-radius: var(--radius-sm);
+}
+
+/* Acompanha .btn-primary: acao que conclui a tela. */
+.btnConfirmar {
+  border-radius: var(--radius-sm);
+  padding: 10px 28px;
+}
+
+/* Cartao de resumo de um registro escolhido. */
+.resumo {
+  padding: 10px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--text-secondary);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.resumoNome {
+  color: var(--text-primary);
+}
+
+.linhaPropria {
+  display: block;
+}

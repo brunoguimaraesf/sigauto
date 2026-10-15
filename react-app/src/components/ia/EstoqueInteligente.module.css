@@ -1,0 +1,35 @@
+/* Explicacao da formula de reposicao sugerida. */
+.formula {
+  color: var(--text-secondary);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.secao {
+  margin-top: 20px;
+}
+
+.titulo {
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.descricao {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-bottom: 10px;
+}
+
+.vazio {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.scroll {
+  overflow-x: auto;
+}
+
+/* Acompanha .data-table do index.css. */
+.tabela {
+  min-width: 620px;
+}

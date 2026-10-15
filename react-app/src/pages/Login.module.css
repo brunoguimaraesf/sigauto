@@ -1,0 +1,253 @@
+/* Botao de conta de demonstracao que preenche o formulario. */
+.demoAccount {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 7px 10px;
+  margin-bottom: 4px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-family: var(--font-body);
+  transition: border-color 0.15s;
+}
+
+.demoAccount:hover,
+.demoAccount:focus-visible {
+  border-color: var(--color-primary);
+}
+
+/* Tela inteira, centralizando o cartao. */
+.tela {
+  min-height: 100vh;
+  background: var(--bg-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+  font-family: var(--font-body);
+}
+
+/* Acompanha .glass do index.css. */
+.cartao {
+  width: 100%;
+  max-width: 440px;
+  margin: 24px;
+  padding: 48px 40px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Filete laranja no topo do cartao. */
+.filete {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background: var(--color-primary);
+}
+
+.marca {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.logoCaixa {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 104px;
+  height: 104px;
+  background: #fff;
+  border: 1px solid var(--border-color);
+  border-radius: 16px;
+  margin-bottom: 18px;
+  overflow: hidden;
+}
+
+/* A escala recorta a margem branca do arquivo do logotipo. */
+.logo {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scale(1.12);
+}
+
+.titulo {
+  font-family: var(--font-display);
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--text-primary);
+  margin-bottom: 8px;
+}
+
+.subtitulo {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+.rotulo {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Campo com icone a esquerda. */
+.campo {
+  position: relative;
+}
+
+.campoIcone {
+  position: absolute;
+  left: 14px;
+  top: 14px;
+  pointer-events: none;
+}
+
+/* Acompanha .form-control: abre espaco para o icone. */
+.campoEmail {
+  padding-left: 42px;
+}
+
+/* Espaco para o icone a esquerda e o olho a direita. */
+.campoSenha {
+  padding-left: 42px;
+  padding-right: 42px;
+}
+
+.btnOlho {
+  position: absolute;
+  right: 12px;
+  top: 10px;
+  color: var(--text-muted);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.erro {
+  padding: 12px 16px;
+  background: var(--color-primary-tint);
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-primary);
+  font-size: 13px;
+  margin-bottom: 20px;
+  line-height: 1.4;
+}
+
+/* Acompanha .btn-primary: ocupa a largura do cartao. */
+.btnEntrar {
+  width: 100%;
+  padding: 14px;
+  font-size: 15px;
+  border-radius: var(--radius-sm);
+  margin-top: 8px;
+}
+
+.carregando {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.spinner {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  border: 2px solid var(--border-color);
+  border-top-color: #fff;
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.esqueci {
+  text-align: center;
+  margin-top: 20px;
+}
+
+/* Acompanha .btn-link. */
+.btnEsqueci {
+  font-size: 13px;
+}
+
+/* Bloco das contas de demonstracao. */
+.demo {
+  margin-top: 28px;
+  padding: 14px 16px;
+  background: var(--color-primary-tint);
+  border: 1px solid var(--color-primary-border);
+  border-radius: var(--radius-sm);
+}
+
+.demoTitulo {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 10px;
+  font-weight: 600;
+}
+
+.demoEmail {
+  font-size: 12px;
+  color: var(--text-secondary);
+  font-family: monospace;
+}
+
+/* A cor vem do perfil e continua inline. */
+.demoPerfil {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.demoDica {
+  font-size: 10px;
+  color: var(--text-muted);
+  margin-top: 6px;
+}
+
+.rodape {
+  text-align: center;
+  color: var(--text-muted);
+  font-size: 11px;
+  margin-top: 20px;
+}
+
+/* ── Modal de recuperacao de senha ── */
+
+/* Acompanha .modal-content: mais estreito, so um campo. */
+.modal {
+  max-width: 400px;
+}
+
+.resetEnviado {
+  padding: 16px;
+  background: var(--color-success-tint);
+  border: 1px solid var(--color-success-border);
+  border-radius: var(--radius-sm);
+  color: var(--status-done);
+  font-size: 14px;
+  text-align: center;
+}
+
+.resetTexto {
+  color: var(--text-secondary);
+  font-size: 14px;
+  margin-bottom: 16px;
+}

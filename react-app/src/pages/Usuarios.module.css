@@ -1,0 +1,37 @@
+/* Padroes comuns das telas de listagem e de cadastro de pessoas. */
+.topo { composes: topo from './listaPagina.module.css'; }
+.btnNovo { composes: btnNovo from './listaPagina.module.css'; }
+.buscaInput { composes: buscaInput from './listaPagina.module.css'; }
+.vazio { composes: vazio from './listaPagina.module.css'; }
+.btnFechar { composes: btnFechar from './listaPagina.module.css'; }
+.acoesTopo { composes: acoesTopo from './listaPagina.module.css'; }
+.btnAtualizar { composes: btnAtualizar from './listaPagina.module.css'; }
+.busca { composes: buscaBarra from './listaPagina.module.css'; }
+.buscaIcone { composes: buscaBarraIcone from './listaPagina.module.css'; }
+.celulaNome { composes: celulaNomeCompacta from './listaPagina.module.css'; }
+.avatar { composes: avatar from './listaPagina.module.css'; }
+.nome { composes: nomeForte from './listaPagina.module.css'; }
+.celulaTexto { composes: celulaTexto from './listaPagina.module.css'; }
+.perfil { composes: badgePill from './listaPagina.module.css'; }
+.acoes { composes: acoesCompactas from './listaPagina.module.css'; }
+.btnEditar { composes: btnEditar from './listaPagina.module.css'; }
+.btnInativar { composes: btnInativar from './listaPagina.module.css'; }
+.erroForm { composes: erroForm from './listaPagina.module.css'; }
+
+/* Proprio desta tela. As cores vem de `ativo` e continuam inline. */
+.status {
+  padding: 4px 10px;
+  border-radius: 100px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* Acompanha .alert-box do index.css. */
+.alertaCompacto {
+  margin-bottom: 12px;
+  font-size: 12px;
+}
+
+.alertaRodape {
+  margin-top: 12px;
+}

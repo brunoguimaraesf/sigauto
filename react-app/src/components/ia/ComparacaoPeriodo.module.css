@@ -1,0 +1,47 @@
+/* Intervalo de datas comparado, no cabecalho do painel. */
+.periodo {
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-top: 4px;
+}
+
+/* Acompanha .data-table do index.css. */
+.tabela {
+  width: 100%;
+  min-width: 760px;
+  table-layout: fixed;
+}
+
+/* A classe da tabela aumenta a especificidade sobre `.data-table th`, que e
+   global e carregada depois. Cabecalho e valores ficam no mesmo eixo. */
+.tabela .num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.semBase {
+  white-space: nowrap;
+}
+
+.variacao {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 3px;
+  white-space: nowrap;
+}
+
+.ranking {
+  margin-top: 24px;
+}
+
+.rankingTitulo {
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.vazio {
+  color: var(--text-secondary);
+  font-size: 13px;
+}

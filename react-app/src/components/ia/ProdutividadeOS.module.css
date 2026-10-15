@@ -1,0 +1,38 @@
+/* Cartoes de metrica mais apertados que o padrao, porque sao muitos na grade. */
+.card {
+  padding: 14px;
+}
+
+.valor {
+  font-size: 22px;
+}
+
+.gridSecundaria {
+  margin-top: 16px;
+}
+
+.secao {
+  margin-top: 20px;
+}
+
+.secaoTitulo {
+  margin-bottom: 10px;
+}
+
+.vazio {
+  color: var(--text-secondary);
+  font-size: 13px;
+}
+
+.scroll {
+  overflow-x: auto;
+}
+
+/* Acompanham .data-table do index.css: largura minima por conteudo da tabela. */
+.tabelaAntigas {
+  min-width: 480px;
+}
+
+.tabelaMecanicos {
+  min-width: 560px;
+}

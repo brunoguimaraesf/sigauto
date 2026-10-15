@@ -1,0 +1,122 @@
+/* Seletor de tipo de relatorio, em cartoes. */
+.tipos {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* Acompanha .metric-card do index.css. */
+.cardTipo {
+  cursor: pointer;
+  padding: 16px 20px;
+  flex: 1;
+  min-width: 160px;
+  text-align: center;
+  border-color: var(--border-color);
+  background: var(--bg-surface);
+}
+
+/* Tipo selecionado. */
+.cardTipoAtivo {
+  border-color: var(--color-primary);
+  background: var(--color-primary-tint);
+}
+
+.cardIcone {
+  margin-bottom: 8px;
+}
+
+.cardLabel {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+
+.cardLabelAtivo {
+  color: var(--neon-orange);
+}
+
+.cardDesc {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Linha de filtros de periodo mais o botao de exportar. */
+.filtros {
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.filtrosCampos {
+  display: flex;
+  gap: 12px;
+  flex: 1;
+}
+
+/* Acompanha .form-group do index.css: na linha de filtros nao ha margem. */
+.campo {
+  margin-bottom: 0;
+  flex: 1;
+}
+
+/* Acompanha .btn-secondary do index.css. */
+.btnExportar {
+  padding: 10px 16px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  align-self: flex-end;
+}
+
+/* Acompanha .panel-header do index.css. */
+.panelHeader {
+  margin-bottom: 24px;
+}
+
+.tituloIcone {
+  margin-right: 8px;
+  vertical-align: middle;
+  color: var(--neon-orange);
+}
+
+.totais {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.total {
+  padding: 16px 20px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  flex: 1;
+  min-width: 140px;
+  text-align: center;
+}
+
+.totalLabel {
+  font-size: 11px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-bottom: 6px;
+}
+
+.totalValor {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--neon-orange);
+}
+
+.vazio {
+  text-align: center;
+  padding: 48px;
+  color: var(--text-secondary);
+}
