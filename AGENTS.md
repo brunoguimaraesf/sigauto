@@ -1,8 +1,8 @@
-# CLAUDE.md — SIGAuto
+# AGENTS.md — SIGAuto
 
 Guia para agentes de IA trabalhando neste repositório. Complementa o [README.md](README.md).
 
-> Mantenha o [AGENTS.md](AGENTS.md) idêntico a este arquivo (só o título muda). Ele é a versão lida pelo Codex.
+> Mantenha `AGENTS.md` e `CLAUDE.md` idênticos (só o título muda): o primeiro é lido pelo Codex e o segundo pelo Claude Code.
 
 ## O que é
 
@@ -11,8 +11,8 @@ SIGAuto — Sistema Inteligente de Gestão de Oficinas Automotivas. TFC UniRV 20
 ## Estrutura
 
 - `react-app/` — Frontend React 19 + Vite (o cliente principal).
-- `backend/` — API Express (ESM), **só o que não pode rodar no navegador**: `authRoutes`, `chatbotRoutes` e `iaRoutes` (health incluso), porque dependem da chave do Gemini e da `service_role`. As rotas de cadastro (clientes, veículos, OS, estoque, movimentações, relatórios, usuários) **foram removidas** — operavam com privilégio administrativo e hoje tudo isso passa direto pelo Supabase sob RLS. Não crie rota nova de cadastro aqui.
-- `database/` — Scripts SQL numerados, aplicados **em ordem** no Supabase (**01 → 19**).
+- `backend/` — API Express (ESM), **só o que não pode rodar no navegador**: `authRoutes`, `chatbotRoutes` e `iaRoutes` (health incluso), porque dependem da chave do Gemini e da `service_role`. O cadastro administrativo de conta (`POST /auth/usuarios`) pertence aqui porque usa `auth.admin`; os demais cadastros passam direto pelo Supabase sob RLS. Não crie rota CRUD comum aqui.
+- `database/` — Scripts SQL numerados, aplicados **em ordem** no Supabase (**01 → 28**).
 - `docs/` — a especificação e o modelo de dados. Leia antes de implementar: ver **Documentação** abaixo.
 
 ## Documentação
@@ -21,18 +21,17 @@ Antes de implementar, consulte — nesta ordem de autoridade:
 
 | Arquivo | O que é | Fonte |
 |---|---|---|
+| [`docs/Desenvolvimento_DERS_BrunoGabrielGuimaraes.docx`](docs/Desenvolvimento_DERS_BrunoGabrielGuimaraes.docx) | O **DERS**, entrega acadêmica do TFC | **A fonte dos requisitos.** Edite este arquivo no Word |
+| [`docs/REQUISITOS.md`](docs/REQUISITOS.md) | RF01–RF15, RN01–RN50, critérios e escopo | **Gerado — não edite à mão.** Derivado do `.docx` |
 | [`docs/DER.md`](docs/DER.md) | O modelo de dados real, em Mermaid | **`database/*.sql`.** Se a especificação e o schema divergirem, o schema ganha — divergências listadas lá |
 | [`docs/VALIDACAO_VERIFICACAO.md`](docs/VALIDACAO_VERIFICACAO.md) | Plano de V&V e a matriz de rastreabilidade UC → RF → implementação → teste | **O código e as suítes.** Só rodando os testes se sabe quantos são |
 
-Os requisitos numerados (**RF01–RF15**, **RN01–RN50**) são a especificação do
-sistema: critérios de aceite, campos de tela, regras de negócio, restrições
-obrigatórias e o escopo incluído e excluído. Em `docs/` o repositório versiona
-apenas os dois arquivos acima; o resto da pasta é material de consulta local e
-está fora do Git.
+Requisito novo ou alterado entra pelo `.docx`, seguido de `python docs/importar-ders.py`.
+O `REQUISITOS.md` e as imagens são artefatos gerados e versionados.
 
 Três coisas que esses documentos evitam, e que custam caro:
 
-- **Escopo excluído é excluído.** Nota fiscal eletrônica, módulo financeiro, baixa automática de estoque na OS, trilha de auditoria por operação, app móvel nativo e folha de pagamento estão **fora** desta versão. Não implemente por iniciativa própria.
+- **Escopo excluído é excluído.** Nota fiscal eletrônica, módulo financeiro, trilha de auditoria por operação, app móvel nativo e folha de pagamento estão **fora** desta versão. Não implemente por iniciativa própria. A baixa automática de peças da OS passou a integrar o RF05/RF10.
 - **Requisito tem número.** Ao mexer num comportamento, cite o RF/RN correspondente no commit e no teste. As 50 regras de negócio (RN01–RN50) são critérios verificáveis, não prosa.
 - **Divergência se relata, não se resolve no escuro.** Se o código contradiz a especificação, registre em `docs/DER.md` (última seção) e avise — não escolha um lado em silêncio. Foi assim que apareceram a troca RF12/RF13 na matriz e o `custo` que a tela enviava para uma coluna inexistente.
 
@@ -42,7 +41,7 @@ Três coisas que esses documentos evitam, e que custam caro:
 - **Itens da OS são relacionais:** `os_servico` e `os_peca` (não mais JSON). `useDatabase` carrega via JOIN e grava com `syncItensOS` (apaga e reinsere). O objeto de OS na aplicação ainda expõe `servicos_itens`/`pecas_itens` como arrays — não mude esse formato interno sem ajustar as telas que consomem.
 - **Funcionário ≠ Usuário:** `usuario` é só acesso/login; `funcionario` é o colaborador (cargo + comissão), 1:1 opcional com usuario. OS referencia `funcionario` em `id_mecanico`/`id_atendente` e `usuario` em `id_usuario` (quem registrou). Resolver a equipe de uma OS: `resolveEquipe(os, funcionarios)` em [`react-app/src/utils/osFinance.js`](react-app/src/utils/osFinance.js), que tem fallback para OS antigas sem `id_mecanico`/`id_atendente` (usa o funcionario ligado ao `id_usuario`).
 - **Armadilha de nome:** `calcUserCommission(usuario, totals)` em `osFinance.js` tem o parâmetro chamado `usuario`, mas recebe um **funcionario** (quem chama é `calcOSCommissions`, com os funcionarios resolvidos). Não "corrija" isso lendo a comissão de `usuario`: a comissão vive em `funcionario`.
-- **Lista de funcionários vem de uma view:** o frontend lê a lista geral por `funcionario_publico` ([`useDatabase.js:209`](react-app/src/hooks/useDatabase.js)), que **não** expõe campos de comissão, com fallback para a tabela em bancos pré-12. Leitura direta de `funcionario` é restrita a gestor + o próprio.
+- **Lista de funcionários vem de uma view:** o frontend lê a lista geral por `funcionario_publico`, que **não** expõe campos de comissão. Se a view estiver ausente durante o deploy, o DataProvider usa temporariamente a leitura direta de `funcionario`, ainda limitada por RLS a gestor + o próprio; nesse estado, perfis não gestores podem ver somente o próprio registro.
 - **RLS:** toda tabela tem RLS. Tabela nova acessada pelo frontend **precisa** de policies (ver `02_rls_policies.sql`, a seção de RLS no `11` e os endurecimentos no `12` e no `14`).
 - **A chamada ao Gemini tem duas camadas de contingência**, nesta ordem, em [`backend/src/services/iaService.js`](backend/src/services/iaService.js): `comRetry` (3 tentativas, backoff 0,8 s e 1,6 s) → `comModeloAlternativo` (troca para o 2º modelo de `MODELOS`). **Não há terceira camada:** se os dois modelos falharem, a tela diz que a IA está indisponível e **nenhum número é estimado localmente** — o roteador de respostas fixas (`utils/chatbot.js`) e a análise local do `PainelIA` foram removidos de propósito, e a divergência das RN38/RN42 está registrada em [`docs/DER.md`](docs/DER.md).
 - **A classificação do erro da IA é por `e.status`**, não por varredura da mensagem. Sem status, o código tem de estar entre colchetes (`[503 ...]`, formato do SDK) ou no início do texto. Varrer a mensagem inteira errava nas duas direções: retentava um 401 que mencionasse "503" no fim, e **não** retentava erro de transporte (`fetch failed`) nem `AbortError`, que são justamente o que a camada existe para absorver.
@@ -52,7 +51,7 @@ Três coisas que esses documentos evitam, e que custam caro:
 
 ## Modelo de dados
 
-Entidades (`database/`): `cliente`, `endereco`, `veiculo`, `usuario`, `funcionario`, `ordem_servico`, `os_servico`, `os_peca`, `item_estoque`, `movimentacao_estoque`, `servico_catalogo`, `recomendacao_ia`, `mensagem_chatbot`, `log_auditoria`. Mais a view `funcionario_publico`.
+Entidades (`database/`): `cliente`, `endereco`, `veiculo`, `usuario`, `funcionario`, `ordem_servico`, `os_servico`, `os_peca`, `os_comissao`, `os_baixa_estoque`, `item_estoque`, `movimentacao_estoque`, `servico_catalogo`, `configuracao_oficina`, `recomendacao_ia`, `mensagem_chatbot`, `log_auditoria`. Mais as views `funcionario_publico`, `item_estoque_publico` e `historico_movimentacao_estoque`.
 
 Enums: `perfil_usuario`, `cargo_funcionario`, `status_os`, `tipo_movimentacao`, `tipo_pessoa`.
 
@@ -66,24 +65,29 @@ Migrações que o README não cobre:
 - **`17_check_preco_unit.sql`** — acrescenta o `CHECK` de nao-negatividade que faltava em `item_estoque.preco_unit`. **Em script proprio, de proposito:** `ADD CONSTRAINT` valida as linhas existentes, e uma unica linha negativa abortaria a transacao — junto da `16` isso desfaria os `REVOKE` de seguranca e deixaria a vulnerabilidade aberta por motivo de **dado**. Correcao de dado e correcao de seguranca nao compartilham transacao.
 
 - **`19_hardening_signup_e_custo.sql`** — fecha os achados da auditoria das migracoes 15-18, nenhum deles introduzido por elas. O critico: `fn_handle_new_auth_user` copiava `raw_user_meta_data->>'perfil'` para `usuario.perfil`, entao um `signup` com a chave **anon** do bundle e `"data": {"perfil": "gestor"}` criava conta gestor e passava em todas as policies do projeto — o trigger agora grava sempre `mecanico`, e promover e `UPDATE` de gestor. Tambem tira `item_estoque.custo` do alcance do atendente (view `item_estoque_publico` sem a coluna, leitura da tabela so para gestor) e exige usuario presente para ler `configuracao_oficina` e o logo. **Ordem de deploy:** publique antes o frontend que le a view, senao a tela de estoque fica vazia para atendente. Acrescenta ainda o trigger `trg_item_estoque_guard_custo` (RLS nao recorta coluna: a policy de UPDATE do atendente deixava ele apagar o custo que nao pode ver), poe `fn_perfil_usuario_atual() IS NOT NULL` na view (que ignora RLS) e cria a policy da oficina com nome proprio, para reaplicar a 18 nao reverter o conserto. **Nao reexecute `01` nem `02` em banco provisionado:** eles recriam o trigger vulneravel e a `pol_estoque_atendente_select`.
+- **`20_fix_rls_cliente_mecanico.sql`** — corrige a policy de cliente usando `funcionario.id_usuario = auth.uid()`, cria vínculos de funcionário ausentes e faz contas de signup direto nascerem inativas. Também preserva endereços textuais na entidade estruturada antes do rollout do frontend.
+- **`21_os_desconto_observacoes.sql`** — persiste o tipo, valor e percentual do desconto e as observações finais, com backfill monetário das OS históricas.
+- **`22_baixa_automatica_estoque_os.sql`** — introduz o RPC transacional `finalizar_ordem_servico`, o estado idempotente em `os_baixa_estoque`, o baseline das OS históricas e a view segura `historico_movimentacao_estoque`. `EXECUTE` fica revogado de `anon`.
+- **`23_os_comissao_snapshot.sql`** — cria `os_comissao`, captura o snapshot imutável dentro do encerramento e fornece RPCs transacionais para OS + itens e cliente + endereço.
+- **`24_remocao_legados_os_usuario.sql`** — repete backfills, valida pós-condições e remove JSONs da OS e comissão de `usuario`.
+- **`25_remocao_endereco_legado.sql`** — preserva qualquer texto restante em `endereco.ponto_referencia`, valida a pós-condição e remove `cliente.endereco`.
+- **`26_enforcement_os_estoque.sql`** — fase restritiva pós-frontend: torna o ledger append-only, ativa os guards de saldo/finalização e impede alteração direta dos itens de OS concluída ou cancelada.
+- **`27_repara_trigger_estoque.sql`** — reinstala o trigger que aplica o ledger ao saldo, reconcilia movimentos automáticos de OS quando detecta que o trigger estava ausente e restaura a view autenticada do histórico. O script bloqueia o ledger durante o reparo e, depois que instala o trigger, a reaplicação não reconcilia novamente.
+- **`28_repara_guard_custo_estoque.sql`** — reinstala os objetos da 19 que não existiam no banco publicado: a view `item_estoque_publico`, a função `fn_guard_custo_gestor` e o trigger `trg_item_estoque_guard_custo`. A 19 ficou pela metade: o `DROP POLICY` de `pol_estoque_atendente_select` foi aplicado, mas a view que a substituiria não — a tela de estoque ficava **vazia para o atendente**, sem erro, porque o fallback do frontend lê a tabela e o RLS filtra linha em silêncio; e o `custo` ficava gravável por quem não pode lê-lo. Difere da 19 em um ponto: a sentinela do INSERT por não gestor segue a nulidade real da coluna (`NULL` se anulável, `0` se `NOT NULL`), porque a 15 tambem nunca foi aplicada e `custo` nasceu `NOT NULL DEFAULT 0` à mão. Divergência registrada em `docs/DER.md`. A 28 fecha ainda um terceiro defeito, alheio à 19: as três views que ignoram o RLS por design revogavam privilégio só de `PUBLIC` e `anon`, e `REVOKE ... FROM PUBLIC` não apaga concessão nominal a `authenticated` — o default privilege do Supabase deixava `INSERT`/`UPDATE`/`DELETE` em `funcionario_publico`, `item_estoque_publico` e `historico_movimentacao_estoque`. `funcionario_publico` é auto-atualizável e expõe `id_usuario`: um mecânico repontava um funcionário para o próprio `auth.uid()` e lia comissão alheia e CPF/CNPJ de todos os clientes. **View que ignora RLS precisa de `REVOKE` nominal de `authenticated`, não só de `PUBLIC` e `anon`.**
 
-## Migrações com "Fase 2" pendente
+## Remoção dos legados concluída
 
-Duas limpezas estão **comentadas** no fim dos scripts e **ainda não podem rodar**, porque o frontend lê as colunas antigas como fallback. O banco hoje tem o formato novo **e** o antigo convivendo — conte com isso.
-
-| Script | O que a Fase 2 remove | Por que ainda não dá |
-|---|---|---|
-| `11_normalizacao_relacional.sql` | `ordem_servico.servicos_itens`, `.pecas_itens`, `.comissao_detalhes` e `usuario.comissao_*` | `useDatabase.js:65-66` cai nos arrays JSONB antigos quando `os_servico`/`os_peca` vêm vazios |
-| `13_endereco_cliente.sql` | `cliente.endereco` | `useDatabase.js:91` e `Clientes.jsx` ainda exibem o texto livre nos registros antigos (`formatarEndereco(estruturado, legado)`) |
-
-Antes de propor qualquer `DROP` dessas colunas: confirme que nenhum registro depende do fallback e tire o fallback do código primeiro, em commit separado.
+As migrações 23–25 normalizam o snapshot de comissão, repetem os backfills com
+pós-condições e removem os JSONs da OS, a comissão de `usuario` e o endereço
+textual de `cliente`. A 25 aborta se ainda houver endereço textual sem equivalente
+estruturado. Não reintroduza fallbacks para essas colunas removidas.
 
 ## Convenções
 
 - **Design system imutável:** tema escuro + laranja (`--neon-orange: #E8590C`), fonte Manrope, em `react-app/src/index.css`. Não altere cores/tipografia/layout global sem pedido explícito.
 - **Idioma:** código, UI e mensagens de commit em **português**.
 - **Commits:** não commite a cada alteração; agrupe em commits significativos e **só quando pedido**. **Sem marca de IA** (nada de "Co-Authored-By" ou "Generated with"). Trabalhe em branch, nunca direto na `main`.
-- **Migrações de banco:** nunca reescreva scripts já aplicados; adicione um novo arquivo numerado (**o próximo é o `20`**). Migração deve ser transacional e idempotente, com backfill antes de qualquer `DROP` (padrão do `11` e do `13`: cria e backfilla primeiro, deixa o drop como "Fase 2" comentada). Mexeu no schema? Atualize o [`docs/DER.md`](docs/DER.md) **no mesmo commit**.
+- **Migrações de banco:** nunca reescreva scripts já aplicados; adicione um novo arquivo numerado (**o próximo é o `29`**). Migração deve ser transacional e idempotente, com backfill e pós-condição antes de qualquer `DROP`. Mexeu no schema? Atualize o [`docs/DER.md`](docs/DER.md) **no mesmo commit**.
 - **Segredos:** a `SUPABASE_SERVICE_ROLE_KEY` e a `GEMINI_API_KEY` só existem no backend. O frontend usa exclusivamente a chave `anon` + RLS. Nunca mova uma dessas chaves para o `react-app/`.
 
 ## Testes
@@ -96,13 +100,13 @@ cd backend   && npx vitest run        # unit + integração da API
 
 Rode antes de considerar uma mudança concluída. Ambiente: Windows (PowerShell + Git Bash).
 
-Linha de base medida em 13/10/2026: **136 testes de frontend** (24 arquivos), **99 de backend** (10 arquivos) e **12 E2E**, todos passando. Caiu o número? Alguma suíte parou de ser coletada.
+Linha de base medida em 16/10/2026: **197 testes de frontend** (28 arquivos), **291 de backend** (14 arquivos) aprovados e **17 E2E** coletados. A CI executa E2E e os testes SQL contra Supabase efêmero. Caiu o número? Alguma suíte parou de ser coletada.
 
 ## Deploy
 
 Vercel (frontend e backend serverless). Merge na `main` dispara deploy automático. Variáveis de ambiente ficam no painel da Vercel; `.env` é gitignored.
 
-Quando a mudança envolver banco **e** frontend, respeite a ordem: publique o frontend que tolera os dois formatos, valide, e só então rode a migração que restringe (foi o caso do `12`).
+Para o lote 20–27, o rollout é obrigatório em três fases: aplique **20–23** (aditivas), publique frontend + backend, valide, e só então aplique **24–27** (remoção/enforcement/reparo). Não aplique 24–27 antes do frontend novo e não publique o frontend antes da 23.
 
 ## Equipe de subagents
 
