@@ -42,15 +42,13 @@ jobs:
       - run: npm run lint
       - run: npm test
 
-  # E2E (Playwright) roda sob demanda: precisa de um Supabase de teste
-  # (segredos) e dos navegadores. Dispare manualmente pela aba Actions.
   e2e:
-    name: E2E (Playwright)
-    if: github.event_name == 'workflow_dispatch'
+    name: E2E (Playwright + Supabase dedicado)
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: react-app
+    timeout-minutes: 25
+    concurrency:
+      group: sigauto-e2e-${{ github.ref }}
+      cancel-in-progress: true
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -58,9 +56,46 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: react-app/package-lock.json
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Preparar migracoes do banco E2E
+        shell: bash
+        run: |
+          mkdir -p supabase/migrations
+          rm -f supabase/migrations/*.sql
+          for arquivo in database/[0-9][0-9]_*.sql; do
+            base="$(basename "$arquivo")"
+            case "$base" in
+              04_seed_data.sql|10_seed_demo.sql) continue ;;
+            esac
+            numero="${base%%_*}"
+            nome="${base#*_}"
+            cp "$arquivo" "supabase/migrations/202610150000${numero}_${nome}"
+          done
+      - name: Iniciar e migrar Supabase efemero
+        shell: bash
+        run: |
+          supabase start
+          supabase db reset --local --no-seed
+          eval "$(supabase status -o env)"
+          echo "VITE_SUPABASE_URL=${API_URL}" >> "$GITHUB_ENV"
+          echo "VITE_SUPABASE_ANON_KEY=${ANON_KEY}" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=${SERVICE_ROLE_KEY}" >> "$GITHUB_ENV"
+          echo "DATABASE_URL=${DB_URL}" >> "$GITHUB_ENV"
       - run: npm ci
+        working-directory: react-app
+      - name: Criar fixtures deterministicas
+        run: node e2e/setup-database.mjs
+        working-directory: react-app
+      - name: Validar matriz de acesso e baixa de estoque
+        shell: bash
+        run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/rls_matrix_test.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/estoque_os_test.sql
       - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+        working-directory: react-app
+      - run: npm run test:e2e -- --workers=1
+        working-directory: react-app
         env:
-          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
-          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          CI: true

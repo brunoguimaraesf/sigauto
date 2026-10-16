@@ -49,8 +49,13 @@ scripts/logs/
 scripts/.watcher-estado.json
 scripts/.watcher.pid
 
-# Em docs/ versionamos apenas o modelo de dados e o plano de V&V. O resto da
-# pasta e material de consulta local, que nao faz parte do projeto.
+# Em docs/ ficam versionados o DERS oficial, seus artefatos gerados, o modelo
+# de dados e o plano de V&V. Os demais materiais continuam locais.
 docs/*
 !docs/DER.md
 !docs/VALIDACAO_VERIFICACAO.md
+!docs/Desenvolvimento_DERS_BrunoGabrielGuimaraes.docx
+!docs/REQUISITOS.md
+!docs/importar-ders.py
+!docs/img/
+!docs/img/**

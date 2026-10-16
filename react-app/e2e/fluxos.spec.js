@@ -45,19 +45,22 @@ test('fluxo de nova O.S. exige cliente antes do veículo', async ({ page }) => {
 // O conteudo do PDF e coberto em utils/osPdf.test.js; aqui so a disponibilidade
 // das acoes na tela real, sem baixar arquivo.
 for (const [status, rotulo] of [['aberta', 'aberta'], ['concluida', 'concluída']]) {
-  test(`O.S. ${rotulo} oferece Salvar PDF e Imprimir`, async ({ page }) => {
+  test(`O.S. ${rotulo} oferece Visualizar PDF e Imprimir`, async ({ page }) => {
     await page.getByRole('link', { name: 'Ordens de Servico', exact: true }).click()
     await page.locator('select').filter({ hasText: 'Todos os status' }).selectOption(status)
 
     const ver = page.getByRole('button', { name: /^Ver$/ }).first()
-    try {
-      await ver.waitFor({ timeout: 15000 })
-    } catch {
-      test.skip(true, `Nenhuma O.S. com status ${status} no banco de teste.`)
-    }
+    await expect(ver).toBeVisible({ timeout: 15000 })
     await ver.click()
 
-    await expect(page.getByRole('button', { name: /Salvar PDF/i })).toBeVisible()
+    const visualizar = page.getByRole('button', { name: /Visualizar PDF/i })
+    await expect(visualizar).toBeVisible()
     await expect(page.getByRole('button', { name: /Imprimir/i })).toBeVisible()
+
+    const popupPromise = page.waitForEvent('popup')
+    await visualizar.click()
+    const popup = await popupPromise
+    await popup.waitForURL(/^blob:/, { timeout: 15000 })
+    await popup.close()
   })
 }
