@@ -18,11 +18,24 @@ DECLARE
   v_total_os  int;
   v_total_est int;
   v_esperado  int;
+  v_clientes_esperados int;
+  v_clientes_ids uuid[];
+  v_clientes_observados uuid[];
+  v_comissoes_proprias int;
   v_cnt       int;
   v_cnt_com   int;
 BEGIN
   -- IDs coletados como owner (antes de trocar de role — depois o RLS bloquearia)
-  SELECT id INTO v_mec FROM usuario WHERE perfil = 'mecanico'  AND ativo LIMIT 1;
+  -- Prefere um mecanico com OS para que o teste da policy de clientes nao
+  -- passe de forma vacua com 0 esperado e 0 observado.
+  SELECT u.id INTO v_mec
+    FROM usuario u
+    LEFT JOIN funcionario f ON f.id_usuario = u.id AND f.ativo
+    LEFT JOIN ordem_servico o ON o.id_mecanico = f.id
+   WHERE u.perfil = 'mecanico' AND u.ativo
+   GROUP BY u.id
+   ORDER BY count(o.id) DESC
+   LIMIT 1;
   SELECT id INTO v_ges FROM usuario WHERE perfil = 'gestor'    AND ativo LIMIT 1;
   SELECT id INTO v_att FROM usuario WHERE perfil = 'atendente' AND ativo LIMIT 1;
   SELECT count(*) INTO v_total_cli FROM cliente;
@@ -56,12 +69,41 @@ BEGIN
       FROM ordem_servico o JOIN funcionario f ON f.id = o.id_mecanico
      WHERE f.id_usuario = v_mec;
 
+    SELECT count(DISTINCT v.id_cliente) INTO v_clientes_esperados
+      FROM ordem_servico o
+      JOIN funcionario f ON f.id = o.id_mecanico
+      JOIN veiculo v ON v.id = o.id_veiculo
+     WHERE f.id_usuario = v_mec;
+
+    SELECT COALESCE(array_agg(DISTINCT v.id_cliente ORDER BY v.id_cliente), ARRAY[]::uuid[])
+      INTO v_clientes_ids
+      FROM ordem_servico o
+      JOIN funcionario f ON f.id = o.id_mecanico
+      JOIN veiculo v ON v.id = o.id_veiculo
+     WHERE f.id_usuario = v_mec;
+
+    SELECT count(*) INTO v_comissoes_proprias
+      FROM os_comissao c
+      JOIN funcionario f ON f.id = c.id_funcionario
+     WHERE f.id_usuario = v_mec;
+
     PERFORM set_config('request.jwt.claims', json_build_object('sub', v_mec, 'role', 'authenticated')::text, true);
     SET LOCAL ROLE authenticated;
 
     -- OS: mecanico so ve as suas
     SELECT count(*) INTO v_cnt FROM ordem_servico;
     IF v_cnt <> v_esperado THEN RAISE EXCEPTION 'FALHA mecanico: deveria ver % OS (as suas), viu %', v_esperado, v_cnt; END IF;
+
+    -- Clientes: somente os proprietarios dos veiculos das suas OS. Esta
+    -- assercao cobre a troca usuario.id -> funcionario.id da migracao 11.
+    SELECT count(*) INTO v_cnt FROM cliente;
+    IF v_cnt <> v_clientes_esperados THEN
+      RAISE EXCEPTION 'FALHA mecanico: deveria ver % clientes das suas OS, viu %', v_clientes_esperados, v_cnt;
+    END IF;
+    SELECT COALESCE(array_agg(id ORDER BY id), ARRAY[]::uuid[]) INTO v_clientes_observados FROM cliente;
+    IF v_clientes_observados IS DISTINCT FROM v_clientes_ids THEN
+      RAISE EXCEPTION 'FALHA mecanico: conjunto de clientes incorreto. Esperado %, observado %', v_clientes_ids, v_clientes_observados;
+    END IF;
 
     -- Estoque: mecanico nao gerencia estoque -> nao deve ver (0)
     SELECT count(*) INTO v_cnt FROM item_estoque;
@@ -70,11 +112,16 @@ BEGIN
     -- Comissao (Strix Finding 2): mecanico NAO deveria ler comissao de outros.
     SELECT count(*) INTO v_cnt FROM funcionario;
     IF v_cnt > 1 THEN
-      RAISE NOTICE 'AVISO (Strix): mecanico enxerga % funcionarios (comissao exposta). Aplicar hardening (view funcionario_publico).', v_cnt;
+      RAISE EXCEPTION 'FALHA mecanico: enxerga % funcionarios com dados de comissao.', v_cnt;
+    END IF;
+
+    SELECT count(*) INTO v_cnt_com FROM os_comissao;
+    IF v_cnt_com <> v_comissoes_proprias THEN
+      RAISE EXCEPTION 'FALHA mecanico: deveria ver % snapshots proprios, viu %.', v_comissoes_proprias, v_cnt_com;
     END IF;
 
     RESET ROLE;
-    RAISE NOTICE 'OK mecanico: OS restritas as suas (%), sem acesso a estoque.', v_esperado;
+    RAISE NOTICE 'OK mecanico: OS (%) e clientes (%) restritos as suas atribuicoes, sem acesso a estoque.', v_esperado, v_clientes_esperados;
   END IF;
 
   -- ---------------------------------------------------------------- ATENDENTE

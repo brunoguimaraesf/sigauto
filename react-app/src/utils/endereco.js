@@ -48,10 +48,8 @@ export async function buscarCep(cep, { fetchImpl = globalThis.fetch, timeoutMs =
 }
 
 // Monta "Rua X, 123 - Centro, Goiania/GO - 74000-000" pulando o que faltar.
-// `fallback` recebe o texto livre do campo legado cliente.endereco, usado
-// enquanto o cliente antigo nao tiver endereco estruturado.
-export function formatarEndereco(endereco, fallback = '') {
-  if (!endereco) return fallback || ''
+export function formatarEndereco(endereco) {
+  if (!endereco) return ''
 
   const { logradouro, numero, complemento, bairro, cidade, uf, cep } = endereco
 
@@ -61,7 +59,7 @@ export function formatarEndereco(endereco, fallback = '') {
   const partes = [linha1, bairro, municipio].filter(Boolean).join(' - ')
   const comCep = cep ? [partes, maskCep(cep)].filter(Boolean).join(' - ') : partes
 
-  return comCep || fallback || ''
+  return comCep || ''
 }
 
 // Um endereco so vale a pena gravar se tiver algum conteudo: o formulario

@@ -170,37 +170,42 @@ export function Relatorios() {
         const c = getCliente(os)
         const { mecanico, atendente } = getResponsaveisOS(os)
         const calculatedComissoes = calcOSCommissions(os, mecanico, atendente)
-        const comissoes = os.comissao_detalhes || calculatedComissoes
+        const comissoes = Object.keys(os.comissoes_snapshot || {}).length
+          ? os.comissoes_snapshot
+          : calculatedComissoes
         const totalsOS = calcOSTotals(os)
         const numero = `#${os.numero_os || os.id?.slice(-4)?.toUpperCase()}`
         const dataBase = os.data_encerramento || os.data_abertura || os.created_at
 
-        if (mecanico && (Number(comissoes.mecanico?.valor || 0) > 0 || Number(mecanico.comissao_percentual || 0) > 0)) {
+        const snapshotMecanico = comissoes.mecanico
+        const snapshotAtendente = comissoes.atendente
+
+        if ((mecanico || snapshotMecanico) && (Number(snapshotMecanico?.valor || 0) > 0 || Number(mecanico?.comissao_percentual || 0) > 0)) {
           linhasComissao.push({
             perfil: 'Mecanico',
-            nome: mecanico.nome,
+            nome: snapshotMecanico?.nome || mecanico?.nome || 'Mecanico nao identificado',
             numero,
             cliente: c.nome || '-',
             placa: v.placa || '-',
-            baseServicos: comissoes.mecanico?.sobreServicos ? totalsOS.valorServicos : 0,
-            basePecas: comissoes.mecanico?.sobrePecas ? totalsOS.valorPecas : 0,
-            percentual: comissoes.mecanico?.percentual || 0,
-            valor: Number(comissoes.mecanico?.valor || 0),
+            baseServicos: snapshotMecanico?.baseServicos ?? (snapshotMecanico?.sobreServicos ? totalsOS.valorServicos : 0),
+            basePecas: snapshotMecanico?.basePecas ?? (snapshotMecanico?.sobrePecas ? totalsOS.valorPecas : 0),
+            percentual: snapshotMecanico?.percentual || 0,
+            valor: Number(snapshotMecanico?.valor || 0),
             data: dataBase,
           })
         }
 
-        if (atendente && (Number(comissoes.atendente?.valor || 0) > 0 || Number(atendente.comissao_percentual || 0) > 0)) {
+        if ((atendente || snapshotAtendente) && (Number(snapshotAtendente?.valor || 0) > 0 || Number(atendente?.comissao_percentual || 0) > 0)) {
           linhasComissao.push({
             perfil: 'Atendente',
-            nome: atendente.nome,
+            nome: snapshotAtendente?.nome || atendente?.nome || 'Atendente nao identificado',
             numero,
             cliente: c.nome || '-',
             placa: v.placa || '-',
-            baseServicos: comissoes.atendente?.sobreServicos ? totalsOS.valorServicos : 0,
-            basePecas: comissoes.atendente?.sobrePecas ? totalsOS.valorPecas : 0,
-            percentual: comissoes.atendente?.percentual || 0,
-            valor: Number(comissoes.atendente?.valor || 0),
+            baseServicos: snapshotAtendente?.baseServicos ?? (snapshotAtendente?.sobreServicos ? totalsOS.valorServicos : 0),
+            basePecas: snapshotAtendente?.basePecas ?? (snapshotAtendente?.sobrePecas ? totalsOS.valorPecas : 0),
+            percentual: snapshotAtendente?.percentual || 0,
+            valor: Number(snapshotAtendente?.valor || 0),
             data: dataBase,
           })
         }

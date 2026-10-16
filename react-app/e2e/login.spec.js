@@ -28,3 +28,18 @@ test('login com senha errada mostra erro', async ({ page }) => {
   await expect(page.getByText(/incorret|inválid|erro/i)).toBeVisible({ timeout: 10000 })
   await expect(page).toHaveURL(/\/login$/)
 })
+
+test('mecanico entra diretamente na listagem de ordens de servico', async ({ page }) => {
+  await page.goto('/login')
+  await page.getByRole('button', { name: /mecanico@sigauto\.com/ }).click()
+  await page.getByRole('button', { name: 'Entrar no Sistema' }).click()
+
+  await expect(page).toHaveURL(/\/ordens-servico$/)
+  await expect(page.getByRole('heading', { name: /Ordens de Servi/i })).toBeVisible()
+})
+
+test('icones do login nao sobrepoem o texto dos campos', async ({ page }) => {
+  await page.goto('/login')
+  await expect(page.getByPlaceholder('seu@email.com')).toHaveCSS('padding-left', '42px')
+  await expect(page.getByPlaceholder('••••••••')).toHaveCSS('padding-left', '42px')
+})

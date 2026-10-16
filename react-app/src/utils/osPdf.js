@@ -49,17 +49,23 @@ const CANCELADA = 'cancelada'
 
 const arred = (v) => Math.round((Number(v) || 0) * 100) / 100
 
-// O banco NAO guarda desconto (ordem_servico so tem valor_total — divergencia
-// registrada no DER). Na O.S. concluida o desconto e o que separa o subtotal
-// dos itens do valor final persistido. Quem acabou de encerrar passa o
-// desconto explicito, com o percentual escolhido na tela.
+// O fechamento novo persiste tipo, valor e percentual do desconto. A derivacao
+// pelo valor_total permanece somente para documentos historicos anteriores a
+// migracao 21, cujo percentual original nao pode ser recuperado.
 export function resumoFinanceiroOS(os, { descontoValor, descontoPercentual } = {}) {
   const { valorServicos, valorPecas, valorTotal: subtotal } = calcOSTotals(os)
   let desconto = 0
   let valorFinal = subtotal
+  const descontoPersistido = Number(os?.desconto_valor)
+  const percentualPersistido = os?.desconto_percentual === null || os?.desconto_percentual === undefined
+    ? null
+    : Number(os.desconto_percentual)
 
   if (Number.isFinite(descontoValor)) {
     desconto = Math.min(arred(descontoValor), subtotal)
+    valorFinal = arred(subtotal - desconto)
+  } else if (Number.isFinite(descontoPersistido) && descontoPersistido >= 0 && os?.desconto_tipo) {
+    desconto = Math.min(arred(descontoPersistido), subtotal)
     valorFinal = arred(subtotal - desconto)
   } else if (CONCLUIDA.has(os?.status) && Number(os?.valor_total) > 0) {
     valorFinal = arred(os.valor_total)
@@ -71,7 +77,9 @@ export function resumoFinanceiroOS(os, { descontoValor, descontoPercentual } = {
     valorPecas: arred(valorPecas),
     subtotal: arred(subtotal),
     descontoValor: desconto,
-    descontoPercentual: desconto > 0 && Number.isFinite(descontoPercentual) ? descontoPercentual : null,
+    descontoPercentual: desconto > 0
+      ? (Number.isFinite(descontoPercentual) ? descontoPercentual : percentualPersistido)
+      : null,
     valorFinal,
   }
 }
@@ -253,7 +261,7 @@ export function criarDocumentoOS({
   }
 
   const docCliente = documentoCliente(cliente.cpf_cnpj)
-  const enderecoCliente = formatarEndereco(cliente.endereco_estruturado, cliente.endereco)
+  const enderecoCliente = formatarEndereco(cliente.endereco_estruturado)
   const linhasCliente = [
     `Nome: ${valido(cliente.nome) ? cliente.nome : 'não informado'}`,
     ...(docCliente ? [`CPF/CNPJ: ${docCliente}`] : []),
@@ -279,7 +287,8 @@ export function criarDocumentoOS({
   const blocos = [
     ['Queixa do cliente', os?.descricao],
     ['Diagnóstico', os?.diagnostico],
-    ['Observações', observacoesFinais || os?.observacoes],
+    ['Observações finais', observacoesFinais || os?.observacoes_finais],
+    ['Observações internas', os?.observacoes],
   ].filter(([, texto]) => valido(texto))
   for (const [titulo, texto] of blocos) {
     fonte(8.5)
@@ -408,16 +417,28 @@ export async function salvarDocumentoOS(dados) {
   doc.save(nomeArquivoOS(dados.os, dados.emitidoEm))
 }
 
+// A reserva precisa ocorrer dentro do clique, antes de qualquer await (como o
+// download da logomarca), para que o bloqueador de pop-ups reconheca o gesto.
+export function reservarGuiaDocumento(windowImpl = window) {
+  const guia = windowImpl.open('about:blank', '_blank')
+  if (guia) guia.opener = null
+  return guia
+}
+
 // Abre o MESMO PDF numa nova guia, no visualizador do navegador (que ja tem
 // salvar e imprimir), em vez de baixar o arquivo direto. A URL temporaria e
 // revogada por tempo: revogar antes da guia carregar deixaria a aba em branco.
-export function abrirDocumentoOS(dados, windowImpl = window) {
+export function abrirDocumentoOS(dados, windowImpl = window, guiaReservada = null) {
   const doc = criarDocumentoOS(dados)
   const url = windowImpl.URL.createObjectURL(doc.output('blob'))
-  const guia = windowImpl.open(url, '_blank')
+  const guia = guiaReservada || windowImpl.open(url, '_blank')
   if (!guia) {
     windowImpl.URL.revokeObjectURL(url)
     throw new Error('O navegador bloqueou a nova guia. Libere os pop-ups deste site e tente novamente.')
+  }
+  if (guiaReservada) {
+    if (typeof guia.location?.replace === 'function') guia.location.replace(url)
+    else guia.location.href = url
   }
   windowImpl.setTimeout(() => windowImpl.URL.revokeObjectURL(url), 60000)
   return guia

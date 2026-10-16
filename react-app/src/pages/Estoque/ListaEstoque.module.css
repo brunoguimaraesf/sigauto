@@ -210,3 +210,46 @@
   font-size: 18px;
   font-weight: 600;
 }
+.historicoCabecalho {
+  margin-bottom: 16px;
+}
+
+.historicoCabecalho h3 {
+  margin: 0 0 4px;
+}
+
+.historicoCabecalho p {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.8125rem;
+}
+
+.movEntrada,
+.movSaida,
+.movAjuste {
+  display: inline-flex;
+  padding: 3px 8px;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.movEntrada {
+  color: var(--status-done);
+  background: var(--color-success-tint);
+}
+
+.movSaida {
+  color: var(--color-danger);
+  background: var(--color-danger-tint);
+}
+
+.movAjuste {
+  color: var(--color-warning);
+  background: var(--color-warning-tint);
+}
+
+.movOs {
+  color: var(--text-secondary);
+  white-space: nowrap;
+}

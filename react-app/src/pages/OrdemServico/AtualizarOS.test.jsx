@@ -11,6 +11,8 @@ vi.mock('../../utils/osPdf', () => ({
   abrirDocumentoOS: vi.fn(() => ({})),
   imprimirDocumentoOS: vi.fn(async () => {}),
   carregarLogoDataUrl: vi.fn(async () => null),
+  reservarGuiaDocumento: vi.fn(() => ({ location: { replace: vi.fn() }, close: vi.fn() })),
+  salvarDocumentoOS: vi.fn(async () => {}),
 }))
 
 // estoque carregado via supabase no useEffect

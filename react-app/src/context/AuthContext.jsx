@@ -16,7 +16,8 @@ const DEMO_USERS = {
 const isSupabaseReal = () => {
   const url = import.meta.env.VITE_SUPABASE_URL || ''
   const anonKey = import.meta.env.VITE_SUPABASE_ANON_KEY || ''
-  return Boolean(url && anonKey && !anonKey.startsWith('sb_secret_') && url.startsWith('https://') && !url.includes('placeholder'))
+  const urlPermitida = url.startsWith('https://') || /^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?(?:\/|$)/.test(url)
+  return Boolean(url && anonKey && !anonKey.startsWith('sb_secret_') && urlPermitida && !url.includes('placeholder'))
 }
 
 const buildDemoUser = (email, demo) => ({

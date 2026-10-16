@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react'
 import { GlassPanel } from '../components/GlassPanel'
 import { Plus, Edit2, UserX, X, Shield, User, Wrench, Search, RefreshCw } from 'lucide-react'
-import { supabase, supabaseDb } from '../supabaseClient'
+import { supabaseDb } from '../supabaseClient'
+import { usuariosApi } from '../services/api'
+import { useDatabase } from '../hooks/useDatabase'
 import css from './Usuarios.module.css'
 
 const PERFIL_ICONS = { gestor: Shield, atendente: User, mecanico: Wrench }
@@ -12,6 +14,7 @@ const PERFIL_COLORS = {
 }
 
 export function Usuarios() {
+  const { reloadDatabase } = useDatabase()
   const [usuarios, setUsuarios] = useState([])
   const [carregando, setCarregando] = useState(true)
   const [modalAberto, setModalAberto] = useState(false)
@@ -83,42 +86,23 @@ export function Usuarios() {
 
     try {
       if (editandoId) {
-        const { error } = await supabaseDb.from('usuario').update(montarPayloadUsuario()).eq('id', editandoId)
-        if (error) throw error
+        await usuariosApi.atualizar(editandoId, montarPayloadUsuario())
       } else {
         if (!fSenha || fSenha.length < 8) {
           throw new Error('A senha deve ter pelo menos 8 caracteres.')
         }
 
-        // Salvar sessão do admin antes de criar o novo usuário
-        const { data: { session: sessaoAdmin } } = await supabase.auth.getSession()
-
-        const { data, error } = await supabase.auth.signUp({
+        await usuariosApi.criar({
           email: fEmail,
-          password: fSenha,
-          options: {
-            data: { nome: fNome, perfil: fPerfil },
-          },
+          senha: fSenha,
+          nome: fNome,
+          perfil: fPerfil,
+          telefone: fTelefone || null,
         })
-        if (error) throw error
-
-        // Se o Supabase auto-confirmou e criou uma sessão nova, restaurar a sessão do admin
-        if (data.session && sessaoAdmin) {
-          await supabase.auth.setSession({
-            access_token: sessaoAdmin.access_token,
-            refresh_token: sessaoAdmin.refresh_token,
-          })
-        }
-
-        const id = data?.user?.id
-        if (id) {
-          const basePayload = { id, email: fEmail, nome: fNome, perfil: fPerfil, telefone: fTelefone || null, ativo: true }
-          const { error: usuarioError } = await supabaseDb.from('usuario').upsert(basePayload)
-          if (usuarioError) throw usuarioError
-        }
       }
 
       await carregarUsuarios()
+      await reloadDatabase()
       setModalAberto(false)
     } catch (error) {
       console.error('Erro ao salvar usuario:', error)
@@ -130,13 +114,21 @@ export function Usuarios() {
 
   const handleInativar = async (id) => {
     if (!confirm('Deseja inativar este usuario? Ele nao podera mais acessar o sistema.')) return
-    const { error } = await supabaseDb.from('usuario').update({ ativo: false }).eq('id', id)
-    if (error) {
+    const atual = usuarios.find(usuario => usuario.id === id)
+    try {
+      await usuariosApi.atualizar(id, {
+        nome: atual?.nome,
+        perfil: atual?.perfil,
+        telefone: atual?.telefone || null,
+        ativo: false,
+      })
+    } catch (error) {
       alert('Nao foi possivel inativar o usuario.')
       console.error('Erro ao inativar usuario:', error)
       return
     }
     await carregarUsuarios()
+    await reloadDatabase()
   }
 
   const filtrados = usuarios.filter(u => {
@@ -271,7 +263,7 @@ export function Usuarios() {
                   )}
                 </div>
                 <div className={`alert-box ${css.alertaCompacto}`}>
-                  A <strong>comissão</strong> agora é configurada em <strong>Funcionários</strong>, vinculada ao colaborador.
+                  A conta será confirmada automaticamente e o funcionário correspondente será vinculado. A <strong>comissão</strong> é configurada em <strong>Funcionários</strong>.
                 </div>
                 {erroForm && (
                   <div className={css.erroForm}>

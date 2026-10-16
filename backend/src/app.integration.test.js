@@ -82,6 +82,16 @@ describe('API — autenticação', () => {
       expect(res.body.codigo).toBe('SEM_PERMISSAO')
     },
   )
+
+  it('atendente nao pode criar conta pela operacao administrativa', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/usuarios')
+      .set('Authorization', 'Bearer token-atendente')
+      .send({ nome: 'Novo', email: 'novo@teste.local', senha: 'Senha1234', perfil: 'mecanico' })
+
+    expect(res.status).toBe(403)
+    expect(res.body.codigo).toBe('SEM_PERMISSAO')
+  })
 })
 
 describe('API — rate limit dedicado da IA', () => {

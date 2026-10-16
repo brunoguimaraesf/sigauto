@@ -41,8 +41,8 @@ export function Sidebar() {
     navigate('/login')
   }
 
-  const isGestorOuAtendente = !perfil || perfil === 'gestor' || perfil === 'atendente'
-  const isGestor = !perfil || perfil === 'gestor'
+  const isGestorOuAtendente = perfil === 'gestor' || perfil === 'atendente'
+  const isGestor = perfil === 'gestor'
   const nc = ({ isActive }) => isActive ? 'nav-link active' : 'nav-link'
 
   return (

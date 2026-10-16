@@ -18,7 +18,7 @@ export function ProtectedRoute({ children, requiredRoles }) {
     return <Navigate to="/login" replace />
   }
 
-  if (requiredRoles && perfil && !requiredRoles.includes(perfil)) {
+  if (requiredRoles && !requiredRoles.includes(perfil)) {
     return (
       <div className={`${css.tela} ${css.negado}`}>
         <div className={css.icone}>⚠️</div>

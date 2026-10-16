@@ -51,7 +51,7 @@ function ItensTable({ items }) {
 export function EncerrarOS() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { clientes, veiculos, ordensServico, updateOrdemServico } = useDatabase()
+  const { clientes, veiculos, ordensServico, updateOrdemServico, finalizarOrdemServico } = useDatabase()
 
   const os = ordensServico.find(o => o.id === id)
   const veiculo = veiculos.find(v => v.id === (os?.veiculo_id || os?.id_veiculo)) || {}
@@ -60,10 +60,14 @@ export function EncerrarOS() {
 
   const [formaPagamento, setFormaPagamento] = useState(os?.forma_pagamento && os.forma_pagamento !== 'a_definir' ? os.forma_pagamento : '')
   const [observacoesFinais, setObservacoesFinais] = useState(os?.observacoes_finais || '')
-  const [tipoDesconto, setTipoDesconto] = useState('pct')
-  const [desconto, setDesconto] = useState('0')
+  const [tipoDesconto, setTipoDesconto] = useState(os?.desconto_tipo || 'pct')
+  const [desconto, setDesconto] = useState(String(
+    os?.desconto_tipo === 'pct' ? (os?.desconto_percentual ?? 0) : (os?.desconto_valor ?? 0)
+  ))
   const [confirmando, setConfirmando] = useState(false)
   const [encerrada, setEncerrada] = useState(false)
+  const [finalizando, setFinalizando] = useState(false)
+  const [erroEncerramento, setErroEncerramento] = useState('')
 
   const descontoNum = Math.max(0, Number(desconto) || 0)
   const descontoValor = tipoDesconto === 'pct'
@@ -73,8 +77,8 @@ export function EncerrarOS() {
 
   const jaEncerrada = os?.status === 'concluida' || os?.status === 'Concluído'
 
-  // O que a tela de encerramento sabe e o banco ainda nao: vai para o PDF
-  // da previa e do comprovante logo apos finalizar.
+  // Na previa, `extra` leva os valores ainda nao confirmados; depois do RPC,
+  // os mesmos campos tambem ficam persistidos na ordem de servico.
   const extraDocumento = {
     desconto: { descontoValor, descontoPercentual: tipoDesconto === 'pct' ? descontoNum : undefined },
     formaPagamento,
@@ -104,10 +108,22 @@ export function EncerrarOS() {
           <div className={css.acoesSucesso}>
             <button className="btn-secondary" onClick={() => navigate('/ordens-servico')}>Voltar</button>
             <AcoesDocumentoOS os={os} cliente={cliente} veiculo={veiculo} />
-            <button className="btn-primary" onClick={() => {
+            <button className="btn-primary" onClick={async () => {
               if (!confirm('Confirmar reabertura da O.S.?')) return
-              updateOrdemServico(id, { status: 'em_andamento', data_reabertura: new Date().toISOString(), atualizado_em: new Date().toISOString() })
-              navigate(`/ordens-servico/${id}`)
+              try {
+                await updateOrdemServico(id, {
+                  status: 'em_andamento',
+                  data_encerramento: null,
+                  forma_pagamento: 'a_definir',
+                  desconto_tipo: null,
+                  desconto_valor: 0,
+                  desconto_percentual: null,
+                  observacoes_finais: null,
+                })
+                navigate(`/ordens-servico/${id}`)
+              } catch (error) {
+                setErroEncerramento(error?.message || 'Não foi possível reabrir a ordem de serviço.')
+              }
             }}>Reabrir O.S.</button>
           </div>
         </GlassPanel>
@@ -145,28 +161,29 @@ export function EncerrarOS() {
     )
   }
 
-  const handleEncerrar = (e) => {
+  const handleEncerrar = async (e) => {
     e.preventDefault()
     if (!formaPagamento) {
       alert('Selecione a forma de pagamento.')
       return
     }
-    updateOrdemServico(id, {
-      status: 'concluida',
-      valor_servicos: totals.valorServicos,
-      valor_pecas: totals.valorPecas,
-      desconto_tipo: tipoDesconto,
-      desconto_valor: descontoValor,
-      desconto_percentual: tipoDesconto === 'pct' ? descontoNum : null,
-      valor_total: valorFinal,
-      preco_final: valorFinal,
-      forma_pagamento: formaPagamento,
-      data_encerramento: new Date().toISOString(),
-      observacoes_finais: observacoesFinais,
-      observacoes: observacoesFinais || os.observacoes,
-      atualizado_em: new Date().toISOString(),
-    })
-    setEncerrada(true)
+    setFinalizando(true)
+    setErroEncerramento('')
+    try {
+      await finalizarOrdemServico(id, {
+        desconto_tipo: tipoDesconto,
+        desconto_valor: descontoValor,
+        desconto_percentual: tipoDesconto === 'pct' ? descontoNum : null,
+        forma_pagamento: formaPagamento,
+        observacoes_finais: observacoesFinais,
+      })
+      setEncerrada(true)
+    } catch (error) {
+      setErroEncerramento(error?.message || 'Nao foi possivel finalizar a O.S.')
+      setConfirmando(false)
+    } finally {
+      setFinalizando(false)
+    }
   }
 
   return (
@@ -309,13 +326,19 @@ export function EncerrarOS() {
                 </div>
               )}
 
+              {erroEncerramento && (
+                <div className="alert-box" role="alert">
+                  <strong>Falha ao finalizar:</strong> {erroEncerramento}
+                </div>
+              )}
+
               <div className={css.acoesForm}>
                 {confirmando ? (
                   <>
                     <button type="button" className="btn-secondary" onClick={() => setConfirmando(false)}>Revisar</button>
                     <AcoesDocumentoOS os={os} cliente={cliente} veiculo={veiculo} extra={extraDocumento} compacto />
-                    <button type="submit" className={`btn-primary ${css.btnConfirmarFinalizacao}`}>
-                      <CheckCircle size={15} className={css.iconeRotulo} /> Confirmar finalização
+                    <button type="submit" className={`btn-primary ${css.btnConfirmarFinalizacao}`} disabled={finalizando}>
+                      <CheckCircle size={15} className={css.iconeRotulo} /> {finalizando ? 'Finalizando...' : 'Confirmar finalização'}
                     </button>
                   </>
                 ) : (

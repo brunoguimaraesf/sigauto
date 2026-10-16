@@ -1,10 +1,5 @@
 /* Padroes comuns das telas de listagem. */
 .topo { composes: topo from './listaPagina.module.css'; }
-.panelHeader { composes: panelHeader from './listaPagina.module.css'; }
-.vazio { composes: vazio from './listaPagina.module.css'; }
-.btnIcone { composes: btnIcone from './listaPagina.module.css'; }
-.celulaTextoMenor { composes: celulaTexto from './listaPagina.module.css'; }
-
 /* Proprio desta tela. */
 .carregando {
   padding: 48px;
@@ -12,19 +7,43 @@
   text-align: center;
 }
 
-/* Alternancia entre Visao Geral e Ordens de Servico. */
-.abas {
+/* Seletor de mes/ano de referencia, no topo da tela. */
+.seletorPeriodo {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 6px;
 }
 
-/* Acompanha .btn-secondary. */
-.btnAba {
-  border-radius: var(--radius-sm);
-  padding: 8px 16px;
+.seletorRotulo {
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+
+/* Os dois selects lado a lado; o do ano e mais estreito porque cabe 4 digitos.
+   Em tela estreita o conjunto ocupa a largura toda, abaixo do titulo. */
+.seletorCampos {
   display: flex;
-  align-items: center;
   gap: 8px;
+}
+
+.seletorCampos select:first-child {
+  min-width: 140px;
+}
+
+.seletorCampos select:last-child {
+  min-width: 96px;
+}
+
+@media (max-width: 640px) {
+  .seletorPeriodo {
+    width: 100%;
+  }
+
+  .seletorCampos select {
+    flex: 1;
+  }
 }
 
 /* Acompanha .metric-title: o titulo leva um icone ao lado. */
@@ -37,6 +56,14 @@
 /* Acompanha .metric-trend: etiqueta menor que o padrao. */
 .metricTrend {
   font-size: 10px;
+}
+
+/* Linha de apoio sob o valor do faturamento: contagem e ticket medio. */
+.faturamentoDetalhe {
+  margin-top: 8px;
+  font-size: 11px;
+  line-height: 1.4;
+  color: var(--text-secondary);
 }
 
 /* ── Lista de O.S. recentes ── */
@@ -124,6 +151,7 @@
   gap: 4px;
 }
 
+/* Base dos dois mini-cards; usada por `composes`, nao referenciada no JSX. */
 .resumoValorBase {
   font-size: 24px;
   font-weight: 700;
@@ -211,74 +239,3 @@
   color: var(--status-done);
 }
 
-/* ── Aba de ordens de servico ── */
-.headerLinha {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.filtros {
-  display: flex;
-  gap: 16px;
-  flex-wrap: wrap;
-  margin-top: 8px;
-}
-
-.filtroBusca {
-  flex: 1;
-  min-width: 240px;
-}
-
-.filtroStatus {
-  width: 180px;
-}
-
-.placa {
-  color: var(--neon-orange);
-  display: block;
-  font-size: 13px;
-}
-
-.veiculo {
-  font-size: 12px;
-  color: var(--text-secondary);
-}
-
-.valor {
-  font-family: var(--font-display);
-  font-weight: 600;
-}
-
-/* ── Aba de nova O.S. ── */
-
-/* Acompanha .btn-secondary. */
-.btnCancelar {
-  padding: 8px 16px;
-}
-
-.formulario {
-  margin-top: 16px;
-}
-
-.dicaCampo {
-  font-size: 11px;
-  color: var(--text-muted);
-}
-
-/* Acompanha .alert-box do index.css. */
-.alerta {
-  margin-top: 8px;
-}
-
-.acoesForm {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  margin-top: 24px;
-}
-
-/* Acompanha .btn-primary: acao principal do formulario. */
-.btnSalvar {
-  padding: 12px 32px;
-}

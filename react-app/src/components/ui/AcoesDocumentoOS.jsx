@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { FileText, Printer } from 'lucide-react'
 import { useDatabase } from '../../hooks/useDatabase'
 import { resolveEquipe } from '../../utils/osFinance'
-import { abrirDocumentoOS, carregarLogoDataUrl, imprimirDocumentoOS } from '../../utils/osPdf'
+import { abrirDocumentoOS, carregarLogoDataUrl, imprimirDocumentoOS, reservarGuiaDocumento, salvarDocumentoOS } from '../../utils/osPdf'
 import css from './AcoesDocumentoOS.module.css'
 
 // "Visualizar PDF" e "Imprimir" da O.S. (RF05), em qualquer status. As duas
@@ -10,21 +10,24 @@ import css from './AcoesDocumentoOS.module.css'
 // Visualizar abre o PDF numa nova guia (o visualizador do navegador ja oferece
 // salvar e imprimir) em vez de baixar o arquivo direto.
 //
-// `extra` repassa ao gerador o que so existe na tela de encerramento:
-// desconto escolhido, forma de pagamento e observacoes finais ainda nao salvas.
+// `extra` permite gerar a previa com os valores ainda nao confirmados na tela
+// de encerramento; depois do fechamento, esses campos ja vem persistidos na OS.
 export function AcoesDocumentoOS({ os, cliente, veiculo, extra = {}, compacto = false }) {
   const { oficina, carregandoOficina, erroOficina, funcionarios, baixarLogoOficina } = useDatabase()
   const [ocupado, setOcupado] = useState(null) // 'visualizar' | 'imprimir' | null
   const [erro, setErro] = useState('')
+  const [aviso, setAviso] = useState('')
 
   const executar = async (acao) => {
     setErro('')
+    setAviso('')
     if (!oficina) {
       setErro(erroOficina
         ? `Os dados da oficina não puderam ser carregados (${erroOficina}). Tente novamente mais tarde.`
         : 'Os dados da oficina ainda não foram cadastrados. O gestor deve preenchê-los no menu Oficina.')
       return
     }
+    const guiaReservada = acao === 'visualizar' ? reservarGuiaDocumento() : null
     setOcupado(acao)
     try {
       const logoDataUrl = await carregarLogoDataUrl(baixarLogoOficina, oficina.logo_path)
@@ -38,9 +41,13 @@ export function AcoesDocumentoOS({ os, cliente, veiculo, extra = {}, compacto = 
         emitidoEm: new Date(),
         ...extra,
       }
-      if (acao === 'visualizar') abrirDocumentoOS(dados)
-      else await imprimirDocumentoOS(dados)
+      if (acao === 'visualizar' && guiaReservada) abrirDocumentoOS(dados, window, guiaReservada)
+      else if (acao === 'visualizar') {
+        await salvarDocumentoOS(dados)
+        setAviso('A nova guia foi bloqueada; o PDF foi salvo no dispositivo.')
+      } else await imprimirDocumentoOS(dados)
     } catch (err) {
+      guiaReservada?.close?.()
       setErro(`Não foi possível gerar o documento: ${err?.message || 'erro desconhecido.'}`)
     } finally {
       setOcupado(null)
@@ -65,6 +72,7 @@ export function AcoesDocumentoOS({ os, cliente, veiculo, extra = {}, compacto = 
           {erro}
         </span>
       )}
+      {aviso && <span role="status" className={css.aviso}>{aviso}</span>}
     </div>
   )
 }

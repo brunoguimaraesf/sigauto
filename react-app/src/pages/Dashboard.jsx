@@ -1,139 +1,131 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { GlassPanel } from '../components/GlassPanel'
 import { useDatabase } from '../hooks/useDatabase'
-import { Wrench, Users, CarFront, FileText, ClipboardList, Trash2, CheckCircle, Clock, XCircle, Hourglass } from 'lucide-react'
+import { Wrench, Users, CarFront, FileText, CheckCircle, Clock, XCircle, Hourglass } from 'lucide-react'
 import { statusOSLabel, statusOSClasse } from '../utils/os'
 import css from './Dashboard.module.css'
 
+const MESES = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+]
+
+// Janela [início, fim) do mês escolhido, em hora local — a mesma base que o
+// `toLocaleDateString` da tela usa. Fim exclusivo evita contar duas vezes uma OS
+// encerrada à meia-noite do dia 1º.
+function janelaDoMes(ano, mes) {
+  return { inicio: new Date(ano, mes, 1, 0, 0, 0, 0), fim: new Date(ano, mes + 1, 1, 0, 0, 0, 0) }
+}
+
+function dentroDaJanela(valor, { inicio, fim }) {
+  if (!valor) return false
+  const data = new Date(valor)
+  return !Number.isNaN(data.getTime()) && data >= inicio && data < fim
+}
+
 export function Dashboard() {
-  const {
-    clientes,
-    veiculos,
-    servicos,
-    ordensServico,
-    loading,
-    addOrdemServico,
-    deleteOrdemServico
-  } = useDatabase()
+  const { clientes, veiculos, servicos, ordensServico, loading } = useDatabase()
 
-  const [activeTab, setActiveTab] = useState('overview') // 'overview', 'orders', 'new-order'
-  
-  // Estados para nova O.S.
-  const [selectedCliente, setSelectedCliente] = useState('')
-  const [selectedVeiculo, setSelectedVeiculo] = useState('')
-  const [selectedServico, setSelectedServico] = useState('')
-  const [customPrice, setCustomPrice] = useState('')
-  const [observacoes, setObservacoes] = useState('')
-  const [orderStatus, setOrderStatus] = useState('Pendente')
-  
-  // Filtro para listagem de O.S.
-  const [searchFilter, setSearchFilter] = useState('')
-  const [statusFilter, setStatusFilter] = useState('Todos')
+  const agora = useMemo(() => new Date(), [])
+  const [mes, setMes] = useState(agora.getMonth())
+  const [ano, setAno] = useState(agora.getFullYear())
 
-  // Tratamento de mudança de serviço para auto-popular preço
-  const handleServicoChange = (e) => {
-    const servicoId = e.target.value
-    setSelectedServico(servicoId)
-    const found = servicos.find(s => s.id === servicoId)
-    if (found) {
-      setCustomPrice(found.preco)
+  // Anos oferecidos: os que têm OS, mais o ano corrente. Sem lista fixa — um
+  // intervalo chumbado esconderia dado histórico assim que o sistema passasse
+  // do ano previsto.
+  const anosDisponiveis = useMemo(() => {
+    const encontrados = new Set([agora.getFullYear()])
+    for (const os of ordensServico) {
+      for (const campo of [os.data_abertura, os.data_encerramento, os.criado_em]) {
+        const data = campo ? new Date(campo) : null
+        if (data && !Number.isNaN(data.getTime())) encontrados.add(data.getFullYear())
+      }
     }
-  }
+    return [...encontrados].sort((a, b) => b - a)
+  }, [ordensServico, agora])
 
-  // Filtragem de veículos associados ao cliente selecionado
-  const filteredVeiculos = selectedCliente 
-    ? veiculos.filter(v => v.cliente_id === selectedCliente)
-    : veiculos
+  const janela = useMemo(() => janelaDoMes(ano, mes), [ano, mes])
+  const ehMesCorrente = mes === agora.getMonth() && ano === agora.getFullYear()
 
-  // Submissão da nova O.S.
-  const handleSubmitOS = (e) => {
-    e.preventDefault()
-    if (!selectedCliente || !selectedVeiculo || !selectedServico) {
-      alert('Por favor, selecione cliente, veículo e serviço catalogado.')
-      return
-    }
+  // Faturamento conta SOMENTE OS concluída, pela data de encerramento. Antes a
+  // tela somava `valor_total` de todas as OS, inclusive cancelada e em aberto,
+  // o que inflava a receita e contradizia o backend do Painel IA
+  // (`metricasPainelIA.js`), que sempre filtrou por `status === 'concluida'`.
+  const concluidasNoMes = useMemo(
+    () => ordensServico.filter(os => os.status === 'concluida' && dentroDaJanela(os.data_encerramento, janela)),
+    [ordensServico, janela],
+  )
+  const faturamentoMes = concluidasNoMes.reduce((soma, os) => soma + (Number(os.valor_total) || 0), 0)
+  const ticketMedio = concluidasNoMes.length > 0 ? faturamentoMes / concluidasNoMes.length : 0
 
-    addOrdemServico({
-      cliente_id: selectedCliente,
-      veiculo_id: selectedVeiculo,
-      servico_id: selectedServico,
-      preco_final: Number(customPrice),
-      observacoes: observacoes,
-      status: orderStatus
-    })
-
-    // Limpa campos e volta para visão geral
-    setSelectedCliente('')
-    setSelectedVeiculo('')
-    setSelectedServico('')
-    setCustomPrice('')
-    setObservacoes('')
-    setOrderStatus('Pendente')
-    setActiveTab('overview')
-  }
-
-  // Estatísticas reativas do painel
-  const activeVehiclesCount = veiculos.length
-  const totalRevenue = ordensServico.reduce((sum, os) => sum + (os.valor_total || os.preco_final || 0), 0)
+  // As contagens por status olham a ABERTURA: é a pergunta "quanto entrou neste
+  // mês e em que pé está", diferente do faturamento, que é por encerramento.
+  const aberturasNoMes = useMemo(
+    () => ordensServico.filter(os => dentroDaJanela(os.data_abertura || os.criado_em, janela)),
+    [ordensServico, janela],
+  )
 
   const osStats = {
-    total: ordensServico.length,
-    abertas: ordensServico.filter(os => os.status === 'aberta' || os.status === 'Pendente').length,
-    emAndamento: ordensServico.filter(os => os.status === 'em_andamento' || os.status === 'Em Andamento').length,
-    aguardando: ordensServico.filter(os => os.status === 'aguardando_peca').length,
-    concluidas: ordensServico.filter(os => os.status === 'concluida' || os.status === 'Concluído').length,
-    canceladas: ordensServico.filter(os => os.status === 'cancelada').length,
-  }
-  const maintenanceCount = osStats.emAndamento + osStats.abertas
-  
-
-  // Cruzamento de dados de O.S. para exibição na tabela/lista
-  const getEnrichedOrders = () => {
-    return ordensServico.map(os => {
-      // cliente via veículo (a OS não tem FK direto para cliente)
-      const veiculo = veiculos.find(v => v.id === (os.veiculo_id || os.id_veiculo)) || {}
-      const cliente = clientes.find(c => c.id === (os.cliente_id || veiculo.id_cliente || veiculo.cliente_id)) || {}
-      // serviço: prefere itens da OS, fallback para catálogo, depois descrição
-      const itens = os.servicos_itens || []
-      const servicoNome = itens.length > 0
-        ? itens.map(s => s.descricao || s.nome).filter(Boolean).join(', ')
-        : (servicos.find(s => s.id === os.servico_id)?.nome || os.descricao || '—')
-      return {
-        ...os,
-        clienteNome: cliente.nome || '—',
-        veiculoInfo: veiculo.marca ? `${veiculo.marca} ${veiculo.modelo}` : '—',
-        veiculoPlaca: veiculo.placa || '—',
-        servicoNome,
-        valorExibido: os.valor_total || os.preco_final || 0,
-      }
-    })
+    total: aberturasNoMes.length,
+    abertas: aberturasNoMes.filter(os => os.status === 'aberta').length,
+    emAndamento: aberturasNoMes.filter(os => os.status === 'em_andamento').length,
+    aguardando: aberturasNoMes.filter(os => os.status === 'aguardando_peca').length,
+    concluidas: aberturasNoMes.filter(os => os.status === 'concluida').length,
+    canceladas: aberturasNoMes.filter(os => os.status === 'cancelada').length,
   }
 
-  const enrichedOrders = getEnrichedOrders()
+  // "Em Manutenção" é situação de AGORA, não do mês escolhido: responde quantos
+  // carros estão no box neste instante. Filtrar pelo mês daria zero ao escolher
+  // um mês passado, o que seria uma resposta errada para a pergunta.
+  const emManutencaoAgora = ordensServico.filter(
+    os => os.status === 'em_andamento' || os.status === 'aberta' || os.status === 'aguardando_peca',
+  ).length
 
-  // Filtros aplicados à listagem completa
-  const filteredOrders = enrichedOrders.filter(os => {
-    const matchesSearch = os.veiculoPlaca.toLowerCase().includes(searchFilter.toLowerCase()) ||
-                          os.clienteNome.toLowerCase().includes(searchFilter.toLowerCase()) ||
-                          os.veiculoInfo.toLowerCase().includes(searchFilter.toLowerCase())
-    const matchesStatus = statusFilter === 'Todos' || os.status === statusFilter
-    return matchesSearch && matchesStatus
-  })
+  const enriquecer = (os) => {
+    const veiculo = veiculos.find(v => v.id === (os.id_veiculo || os.veiculo_id)) || {}
+    const cliente = clientes.find(c => c.id === (veiculo.id_cliente || veiculo.cliente_id)) || {}
+    const itens = os.servicos_itens || []
+    const servicoNome = itens.length > 0
+      ? itens.map(s => s.descricao || s.nome).filter(Boolean).join(', ')
+      : (servicos.find(s => s.id === os.servico_id)?.nome || os.descricao || '—')
+    return {
+      ...os,
+      clienteNome: cliente.nome || '—',
+      veiculoInfo: veiculo.marca ? `${veiculo.marca} ${veiculo.modelo}` : '—',
+      veiculoPlaca: veiculo.placa || '—',
+      servicoNome,
+      valorExibido: Number(os.valor_total) || 0,
+    }
+  }
 
-  // Entradas desta semana (seg–dom), no máximo 6
-  const startOfWeek = (() => {
+  // No mês corrente a lista mostra a semana, que é a informação operacional do
+  // dia. Em mês passado, "esta semana" não existe dentro do recorte: a lista
+  // passa a ser das entradas do próprio mês, senão o painel viria sempre vazio.
+  const inicioDaSemana = useMemo(() => {
     const d = new Date()
-    const day = d.getDay()
-    d.setDate(d.getDate() - (day === 0 ? 6 : day - 1))
+    const dia = d.getDay()
+    d.setDate(d.getDate() - (dia === 0 ? 6 : dia - 1))
     d.setHours(0, 0, 0, 0)
     return d
-  })()
-  const recentOrders = enrichedOrders
-    .filter(os => {
-      const d = new Date(os.data_abertura || os.criado_em)
-      return !isNaN(d) && d >= startOfWeek
-    })
-    .slice(0, 6)
+  }, [])
+
+  const entradas = useMemo(() => {
+    const base = ehMesCorrente
+      ? aberturasNoMes.filter(os => {
+        const data = new Date(os.data_abertura || os.criado_em)
+        return !Number.isNaN(data.getTime()) && data >= inicioDaSemana
+      })
+      : aberturasNoMes
+    return base
+      .slice()
+      .sort((a, b) => new Date(b.data_abertura || b.criado_em) - new Date(a.data_abertura || a.criado_em))
+      .slice(0, 6)
+      .map(enriquecer)
+  }, [aberturasNoMes, ehMesCorrente, inicioDaSemana, veiculos, clientes, servicos])
+
+  const tituloEntradas = ehMesCorrente ? 'Entradas desta Semana' : `Entradas de ${MESES[mes]}`
+  const rotuloPeriodo = `${MESES[mes]} de ${ano}`
 
   if (loading) {
     return (
@@ -148,376 +140,183 @@ export function Dashboard() {
       <section className={`welcome-section stagger-1 ${css.topo}`}>
         <div>
           <h2>Visão Geral</h2>
-          <p>Resumo da operação da oficina.</p>
+          <p>Resumo da operação da oficina em {rotuloPeriodo}.</p>
         </div>
-        <div className={css.abas}>
-          <button
-            className={`btn-secondary ${css.btnAba} ${activeTab === 'overview' ? 'active' : ''}`}
-            onClick={() => setActiveTab('overview')}
-          >
-            <ClipboardList size={16} /> Visão Geral
-          </button>
-          <button
-            className={`btn-secondary ${css.btnAba} ${activeTab === 'orders' ? 'active' : ''}`}
-            onClick={() => setActiveTab('orders')}
-          >
-            <FileText size={16} /> Ordens de Serviço
-          </button>
+        <div className={css.seletorPeriodo}>
+          <label className={css.seletorRotulo} htmlFor="dashboard-mes">Mês de referência</label>
+          <div className={css.seletorCampos}>
+            <select
+              id="dashboard-mes"
+              className="form-control"
+              value={mes}
+              onChange={(e) => setMes(Number(e.target.value))}
+              aria-label="Mês de referência"
+            >
+              {MESES.map((nome, indice) => (
+                <option key={nome} value={indice}>{nome}</option>
+              ))}
+            </select>
+            <select
+              className="form-control"
+              value={ano}
+              onChange={(e) => setAno(Number(e.target.value))}
+              aria-label="Ano de referência"
+            >
+              {anosDisponiveis.map(valor => (
+                <option key={valor} value={valor}>{valor}</option>
+              ))}
+            </select>
+          </div>
         </div>
       </section>
 
-      {/* --- ABA 1: VISÃO GERAL --- */}
-      {activeTab === 'overview' && (
-        <>
-          <section className="metrics-grid">
-            <GlassPanel className="metric-card metric-card--accent stagger-2">
-              <div className="metric-header">
-                <span className={`metric-title ${css.metricTitulo}`}>
-                  <CarFront size={16} className="metric-icon" /> Veículos Cadastrados
-                </span>
-                <span className={`metric-trend positive ${css.metricTrend}`}>ATIVOS</span>
-              </div>
-              <div className="metric-value">{activeVehiclesCount}</div>
-            </GlassPanel>
-            
-            <GlassPanel className="metric-card metric-card--info stagger-3">
-              <div className="metric-header">
-                <span className={`metric-title ${css.metricTitulo}`}>
-                  <Wrench size={16} className="metric-icon" /> Em Manutenção
-                </span>
-                <span className={`metric-trend metric-context ${css.metricTrend}`}>EM BOX</span>
-              </div>
-              <div className="metric-value">{maintenanceCount}</div>
-            </GlassPanel>
+      <section className="metrics-grid">
+        <GlassPanel className="metric-card metric-card--accent stagger-2">
+          <div className="metric-header">
+            <span className={`metric-title ${css.metricTitulo}`}>
+              <CarFront size={16} className="metric-icon" /> Veículos Cadastrados
+            </span>
+            <span className={`metric-trend positive ${css.metricTrend}`}>ATIVOS</span>
+          </div>
+          <div className="metric-value">{veiculos.length}</div>
+        </GlassPanel>
 
-            <GlassPanel className="metric-card metric-card--success stagger-4 highlight-card">
-              <div className="metric-header">
-                <span className={`metric-title ${css.metricTitulo}`}>
-                  <Users size={16} className="metric-icon" /> Faturamento
-                </span>
-                <span className={`metric-trend positive ${css.metricTrend}`}>RECEITA</span>
-              </div>
-              <div className="metric-value">R$ {(totalRevenue / 1000).toFixed(1)}k</div>
-              <div className="metric-progress-bar">
-                <div className="progress" style={{ width: `${Math.min(100, (totalRevenue / 100000) * 100)}%` }}></div>
-              </div>
-            </GlassPanel>
-          </section>
+        <GlassPanel className="metric-card metric-card--info stagger-3">
+          <div className="metric-header">
+            <span className={`metric-title ${css.metricTitulo}`}>
+              <Wrench size={16} className="metric-icon" /> Em Manutenção
+            </span>
+            <span className={`metric-trend metric-context ${css.metricTrend}`}>AGORA</span>
+          </div>
+          <div className="metric-value">{emManutencaoAgora}</div>
+        </GlassPanel>
 
-          <section className="content-split">
-            <GlassPanel className="panel stagger-5">
-              <div className="panel-header">
-                <h3>Entradas desta Semana</h3>
-                <button className="btn-link" onClick={() => setActiveTab('orders')}>Ver Todas as O.S.</button>
-              </div>
+        <GlassPanel className="metric-card metric-card--success stagger-4 highlight-card">
+          <div className="metric-header">
+            <span className={`metric-title ${css.metricTitulo}`}>
+              <Users size={16} className="metric-icon" /> Faturamento
+            </span>
+            <span className={`metric-trend positive ${css.metricTrend}`}>CONCLUÍDAS</span>
+          </div>
+          <div className="metric-value">
+            {faturamentoMes.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 })}
+          </div>
+          <div className={css.faturamentoDetalhe}>
+            {concluidasNoMes.length === 0
+              ? `Nenhuma O.S. concluída em ${MESES[mes]}.`
+              : `${concluidasNoMes.length} O.S. concluída${concluidasNoMes.length > 1 ? 's' : ''} · ticket médio ${ticketMedio.toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })}`}
+          </div>
+        </GlassPanel>
+      </section>
 
-              <div className="list-container">
-                {recentOrders.length === 0 ? (
-                  <div className={css.listaVazia}>
-                    <FileText size={28} color="var(--text-muted)" />
-                    <span className={css.listaVaziaTexto}>Nenhuma O.S. aberta esta semana.</span>
-                    <button className={`btn-primary ${css.btnListaVazia}`} onClick={() => setActiveTab('orders')}>Abrir nova O.S.</button>
-                  </div>
-                ) : (
-                  recentOrders.map((os) => (
-                    <div key={os.id} className="list-item">
-                      <div className={`car-indicator ${css.inicialVeiculo}`}>
-                        {os.veiculoInfo?.charAt(0) || 'V'}
-                      </div>
-                      <div className="item-details">
-                        <h4>{os.veiculoInfo}</h4>
-                        <span className={css.itemPlaca}>{os.veiculoPlaca} • {os.clienteNome}</span>
-                        <span className={css.itemServico}>{os.servicoNome}</span>
-                      </div>
-                      
-                      <div className={css.itemLateral}>
-                        <span className={css.itemValor}>
-                          {os.valorExibido > 0 ? `R$ ${os.valorExibido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
-                        </span>
-                        <div className={`status-badge ${statusOSClasse(os.status)}`}>
-                          {statusOSLabel(os.status)}
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            </GlassPanel>
-
-            <GlassPanel className="panel stagger-6">
-              <div className="panel-header">
-                <h3>Situação da Oficina</h3>
-                <span className={css.totalOS}>
-                  {osStats.total} OS total
-                </span>
-              </div>
-
-              {/* Mini-cards: veículos e clientes */}
-              <div className={css.resumoGrade}>
-                <div className={`resumo-oficina--accent ${css.resumoCard}`}>
-                  <div className={css.resumoRotulo}>
-                    <CarFront size={10} /> Veículos
-                  </div>
-                  <div className={css.resumoValorAccent}>{veiculos.length}</div>
-                </div>
-                <div className={`resumo-oficina--info ${css.resumoCard}`}>
-                  <div className={css.resumoRotulo}>
-                    <Users size={10} /> Clientes
-                  </div>
-                  <div className={css.resumoValorInfo}>{clientes.length}</div>
-                </div>
-              </div>
-
-              {/* Barras de status por OS */}
-              <div className={css.statusLista}>
-                {[
-                  { label: 'Abertas',       count: osStats.abertas,     color: 'var(--status-pending)', Icon: Clock },
-                  { label: 'Em Andamento',  count: osStats.emAndamento,  color: 'var(--status-progress)', Icon: Wrench },
-                  { label: 'Aguard. Peça',  count: osStats.aguardando,   color: 'var(--color-warning)', Icon: Hourglass },
-                  { label: 'Concluídas',    count: osStats.concluidas,   color: 'var(--status-done)', Icon: CheckCircle },
-                  { label: 'Canceladas',    count: osStats.canceladas,   color: 'var(--text-muted)', Icon: XCircle },
-                ].map(({ label, count, color, Icon }) => {
-                  const pct = osStats.total > 0 ? Math.round((count / osStats.total) * 100) : 0
-                  return (
-                    <div key={label}>
-                      <div className={css.statusLinha}>
-                        <span className={css.statusRotulo}>
-                          <Icon size={12} color={color} /> {label}
-                        </span>
-                        <span className={css.statusContagem} style={{ color }}>
-                          {count} <span className={css.statusPercentual}>({pct}%)</span>
-                        </span>
-                      </div>
-                      <div className={css.statusBarra}>
-                        <div className={css.statusBarraPreenchida} style={{ width: `${pct}%`, background: color }} />
-                      </div>
-                    </div>
-                  )
-                })}
-              </div>
-
-              {/* Taxa de conclusão */}
-              {osStats.total > 0 && (
-                <div className={css.taxaConclusao}>
-                <span className={css.taxaRotulo}>Taxa de conclusão</span>
-                  <span className={css.taxaValor}>
-                    {Math.round((osStats.concluidas / osStats.total) * 100)}%
-                  </span>
-                </div>
-              )}
-            </GlassPanel>
-          </section>
-        </>
-      )}
-
-      {/* --- ABA 2: LISTAGEM DE ORDENS DE SERVIÇO --- */}
-      {activeTab === 'orders' && (
-        <GlassPanel className="panel stagger-2">
-          <div className={`panel-header ${css.panelHeader}`}>
-            <div className={css.headerLinha}>
-              <h3>Todas as Ordens de Serviço</h3>
-              <button className="btn-primary" onClick={() => setActiveTab('new-order')}>+ Nova O.S.</button>
-            </div>
-            
-            <div className={css.filtros}>
-              <div className={css.filtroBusca}>
-                <input 
-                  type="text" 
-                  className="form-control" 
-                  placeholder="Filtrar por placa, cliente ou veículo..." 
-                  value={searchFilter}
-                  onChange={(e) => setSearchFilter(e.target.value)}
-                />
-              </div>
-              <div className={css.filtroStatus}>
-                <select
-                  className="form-control"
-                  value={statusFilter}
-                  onChange={(e) => setStatusFilter(e.target.value)}
-                >
-                  <option value="Todos">Status: Todos</option>
-                  <option value="aberta">Aberta</option>
-                  <option value="Pendente">Aberta (leg.)</option>
-                  <option value="em_andamento">Em Andamento</option>
-                  <option value="aguardando_peca">Aguard. Peça</option>
-                  <option value="concluida">Concluída</option>
-                  <option value="cancelada">Cancelada</option>
-                </select>
-              </div>
-            </div>
+      <section className="content-split">
+        <GlassPanel className="panel stagger-5">
+          <div className="panel-header">
+            <h3>{tituloEntradas}</h3>
+            <Link className="btn-link" to="/ordens-servico">Ver Todas as O.S.</Link>
           </div>
 
-          <div className="tech-table-container">
-            {filteredOrders.length === 0 ? (
-              <div className={css.vazio}>
-                Nenhuma O.S. encontrada com os filtros aplicados.
+          <div className="list-container">
+            {entradas.length === 0 ? (
+              <div className={css.listaVazia}>
+                <FileText size={28} color="var(--text-muted)" />
+                <span className={css.listaVaziaTexto}>
+                  {ehMesCorrente
+                    ? 'Nenhuma O.S. aberta esta semana.'
+                    : `Nenhuma O.S. aberta em ${rotuloPeriodo}.`}
+                </span>
+                <Link className={`btn-primary ${css.btnListaVazia}`} to="/ordens-servico/nova">Abrir nova O.S.</Link>
               </div>
             ) : (
-              <table className="tech-table">
-                <thead>
-                  <tr>
-                    <th>Placa / Veículo</th>
-                    <th>Cliente</th>
-                    <th>Serviço Executado</th>
-                    <th>Preço</th>
-                    <th>Status O.S.</th>
-                    <th>Data Abertura</th>
-                    <th>Ações</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredOrders.map((os) => (
-                    <tr key={os.id}>
-                      <td>
-                        <strong className={css.placa}>{os.veiculoPlaca}</strong>
-                        <span className={css.veiculo}>{os.veiculoInfo}</span>
-                      </td>
-                      <td>{os.clienteNome}</td>
-                      <td>{os.servicoNome}</td>
-                      <td className={css.valor}>
-                        {os.valorExibido > 0 ? `R$ ${os.valorExibido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
-                      </td>
-                      <td>
-                        <div className={`status-badge ${statusOSClasse(os.status)}`}>
-                          {statusOSLabel(os.status)}
-                        </div>
-                      </td>
-                      <td className={css.celulaTextoMenor}>
-                        {(() => { const d = new Date(os.data_abertura || os.criado_em); return isNaN(d) ? '—' : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }) })()}
-                      </td>
-                      <td>
-                        <button 
-                          className={`btn-danger ${css.btnIcone}`}
-                          onClick={() => {
-                            if(confirm('Tem certeza que deseja excluir esta Ordem de Serviço?')) {
-                              deleteOrdemServico(os.id)
-                            }
-                          }}
-                          title="Excluir O.S."
-                        >
-                          <Trash2 size={14} />
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              entradas.map((os) => (
+                <Link key={os.id} className="list-item" to={`/ordens-servico/${os.id}`}>
+                  <div className={`car-indicator ${css.inicialVeiculo}`}>
+                    {os.veiculoInfo?.charAt(0) || 'V'}
+                  </div>
+                  <div className="item-details">
+                    <h4>{os.veiculoInfo}</h4>
+                    <span className={css.itemPlaca}>{os.veiculoPlaca} • {os.clienteNome}</span>
+                    <span className={css.itemServico}>{os.servicoNome}</span>
+                  </div>
+
+                  <div className={css.itemLateral}>
+                    <span className={css.itemValor}>
+                      {os.valorExibido > 0 ? `R$ ${os.valorExibido.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
+                    </span>
+                    <div className={`status-badge ${statusOSClasse(os.status)}`}>
+                      {statusOSLabel(os.status)}
+                    </div>
+                  </div>
+                </Link>
+              ))
             )}
           </div>
         </GlassPanel>
-      )}
 
-      {/* --- ABA 3: FORMULÁRIO DE ABERTURA DE O.S. --- */}
-      {activeTab === 'new-order' && (
-        <GlassPanel className="panel stagger-2">
+        <GlassPanel className="panel stagger-6">
           <div className="panel-header">
-            <h3>Abertura de Nova Ordem de Serviço</h3>
-            <button className={`btn-secondary ${css.btnCancelar}`} onClick={() => setActiveTab('overview')}>Cancelar</button>
+            <h3>Situação da Oficina</h3>
+            <span className={css.totalOS}>
+              {osStats.total} OS em {MESES[mes]}
+            </span>
           </div>
 
-          <form onSubmit={handleSubmitOS} className={css.formulario}>
-            <div className="form-row">
-              <div className="form-group">
-                <label>Cliente Proprietário</label>
-                <select 
-                  className="form-control"
-                  value={selectedCliente}
-                  onChange={(e) => {
-                    setSelectedCliente(e.target.value)
-                    setSelectedVeiculo('') // reseta veículo
-                  }}
-                  required
-                >
-                  <option value="">Selecione o Cliente...</option>
-                  {clientes.map(c => (
-                    <option key={c.id} value={c.id}>{c.nome} ({c.telefone})</option>
-                  ))}
-                </select>
+          <div className={css.resumoGrade}>
+            <div className={`resumo-oficina--accent ${css.resumoCard}`}>
+              <div className={css.resumoRotulo}>
+                <CarFront size={10} /> Veículos
               </div>
-
-              <div className="form-group">
-                <label>Veículo Associado</label>
-                <select 
-                  className="form-control"
-                  value={selectedVeiculo}
-                  onChange={(e) => setSelectedVeiculo(e.target.value)}
-                  disabled={!selectedCliente}
-                  required
-                >
-                  <option value="">Selecione o Veículo...</option>
-                  {filteredVeiculos.map(v => (
-                    <option key={v.id} value={v.id}>{v.marca} {v.modelo} - [{v.placa}]</option>
-                  ))}
-                </select>
-                {!selectedCliente && (
-                  <span className={css.dicaCampo}>Escolha um cliente primeiro.</span>
-                )}
+              <div className={css.resumoValorAccent}>{veiculos.length}</div>
+            </div>
+            <div className={`resumo-oficina--info ${css.resumoCard}`}>
+              <div className={css.resumoRotulo}>
+                <Users size={10} /> Clientes
               </div>
+              <div className={css.resumoValorInfo}>{clientes.length}</div>
             </div>
+          </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label>Serviço do Catálogo</label>
-                <select 
-                  className="form-control"
-                  value={selectedServico}
-                  onChange={handleServicoChange}
-                  required
-                >
-                  <option value="">Selecione o Serviço...</option>
-                  {servicos.map(s => (
-                    <option key={s.id} value={s.id}>{s.nome} - R$ {s.preco.toLocaleString('pt-BR')}</option>
-                  ))}
-                </select>
-              </div>
+          <div className={css.statusLista}>
+            {[
+              { label: 'Abertas', count: osStats.abertas, color: 'var(--status-pending)', Icon: Clock },
+              { label: 'Em Andamento', count: osStats.emAndamento, color: 'var(--status-progress)', Icon: Wrench },
+              { label: 'Aguard. Peça', count: osStats.aguardando, color: 'var(--color-warning)', Icon: Hourglass },
+              { label: 'Concluídas', count: osStats.concluidas, color: 'var(--status-done)', Icon: CheckCircle },
+              { label: 'Canceladas', count: osStats.canceladas, color: 'var(--text-muted)', Icon: XCircle },
+            ].map(({ label, count, color, Icon }) => {
+              const pct = osStats.total > 0 ? Math.round((count / osStats.total) * 100) : 0
+              return (
+                <div key={label}>
+                  <div className={css.statusLinha}>
+                    <span className={css.statusRotulo}>
+                      <Icon size={12} color={color} /> {label}
+                    </span>
+                    <span className={css.statusContagem} style={{ color }}>
+                      {count} <span className={css.statusPercentual}>({pct}%)</span>
+                    </span>
+                  </div>
+                  <div className={css.statusBarra}>
+                    <div className={css.statusBarraPreenchida} style={{ width: `${pct}%`, background: color }} />
+                  </div>
+                </div>
+              )
+            })}
+          </div>
 
-              <div className="form-group">
-                <label>Preço Final Cobrado (R$)</label>
-                <input 
-                  type="number"
-                  className="form-control"
-                  placeholder="Preço personalizado"
-                  value={customPrice}
-                  onChange={(e) => setCustomPrice(e.target.value)}
-                  required
-                />
-              </div>
-
-              <div className="form-group">
-                <label>Status Inicial</label>
-                <select 
-                  className="form-control"
-                  value={orderStatus}
-                  onChange={(e) => setOrderStatus(e.target.value)}
-                >
-                  <option value="Pendente">Pendente (Fila)</option>
-                  <option value="Em Andamento">Em Andamento (Box)</option>
-                  <option value="Concluído">Concluído (Entregue)</option>
-                </select>
-              </div>
+          {osStats.total > 0 ? (
+            <div className={css.taxaConclusao}>
+              <span className={css.taxaRotulo}>Taxa de conclusão</span>
+              <span className={css.taxaValor}>
+                {Math.round((osStats.concluidas / osStats.total) * 100)}%
+              </span>
             </div>
-
-            <div className="form-group">
-              <label>Observações Técnicas / Sintomas</label>
-              <textarea 
-                className="form-control"
-                placeholder="Detalhes sobre o problema do carro, solicitações especiais do proprietário..."
-                value={observacoes}
-                onChange={(e) => setObservacoes(e.target.value)}
-              />
+          ) : (
+            <div className={css.taxaConclusao}>
+              <span className={css.taxaRotulo}>Nenhuma O.S. aberta em {rotuloPeriodo}</span>
             </div>
-
-            <div className={`alert-box ${css.alerta}`}>
-              Ao abrir a Ordem de Serviço, o status do veículo correspondente será automaticamente atualizado para **"{orderStatus}"** e o serviço atual dele será atualizado reativamente na frota.
-            </div>
-
-            <div className={css.acoesForm}>
-              <button type="button" className="btn-secondary" onClick={() => setActiveTab('overview')}>Cancelar</button>
-              <button type="submit" className={`btn-primary ${css.btnSalvar}`}>Confirmar O.S.</button>
-            </div>
-          </form>
+          )}
         </GlassPanel>
-      )}
+      </section>
     </div>
   )
 }

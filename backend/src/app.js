@@ -83,7 +83,8 @@ app.use('/api/v1', apiRateLimiter)
 // autenticação, chatbot e IA. As antigas rotas CRUD (clientes, veiculos, os,
 // estoque, etc.) foram removidas: elas rodavam com service_role (ignorando o
 // RLS) e, sem checagem de dono, eram uma superfície de IDOR/bypass do RLS.
-app.use('/api/v1/auth', loginRateLimiter, authRoutes)
+app.use('/api/v1/auth/login', loginRateLimiter)
+app.use('/api/v1/auth', authRoutes)
 app.use('/api/v1/chatbot', iaRateLimiter, chatbotRoutes)
 app.use('/api/v1/ia', iaRateLimiter, iaRoutes)
 

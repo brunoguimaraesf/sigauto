@@ -12,12 +12,26 @@ const mocks = vi.hoisted(() => ({
   respostasUpload: [],
   respostasRemocao: [],
   eventos: [],
+  falharFuncionarioPublico: false,
+  consultas: [],
 }))
 
 vi.mock('../supabaseClient', () => {
-  const respostaTabela = (tabela) => mocks.tabelas[tabela] || { data: [], error: null }
+  const respostaTabela = (tabela) => {
+    if (tabela === 'funcionario_publico' && mocks.falharFuncionarioPublico) {
+      return {
+        data: null,
+        error: {
+          code: 'PGRST205',
+          message: "Could not find the table 'public.funcionario_publico' in the schema cache",
+        },
+      }
+    }
+    return mocks.tabelas[tabela] || { data: [], error: null }
+  }
 
   const criarConsulta = (tabela) => {
+    mocks.consultas.push(tabela)
     let operacao = 'leitura'
     let payloadUpsert
     const consulta = {
@@ -96,10 +110,37 @@ beforeEach(() => {
   mocks.respostasUpload = []
   mocks.respostasRemocao = []
   mocks.eventos = []
+  mocks.falharFuncionarioPublico = false
+  mocks.consultas = []
   banco = undefined
 })
 
 describe('configuracao da oficina no DataProvider', () => {
+  it('mantem os dados e usa fallback seguro quando funcionario_publico nao existe', async () => {
+    mocks.falharFuncionarioPublico = true
+    mocks.tabelas.cliente = { data: [{ id: 'cliente-1', nome: 'Cliente existente' }], error: null }
+    mocks.tabelas.veiculo = { data: [{ id: 'veiculo-1', placa: 'ABC1D23' }], error: null }
+    mocks.tabelas.ordem_servico = {
+      data: [{ id: 'os-1', numero_os: 15, os_servico: [], os_peca: [], os_comissao: [] }],
+      error: null,
+    }
+    mocks.tabelas.funcionario = {
+      data: [{ id: 'funcionario-1', nome: 'Mecanico', cargo: 'mecanico', ativo: true }],
+      error: null,
+    }
+
+    await renderProvider()
+
+    expect(banco.supabaseConnected).toBe(true)
+    expect(banco.databaseError).toBe('')
+    expect(banco.clientes).toHaveLength(1)
+    expect(banco.veiculos).toHaveLength(1)
+    expect(banco.ordensServico).toHaveLength(1)
+    expect(banco.funcionarios).toHaveLength(1)
+    expect(mocks.consultas).toContain('funcionario_publico')
+    expect(mocks.consultas).toContain('funcionario')
+  })
+
   it('representa o singleton ausente como null sem derrubar os demais dados', async () => {
     mocks.tabelas.configuracao_oficina = { data: null, error: null }
     mocks.tabelas.cliente = { data: [{ id: 'cliente-1', nome: 'Cliente' }], error: null }
