@@ -10,11 +10,16 @@ vi.mock('../../supabaseClient', () => {
     { id: 'i1', codigo: 'FIL-001', nome: 'Filtro de Óleo', unidade: 'UN', quantidade: 10, qtd_minima: 3, preco_unit: 30, ativo: true },
     { id: 'i2', codigo: 'PAS-002', nome: 'Pastilha de Freio', unidade: 'PC', quantidade: 2, qtd_minima: 5, preco_unit: 90, ativo: true },
   ]
-  const q = {}
-  q.select = () => q
-  q.eq = () => q
-  q.order = () => Promise.resolve({ data, error: null })
-  const from = vi.fn(() => q)
+  const from = vi.fn((tabela) => {
+    const resposta = { data: tabela === 'movimentacao_estoque' ? [] : data, error: null }
+    const q = {}
+    q.select = () => q
+    q.eq = () => q
+    q.order = () => q
+    q.limit = () => Promise.resolve(resposta)
+    q.then = (resolve, reject) => Promise.resolve(resposta).then(resolve, reject)
+    return q
+  })
   return { supabaseDb: { from } }
 })
 

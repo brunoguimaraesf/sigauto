@@ -33,9 +33,6 @@ export function Clientes() {
   const [cpfCnpj, setCpfCnpj] = useState('')
   const [tipoPessoa, setTipoPessoa] = useState('fisica')
   const [endereco, setEndereco] = useState(enderecoEmBranco)
-  // Texto livre do cadastro antigo. Continua visivel enquanto o cliente nao
-  // tiver endereco estruturado, para nao sumir com o que ja estava la.
-  const [enderecoLegado, setEnderecoLegado] = useState('')
   const [buscandoCep, setBuscandoCep] = useState(false)
   const [erroCep, setErroCep] = useState('')
 
@@ -74,7 +71,6 @@ export function Clientes() {
     setCpfCnpj('')
     setTipoPessoa('fisica')
     setEndereco(enderecoEmBranco)
-    setEnderecoLegado('')
     setErroCep('')
     setModalOpen(true)
   }
@@ -88,7 +84,6 @@ export function Clientes() {
     setCpfCnpj(c.cpf_cnpj || '')
     setTipoPessoa(c.tipo_pessoa || 'fisica')
     setEndereco({ ...enderecoEmBranco, ...(c.endereco_estruturado || {}) })
-    setEnderecoLegado(c.endereco || '')
     setErroCep('')
     setModalOpen(true)
   }
@@ -112,12 +107,11 @@ export function Clientes() {
       telefone,
       cpf_cnpj: cpfCnpj,
       tipo_pessoa: tipoPessoa,
-      endereco: enderecoLegado,
       endereco_estruturado: endereco
     }
 
     if (editingId) {
-      updateCliente(editingId, payload)
+      updateCliente(editingId, payload).catch(err => alert(`Erro ao atualizar cliente: ${err?.message || 'tente novamente.'}`))
     } else {
       addCliente(payload).catch(err => alert(`Erro ao salvar cliente: ${err?.message || 'tente novamente.'}`))
     }
@@ -133,7 +127,7 @@ export function Clientes() {
            (c.email || '').toLowerCase().includes(term) ||
            (c.telefone || '').includes(term) ||
            (c.cpf_cnpj || '').includes(term) ||
-           formatarEndereco(c.endereco_estruturado, c.endereco).toLowerCase().includes(term)
+           formatarEndereco(c.endereco_estruturado).toLowerCase().includes(term)
   })
 
   return (
@@ -207,9 +201,9 @@ export function Clientes() {
                       <td>
                         <span className={css.telefone}>{c.telefone}</span>
                         <span className={css.email}>{c.email}</span>
-                        {formatarEndereco(c.endereco_estruturado, c.endereco) && (
+                        {formatarEndereco(c.endereco_estruturado) && (
                           <span className={css.endereco}>
-                            {formatarEndereco(c.endereco_estruturado, c.endereco)}
+                            {formatarEndereco(c.endereco_estruturado)}
                           </span>
                         )}
                       </td>
@@ -420,11 +414,6 @@ export function Clientes() {
                     onChange={(e) => setCampoEndereco('ponto_referencia', e.target.value)}
                   />
 
-                  {enderecoLegado && (
-                    <span className={css.enderecoLegado}>
-                      Cadastro anterior: {enderecoLegado}
-                    </span>
-                  )}
                 </div>
               </div>
 

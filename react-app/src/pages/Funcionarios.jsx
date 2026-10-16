@@ -82,7 +82,7 @@ export function Funcionarios() {
     if (resp.error) { setErroForm(resp.error.message || 'Não foi possível salvar.'); return }
     setModalAberto(false)
     await carregar()
-    reloadDatabase()
+    await reloadDatabase()
   }
 
   const handleInativar = async (id) => {
@@ -90,7 +90,7 @@ export function Funcionarios() {
     const { error } = await supabaseDb.from('funcionario').update({ ativo: false }).eq('id', id)
     if (error) { alert('Não foi possível inativar.'); return }
     await carregar()
-    reloadDatabase()
+    await reloadDatabase()
   }
 
   const usuariosDisponiveis = usuarios.filter(u =>

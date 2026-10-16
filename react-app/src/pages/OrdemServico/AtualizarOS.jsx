@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useContext, useEffect, useState } from 'react'
 import css from './AtualizarOS.module.css'
 import { useNavigate, useParams } from 'react-router-dom'
 import { ArrowLeft, CheckCircle, Package, Plus, Search, Trash2, Wrench, X } from 'lucide-react'
@@ -6,6 +6,7 @@ import { GlassPanel } from '../../components/GlassPanel'
 import { AcoesDocumentoOS } from '../../components/ui/AcoesDocumentoOS'
 import { useDatabase } from '../../hooks/useDatabase'
 import { supabaseDb } from '../../supabaseClient'
+import { AuthContext } from '../../context/AuthContext'
 import { calcOSCommissions, calcOSTotals, formatCurrency, getLineTotal, resolveEquipe, toMoney } from '../../utils/osFinance'
 
 function SummaryChip({ label, value, tone }) {
@@ -21,6 +22,9 @@ export function AtualizarOS() {
   const { id } = useParams()
   const navigate = useNavigate()
   const { clientes, veiculos, funcionarios, servicos: catalogoServicos, ordensServico, updateOrdemServico } = useDatabase()
+  const auth = useContext(AuthContext)
+  const perfil = auth?.perfil
+  const podeGerenciar = auth ? perfil === 'gestor' || perfil === 'atendente' : true
 
   const os = ordensServico.find(o => o.id === id)
   const veiculo = veiculos.find(v => v.id === (os?.veiculo_id || os?.id_veiculo)) || {}
@@ -55,6 +59,7 @@ export function AtualizarOS() {
   const [buscaModal, setBuscaModal] = useState('')
   const [selecionadosModal, setSelecionadosModal] = useState([])
   const [saved, setSaved] = useState(false)
+  const [erroSalvar, setErroSalvar] = useState('')
 
   const totals = calcOSTotals({ servicos_itens: servicosItens, pecas_itens: pecasItens })
   const mecanicos = funcionarios.filter(f => f.cargo === 'mecanico')
@@ -96,41 +101,61 @@ export function AtualizarOS() {
     )
   }
 
-  const persistirOS = (nextServicos = servicosItens, nextPecas = pecasItens, extra = {}) => {
+  const persistirOS = async (nextServicos = servicosItens, nextPecas = pecasItens, extra = {}) => {
+    if (!podeGerenciar) {
+      setErroSalvar('')
+      try {
+        await updateOrdemServico(id, { diagnostico, status, observacoes })
+        setSaved(true)
+        setTimeout(() => setSaved(false), 2500)
+        return true
+      } catch (error) {
+        setErroSalvar(error?.message || 'Nao foi possivel salvar a ordem de servico.')
+        return false
+      }
+    }
+
     const nextTotals = calcOSTotals({ servicos_itens: nextServicos, pecas_itens: nextPecas })
     const nextComissoes = calcOSCommissions(
       { servicos_itens: nextServicos, pecas_itens: nextPecas },
       mecanicoSelecionado,
       atendenteSelecionado
     )
-    updateOrdemServico(id, {
-      diagnostico,
-      id_mecanico: mecanicoId || null,
-      id_atendente: atendenteId || null,
-      servicos_executados: nextServicos.map(item => item.descricao).join('; '),
-      servicos_itens: nextServicos,
-      pecas_itens: nextPecas,
-      status,
-      observacoes,
-      forma_pagamento: formaPagamento,
-      valor_servicos: nextTotals.valorServicos,
-      valor_pecas: nextTotals.valorPecas,
-      valor_total: nextTotals.valorTotal,
-      preco_final: nextTotals.valorTotal,
-      valor_comissao_mecanico: nextComissoes.mecanico.valor,
-      valor_comissao_atendente: nextComissoes.atendente.valor,
-      comissao_detalhes: nextComissoes,
-      atualizado_em: new Date().toISOString(),
-      ...extra,
-    })
-    setSaved(true)
-    setTimeout(() => setSaved(false), 2500)
+    setErroSalvar('')
+    try {
+      await updateOrdemServico(id, {
+        diagnostico,
+        id_mecanico: mecanicoId || null,
+        id_atendente: atendenteId || null,
+        servicos_executados: nextServicos.map(item => item.descricao).join('; '),
+        servicos_itens: nextServicos,
+        pecas_itens: nextPecas,
+        status,
+        observacoes,
+        forma_pagamento: formaPagamento,
+        valor_servicos: nextTotals.valorServicos,
+        valor_pecas: nextTotals.valorPecas,
+        valor_total: nextTotals.valorTotal,
+        preco_final: nextTotals.valorTotal,
+        valor_comissao_mecanico: nextComissoes.mecanico.valor,
+        valor_comissao_atendente: nextComissoes.atendente.valor,
+        comissoes_snapshot: nextComissoes,
+        atualizado_em: new Date().toISOString(),
+        ...extra,
+      })
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2500)
+      return true
+    } catch (error) {
+      setErroSalvar(error?.message || 'Não foi possível salvar a ordem de serviço.')
+      return false
+    }
   }
 
-  const handleSalvar = (e) => {
+  const handleSalvar = async (e) => {
     e.preventDefault()
     if (bloqueada) return
-    persistirOS()
+    await persistirOS()
   }
 
   const abrirModal = (tipo) => {
@@ -165,41 +190,51 @@ export function AtualizarOS() {
     setSelecionadosModal(items => items.map(item => item.id === itemId ? { ...item, quantidade } : item))
   }
 
-  const salvarModal = () => {
+  const salvarModal = async () => {
+    let salvo
     if (modalTipo === 'servico') {
       const nextServicos = [...servicosItens, ...selecionadosModal]
       setServicosItens(nextServicos)
-      persistirOS(nextServicos, pecasItens)
+      salvo = await persistirOS(nextServicos, pecasItens)
     } else {
       const nextPecas = [...pecasItens, ...selecionadosModal]
       setPecasItens(nextPecas)
-      persistirOS(servicosItens, nextPecas)
+      salvo = await persistirOS(servicosItens, nextPecas)
     }
-    setModalTipo(null)
+    if (salvo) setModalTipo(null)
   }
 
-  const removerServico = (itemId) => {
+  const removerServico = async (itemId) => {
     if (bloqueada) return
     const nextServicos = servicosItens.filter(item => item.id !== itemId)
     setServicosItens(nextServicos)
-    persistirOS(nextServicos, pecasItens)
+    await persistirOS(nextServicos, pecasItens)
   }
 
-  const removerPeca = (itemId) => {
+  const removerPeca = async (itemId) => {
     if (bloqueada) return
     const nextPecas = pecasItens.filter(item => item.id !== itemId)
     setPecasItens(nextPecas)
-    persistirOS(servicosItens, nextPecas)
+    await persistirOS(servicosItens, nextPecas)
   }
 
-  const reabrirOS = () => {
+  const reabrirOS = async () => {
     if (!confirm('Confirmar reabertura da O.S.? Depois disso ela poderá ser alterada novamente.')) return
-    setStatus('em_andamento')
-    updateOrdemServico(id, {
-      status: 'em_andamento',
-      data_reabertura: new Date().toISOString(),
-      atualizado_em: new Date().toISOString(),
-    })
+    setErroSalvar('')
+    try {
+      await updateOrdemServico(id, {
+        status: 'em_andamento',
+        data_encerramento: null,
+        forma_pagamento: 'a_definir',
+        desconto_tipo: null,
+        desconto_valor: 0,
+        desconto_percentual: null,
+        observacoes_finais: null,
+      })
+      setStatus('em_andamento')
+    } catch (error) {
+      setErroSalvar(error?.message || 'Não foi possível reabrir a ordem de serviço.')
+    }
   }
 
   return (
@@ -219,11 +254,11 @@ export function AtualizarOS() {
             <ArrowLeft size={15} /> Voltar
           </button>
           <AcoesDocumentoOS os={os} cliente={cliente} veiculo={veiculo} compacto />
-          {bloqueada ? (
+          {podeGerenciar && (bloqueada ? (
             <button className={`btn-primary ${css.btnAcaoTopo}`} onClick={reabrirOS}>Reabrir O.S.</button>
           ) : (
             <button className={`btn-primary ${css.btnAcaoTopo}`} onClick={() => navigate(`/ordens-servico/${id}/encerrar`)}>Finalizar O.S.</button>
-          )}
+          ))}
         </div>
       </section>
 
@@ -256,18 +291,19 @@ export function AtualizarOS() {
             <div className={css.formHeader}>
               <span className={css.formTitulo}>Dados técnicos</span>
               {saved && <span className={css.avisoSalvo}><CheckCircle size={13} /> Salvo</span>}
+              {erroSalvar && <span role="alert" className={css.erroSalvar}>{erroSalvar}</span>}
             </div>
             <div className={css.linhaCampos}>
               <div className={`form-group ${css.campoSemMargem}`}>
                 <label>Mecanico responsavel</label>
-                <select className="form-control" value={mecanicoId} onChange={e => setMecanicoId(e.target.value)} disabled={bloqueada}>
+                <select className="form-control" value={mecanicoId} onChange={e => setMecanicoId(e.target.value)} disabled={bloqueada || !podeGerenciar}>
                   <option value="">A definir</option>
                   {mecanicos.map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
                 </select>
               </div>
               <div className={`form-group ${css.campoSemMargem}`}>
                 <label>Atendente responsavel</label>
-                <select className="form-control" value={atendenteId} onChange={e => setAtendenteId(e.target.value)} disabled={bloqueada}>
+                <select className="form-control" value={atendenteId} onChange={e => setAtendenteId(e.target.value)} disabled={bloqueada || !podeGerenciar}>
                   <option value="">A definir</option>
                   {atendentes.map(a => <option key={a.id} value={a.id}>{a.nome}</option>)}
                 </select>
@@ -280,13 +316,13 @@ export function AtualizarOS() {
                   <option value="aberta">Aberta</option>
                   <option value="em_andamento">Em andamento</option>
                   <option value="aguardando_peca">Aguardando peça</option>
-                  <option value="concluida">Concluída</option>
-                  <option value="cancelada">Cancelada</option>
+                  {encerrada && <option value="concluida">Concluída</option>}
+                  {podeGerenciar && <option value="cancelada">Cancelada</option>}
                 </select>
               </div>
               <div className={`form-group ${css.campoSemMargem}`}>
                 <label>Forma de pagamento</label>
-                <select className="form-control" value={formaPagamento} onChange={e => setFormaPagamento(e.target.value)} disabled={bloqueada}>
+                <select className="form-control" value={formaPagamento} onChange={e => setFormaPagamento(e.target.value)} disabled={bloqueada || !podeGerenciar}>
                   <option value="a_definir">A definir</option>
                   <option value="dinheiro">Dinheiro</option>
                   <option value="pix">Pix</option>
@@ -320,26 +356,26 @@ export function AtualizarOS() {
           <div>
             <div className={`panel-header ${css.itensHeader}`}>
               <h3 className={css.itensTitulo}><Wrench size={15} /> Serviços</h3>
-              {!bloqueada && (
+              {!bloqueada && podeGerenciar && (
                 <button type="button" className={`btn-secondary ${css.btnAdicionar}`} onClick={() => abrirModal('servico')}>
                   <Plus size={12} /> Adicionar
                 </button>
               )}
             </div>
-            <ItensTable items={servicosItens} onRemove={removerServico} locked={bloqueada} />
+            <ItensTable items={servicosItens} onRemove={removerServico} locked={bloqueada || !podeGerenciar} />
           </div>
 
           {/* Peças */}
           <div>
             <div className={`panel-header ${css.itensHeader}`}>
               <h3 className={css.itensTitulo}><Package size={15} /> Produtos e peças</h3>
-              {!bloqueada && (
+              {!bloqueada && podeGerenciar && (
                 <button type="button" className={`btn-secondary ${css.btnAdicionar}`} onClick={() => abrirModal('peca')}>
                   <Plus size={12} /> Adicionar
                 </button>
               )}
             </div>
-            <ItensTable items={pecasItens} onRemove={removerPeca} locked={bloqueada} />
+            <ItensTable items={pecasItens} onRemove={removerPeca} locked={bloqueada || !podeGerenciar} />
           </div>
         </div>
       </GlassPanel>

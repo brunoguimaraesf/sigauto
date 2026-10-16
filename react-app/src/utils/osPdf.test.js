@@ -43,7 +43,7 @@ vi.mock('jspdf-autotable', () => ({
 
 import {
   criarDocumentoOS, salvarDocumentoOS, abrirDocumentoOS, imprimirDocumentoOS, nomeArquivoOS,
-  resumoFinanceiroOS, ERRO_OFICINA_AUSENTE,
+  reservarGuiaDocumento, resumoFinanceiroOS, ERRO_OFICINA_AUSENTE,
 } from './osPdf'
 
 const OFICINA = {
@@ -182,6 +182,16 @@ describe('resumoFinanceiroOS', () => {
     const r = resumoFinanceiroOS({ ...OS, status: 'aberta', valor_total: 0 })
     expect(r).toMatchObject({ descontoValor: 0, valorFinal: 400 })
   })
+
+  it('usa o tipo, valor e percentual persistidos no fechamento', () => {
+    const r = resumoFinanceiroOS({
+      ...OS,
+      desconto_tipo: 'pct',
+      desconto_valor: 40,
+      desconto_percentual: 10,
+    })
+    expect(r).toMatchObject({ subtotal: 400, descontoValor: 40, descontoPercentual: 10, valorFinal: 360 })
+  })
 })
 
 describe('salvar e imprimir', () => {
@@ -207,6 +217,26 @@ describe('salvar e imprimir', () => {
     expect(open).toHaveBeenCalledWith('blob:os-42', '_blank')
     expect(revoke).toHaveBeenCalledWith('blob:os-42')
     expect(registro.docs).toHaveLength(1)
+  })
+
+  it('reserva a guia antes do trabalho assincrono e navega nela depois', () => {
+    const replace = vi.fn()
+    const guia = { opener: window, location: { replace } }
+    const open = vi.fn(() => guia)
+    const win = {
+      document,
+      open,
+      URL: { createObjectURL: vi.fn(() => 'blob:os-42'), revokeObjectURL: vi.fn() },
+      setTimeout: vi.fn(),
+    }
+
+    expect(reservarGuiaDocumento(win)).toBe(guia)
+    expect(open).toHaveBeenCalledWith('about:blank', '_blank')
+    expect(guia.opener).toBeNull()
+
+    abrirDocumentoOS(dados(), win, guia)
+    expect(open).toHaveBeenCalledTimes(1)
+    expect(replace).toHaveBeenCalledWith('blob:os-42')
   })
 
   it('visualizar avisa quando o navegador bloqueia a guia', () => {

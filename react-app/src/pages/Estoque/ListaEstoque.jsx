@@ -16,8 +16,10 @@ export function ListaEstoque() {
   // as policies de escrita do atendente valem para a linha inteira.
   const ctxAuth = useContext(AuthContext)
   const perfil = ctxAuth?.perfil
+  const usuarioAtual = ctxAuth?.user
   const podeVerCusto = ctxAuth ? perfil === 'gestor' : true
   const [itens, setItens] = useState([])
+  const [movimentacoes, setMovimentacoes] = useState([])
 
   const salvarItens = (data) => {
     setItens(data)
@@ -49,9 +51,23 @@ export function ListaEstoque() {
     salvarItens(data || [])
   }
 
+  const carregarMovimentacoes = async () => {
+    const { data, error } = await supabaseDb
+      .from('historico_movimentacao_estoque')
+      .select('*')
+      .order('data_hora', { ascending: false })
+      .limit(100)
+    if (error) {
+      console.error('Erro ao carregar historico de estoque:', error)
+      return
+    }
+    setMovimentacoes(data || [])
+  }
+
   useEffect(() => {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     carregarEstoque()
+    carregarMovimentacoes()
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
@@ -161,22 +177,31 @@ export function ListaEstoque() {
     setModalItem(null)
   }
 
-  const handleMovimentacao = (e) => {
+  const handleMovimentacao = async (e) => {
     e.preventDefault()
-    const qty = parseInt(mQtd)
+    setErroPersistencia('')
+    const qty = Number(mQtd)
     if (!qty || qty <= 0) { alert('Quantidade inválida'); return }
+    if (!mMotivo.trim()) { alert('Informe o motivo da movimentação.'); return }
     const item = modalMovimentacao
-    let novaQtd = item.quantidade
-    if (mTipo === 'entrada') novaQtd += qty
-    else if (mTipo === 'saida') {
-      if (qty > item.quantidade) { alert('Saldo insuficiente para saída.'); return }
-      novaQtd -= qty
-    } else novaQtd = qty
-    salvarItens(itens.map(i => i.id === item.id ? { ...i, quantidade: novaQtd } : i))
-    supabaseDb.from('item_estoque').update({ quantidade: novaQtd }).eq('id', item.id).then(({ error }) => {
-      if (error) console.error('Erro ao movimentar estoque no Supabase:', error)
-      else carregarEstoque()
+    if (mTipo === 'saida' && qty > Number(item.quantidade)) { alert('Saldo insuficiente para saída.'); return }
+    if (!usuarioAtual?.id) {
+      setErroPersistencia('Nao foi possivel identificar o usuario responsavel pela movimentacao.')
+      return
+    }
+    const { error } = await supabaseDb.from('movimentacao_estoque').insert({
+      id_item: item.id,
+      id_usuario: usuarioAtual.id,
+      tipo: mTipo,
+      quantidade: qty,
+      motivo: mMotivo.trim(),
+      origem: 'manual',
     })
+    if (error) {
+      setErroPersistencia(`Nao foi possivel registrar a movimentacao: ${error.message || 'erro no banco de dados'}.`)
+      return
+    }
+    await Promise.all([carregarEstoque(), carregarMovimentacoes()])
     setModalMovimentacao(null)
     setMQtd(''); setMMotivo('')
   }
@@ -296,6 +321,52 @@ export function ListaEstoque() {
         </div>
       </GlassPanel>
 
+      <GlassPanel className="panel stagger-3">
+        <div className={css.historicoCabecalho}>
+          <div>
+            <h3>Histórico de movimentações</h3>
+            <p>Entradas, saídas e ajustes com motivo, O.S. e usuário responsável.</p>
+          </div>
+        </div>
+        <div className="tech-table-container">
+          {movimentacoes.length === 0 ? (
+            <div className={css.vazio}>Nenhuma movimentação registrada.</div>
+          ) : (
+            <table className="tech-table">
+              <thead>
+                <tr>
+                  <th>Data</th>
+                  <th>Item</th>
+                  <th>Tipo</th>
+                  <th>Quantidade</th>
+                  <th>Motivo / O.S.</th>
+                  <th>Responsável</th>
+                </tr>
+              </thead>
+              <tbody>
+                {movimentacoes.map(mov => {
+                  return <tr key={mov.id}>
+                    <td>{new Date(mov.data_hora).toLocaleString('pt-BR')}</td>
+                    <td>{mov.item_codigo ? `${mov.item_codigo} · ` : ''}{mov.item_nome || 'Item removido'}</td>
+                    <td>
+                      <span className={mov.tipo === 'entrada' ? css.movEntrada : mov.tipo === 'saida' ? css.movSaida : css.movAjuste}>
+                        {mov.tipo === 'entrada' ? 'Entrada' : mov.tipo === 'saida' ? 'Saída' : 'Ajuste'}
+                      </span>
+                    </td>
+                    <td>{Number(mov.quantidade).toLocaleString('pt-BR')} {mov.item_unidade || ''}</td>
+                    <td>
+                      {mov.motivo || 'Sem motivo informado'}
+                      {mov.numero_os && <span className={css.movOs}> O.S. #{mov.numero_os}</span>}
+                    </td>
+                    <td>{mov.responsavel_nome || 'Usuário não identificado'}</td>
+                  </tr>
+                })}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </GlassPanel>
+
       {/* Modal Item */}
       {modalItem !== null && (
         <div className="modal-overlay">
@@ -391,11 +462,11 @@ export function ListaEstoque() {
                 </div>
                 <div className="form-group">
                   <label>Quantidade *</label>
-                  <input type="number" className={`form-control ${css.campoQuantidade}`} placeholder="0" value={mQtd} onChange={e => setMQtd(e.target.value)} min={1} required />
+                  <input type="number" className={`form-control ${css.campoQuantidade}`} placeholder="0" value={mQtd} onChange={e => setMQtd(e.target.value)} min="0.01" step="0.01" required />
                 </div>
                 <div className="form-group">
-                  <label>Motivo / Observação</label>
-                  <input type="text" className="form-control" placeholder="Ex: Compra fornecedor, Consumo OS #123..." value={mMotivo} onChange={e => setMMotivo(e.target.value)} />
+                  <label>Motivo / Observação *</label>
+                  <input type="text" className="form-control" placeholder="Ex: Compra fornecedor, ajuste de inventário..." value={mMotivo} onChange={e => setMMotivo(e.target.value)} maxLength={100} required />
                 </div>
               </div>
               <div className="modal-footer">

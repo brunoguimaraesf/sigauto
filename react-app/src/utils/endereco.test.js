@@ -91,12 +91,9 @@ describe('formatarEndereco', () => {
       .toBe('Rua A - Rio Verde/GO')
   })
 
-  it('cai no texto legado quando não há endereço estruturado', () => {
-    expect(formatarEndereco(null, 'Av. Antiga, 50 - Centro')).toBe('Av. Antiga, 50 - Centro')
-  })
-
-  it('cai no texto legado quando o estruturado está vazio', () => {
-    expect(formatarEndereco({}, 'Av. Antiga, 50')).toBe('Av. Antiga, 50')
+  it('não usa texto legado depois da normalização', () => {
+    expect(formatarEndereco(null)).toBe('')
+    expect(formatarEndereco({})).toBe('')
   })
 
   it('devolve string vazia quando não há nada', () => {

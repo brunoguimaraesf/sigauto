@@ -13,6 +13,8 @@ vi.mock('../../utils/osPdf', () => ({
   abrirDocumentoOS: vi.fn(() => ({})),
   imprimirDocumentoOS: vi.fn(async () => {}),
   carregarLogoDataUrl: vi.fn(async () => null),
+  reservarGuiaDocumento: vi.fn(() => ({ location: { replace: vi.fn() }, close: vi.fn() })),
+  salvarDocumentoOS: vi.fn(async () => {}),
 }))
 
 const veic = { id: 'v1', cliente_id: 'c1', placa: 'ABC1D23', marca: 'VW', modelo: 'Gol' }
@@ -20,7 +22,7 @@ const cli = { id: 'c1', nome: 'João Silva' }
 
 const oficina = { id: 1, nome_fantasia: 'Oficina Central', cnpj: '11222333000181' }
 const dbWith = (os) => ({
-  clientes: [cli], veiculos: [veic], ordensServico: os ? [os] : [], updateOrdemServico: vi.fn(), oficina,
+  clientes: [cli], veiculos: [veic], ordensServico: os ? [os] : [], updateOrdemServico: vi.fn(), finalizarOrdemServico: vi.fn(), oficina,
 })
 
 const renderAt = (id = 'o1') => render(

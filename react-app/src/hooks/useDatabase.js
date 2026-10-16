@@ -24,8 +24,6 @@ const mapEnderecoFromDb = (raw) => {
 const mapClienteFromDb = (c) => ({
   ...c,
   tipo_pessoa: c.tipo_pessoa || 'fisica',
-  // `endereco` (string) continua sendo o campo legado de texto livre;
-  // `endereco_estruturado` e a entidade nova.
   endereco_estruturado: mapEnderecoFromDb(c.endereco_estruturado),
 })
 
@@ -49,8 +47,7 @@ const mapVeiculoFromDb = (v) => ({
   status: v.status || 'Pendente',
 })
 
-// Item de OS (servico ou peca) vindo das tabelas os_servico/os_peca
-// (ou, como fallback, dos antigos arrays JSONB servicos_itens/pecas_itens).
+// Item de OS vindo exclusivamente das tabelas relacionais os_servico/os_peca.
 const mapItemFromDb = (row) => ({
   id: row.id || newUuid(),
   catalogo_id: row.id_servico ?? row.catalogo_id ?? null,
@@ -62,8 +59,19 @@ const mapItemFromDb = (row) => ({
 })
 
 const mapOSFromDb = (os) => {
-  const servicosRaw = (os.os_servico && os.os_servico.length) ? os.os_servico : (os.servicos_itens || [])
-  const pecasRaw = (os.os_peca && os.os_peca.length) ? os.os_peca : (os.pecas_itens || [])
+  const servicosRaw = os.os_servico || []
+  const pecasRaw = os.os_peca || []
+  const comissoesSnapshot = Object.fromEntries((os.os_comissao || []).map(item => [item.papel, {
+    id_funcionario: item.id_funcionario || null,
+    nome: item.nome || null,
+    percentual: Number(item.percentual || 0),
+    base: Number(item.base_servicos || 0) + Number(item.base_pecas || 0),
+    baseServicos: Number(item.base_servicos || 0),
+    basePecas: Number(item.base_pecas || 0),
+    valor: Number(item.valor || 0),
+    sobreServicos: Boolean(item.sobre_servicos),
+    sobrePecas: Boolean(item.sobre_pecas),
+  }]))
   return {
     ...os,
     cliente_id: os.id_cliente,
@@ -75,6 +83,7 @@ const mapOSFromDb = (os) => {
     preco_final: os.valor_total || 0,
     servicos_itens: servicosRaw.map(mapItemFromDb),
     pecas_itens: pecasRaw.map(mapItemFromDb),
+    comissoes_snapshot: comissoesSnapshot,
     // normaliza data: tabela usa criado_em, não created_at
     data_abertura: os.data_abertura || os.criado_em || null,
     created_at: os.created_at || os.criado_em || null,
@@ -88,7 +97,6 @@ const normalizeClienteForDb = (cliente) => ({
   cpf_cnpj: cliente.cpf_cnpj || `SC${Date.now().toString().slice(-9)}`,
   telefone: cliente.telefone || 'Nao informado',
   email: cliente.email || null,
-  endereco: cliente.endereco || null,
   ativo: cliente.ativo !== false,
 })
 
@@ -116,8 +124,8 @@ const normalizeFuncionarioForDb = (f) => ({
   ativo: f.ativo !== false,
 })
 
-// Campos ESCALARES da OS. Os itens (servicos/pecas) sao gravados a parte,
-// nas tabelas os_servico/os_peca, via syncItensOS(). id_usuario referencia
+// Campos ESCALARES da OS. Os itens (servicos/pecas) seguem no mesmo RPC
+// transacional, mas vivem nas tabelas os_servico/os_peca. id_usuario referencia
 // usuario (quem registrou); id_mecanico/id_atendente referenciam funcionario.
 const pickOSFields = (os, userId) => ({
   ...(isUuid(os.id) ? { id: os.id } : {}),
@@ -136,42 +144,65 @@ const pickOSFields = (os, userId) => ({
   valor_total: Number(os.valor_total || os.preco_final || 0),
   forma_pagamento: os.forma_pagamento || null,
   observacoes: os.observacoes || null,
+  observacoes_finais: os.observacoes_finais || null,
+  desconto_tipo: os.desconto_tipo || null,
+  desconto_valor: Number(os.desconto_valor || 0),
+  desconto_percentual: os.desconto_percentual === null || os.desconto_percentual === undefined
+    ? null
+    : Number(os.desconto_percentual),
   valor_servicos: Number(os.valor_servicos || 0),
   valor_pecas: Number(os.valor_pecas || 0),
+  valor_comissao_mecanico: Number(os.valor_comissao_mecanico || 0),
+  valor_comissao_atendente: Number(os.valor_comissao_atendente || 0),
 })
 
-// Sincroniza os itens da OS nas tabelas relacionais: apaga os antigos e insere
-// os atuais (estrategia simples de "substituir tudo" a cada salvamento).
-const syncItensOS = async (supabaseDb, osId, servicos = [], pecas = []) => {
-  await supabaseDb.from('os_servico').delete().eq('id_os', osId)
-  await supabaseDb.from('os_peca').delete().eq('id_os', osId)
-  const sRows = (servicos || []).map(it => ({
-    id_os: osId,
+const normalizarServicosOS = (servicos = []) => (servicos || []).map(it => ({
     id_servico: isUuid(it.catalogo_id) ? it.catalogo_id : null,
     descricao: String(it.descricao || 'Servico').slice(0, 200),
     quantidade: Number(it.quantidade) || 1,
     valor_unitario: Number(it.valor_unitario) || 0,
   }))
-  const pRows = (pecas || []).map(it => ({
-    id_os: osId,
+
+const normalizarPecasOS = (pecas = []) => (pecas || []).map(it => ({
     id_item: isUuid(it.item_id) ? it.item_id : null,
     descricao: String(it.descricao || 'Peca').slice(0, 200),
     quantidade: Number(it.quantidade) || 1,
     valor_unitario: Number(it.valor_unitario) || 0,
   }))
-  if (sRows.length) {
-    const { error } = await supabaseDb.from('os_servico').insert(sRows)
-    if (error) console.error('Erro ao salvar servicos da OS:', error)
-  }
-  if (pRows.length) {
-    const { error } = await supabaseDb.from('os_peca').insert(pRows)
-    if (error) console.error('Erro ao salvar pecas da OS:', error)
-  }
-}
 
 // ── Configuracao da oficina (migracao 18) ──────────────────────────────────
 // Singleton `configuracao_oficina` (id = 1) e bucket privado `logos-oficina`.
 // O banco guarda so o caminho do objeto: nunca URL assinada nem Base64.
+const funcionarioPublicoIndisponivel = (error) => {
+  if (!error) return false
+  const codigo = String(error.code || '').toUpperCase()
+  const mensagem = `${error.message || ''} ${error.details || ''} ${error.hint || ''}`
+  return ['42P01', 'PGRST205'].includes(codigo)
+    || (/funcionario_publico/i.test(mensagem)
+      && /(schema cache|does not exist|nao existe|não existe)/i.test(mensagem))
+}
+
+// A view e o contrato principal. O fallback evita que uma view ausente durante
+// o deploy derrube clientes, veiculos e OS que ja foram carregados. O RLS da
+// tabela continua valendo: gestor ve a equipe e os demais veem apenas o proprio
+// registro ate a migracao de reparo restaurar a view.
+const carregarFuncionariosPublicos = async () => {
+  const resultado = await supabaseDb
+    .from('funcionario_publico')
+    .select('*')
+    .eq('ativo', true)
+    .order('nome')
+
+  if (!funcionarioPublicoIndisponivel(resultado.error)) return resultado
+
+  console.warn('View funcionario_publico indisponivel; usando leitura restrita da tabela funcionario.')
+  return supabaseDb
+    .from('funcionario')
+    .select('id, nome, cargo, id_usuario, ativo')
+    .eq('ativo', true)
+    .order('nome')
+}
+
 const OFICINA_BUCKET = 'logos-oficina'
 const LOGO_TAMANHO_MAX = 2 * 1024 * 1024 // mesmo limite do bucket
 // A extensao vem do MIME, nunca do nome que o usuario deu ao arquivo.
@@ -242,17 +273,16 @@ function useDatabaseState() {
     try {
       const [{ data: sessionData }, clientesRes, veiculosRes, osRes, servicosRes, usuariosRes, funcionariosRes, oficinaRes] = await Promise.all([
         supabase.auth.getUser(),
-        // Alias no embed porque `endereco` colide com a coluna legada de mesmo
-        // nome em cliente.
+        // Alias explicito mantem o formato interno `endereco_estruturado`.
         supabaseDb.from('cliente').select('*, endereco_estruturado:endereco(*)').eq('ativo', true).order('nome'),
         supabaseDb.from('veiculo').select('*').eq('ativo', true).order('placa'),
-        supabaseDb.from('ordem_servico').select('*, os_servico(*), os_peca(*)').order('data_abertura', { ascending: false }),
+        supabaseDb.from('ordem_servico').select('*, os_servico(*), os_peca(*), os_comissao(*)').order('data_abertura', { ascending: false }),
         supabaseDb.from('servico_catalogo').select('*').eq('ativo', true).order('nome'),
         supabaseDb.from('usuario').select('*').eq('ativo', true).order('nome'),
         // Lista geral pela view publica (sem comissao) — usada em dropdowns e
         // na resolucao de nomes. Comissao so nas telas de gestor (Relatorios,
         // Funcionarios), que consultam a tabela funcionario diretamente.
-        supabaseDb.from('funcionario_publico').select('*').eq('ativo', true).order('nome'),
+        carregarFuncionariosPublicos(),
         // Singleton: sem linha (oficina ainda nao cadastrada) vem data null.
         supabaseDb.from('configuracao_oficina').select('*').maybeSingle(),
       ])
@@ -268,40 +298,18 @@ function useDatabaseState() {
         setErroOficina('')
       }
 
-      // Fallback para bancos ainda sem a tabela endereco (pre-13): repete sem o
-      // embed, e o cliente cai no campo de texto livre.
-      let clientesData = clientesRes.data
-      if (clientesRes.error) {
-        const retry = await supabaseDb.from('cliente').select('*').eq('ativo', true).order('nome')
-        if (retry.error) throw clientesRes.error
-        clientesData = retry.data
-      }
+      if (clientesRes.error) throw clientesRes.error
       if (veiculosRes.error) throw veiculosRes.error
-
-      // Fallback para bancos ainda sem as tabelas os_servico/os_peca (pre-migracao):
-      // repete a consulta sem o JOIN e o mapper cai nos arrays JSONB antigos.
-      let osData = osRes.data
-      if (osRes.error) {
-        const retry = await supabaseDb.from('ordem_servico').select('*').order('data_abertura', { ascending: false })
-        if (retry.error) throw retry.error
-        osData = retry.data
-      }
-
-      // Fallback para bancos ainda sem a view funcionario_publico (pre-12):
-      // le da tabela funcionario direto (permissivo ate o hardening rodar).
-      let funcData = funcionariosRes.error ? [] : (funcionariosRes.data || [])
-      if (funcionariosRes.error) {
-        const retry = await supabaseDb.from('funcionario').select('id, nome, cargo, id_usuario, ativo').eq('ativo', true).order('nome')
-        if (!retry.error) funcData = retry.data || []
-      }
+      if (osRes.error) throw osRes.error
+      if (funcionariosRes.error) throw funcionariosRes.error
 
       const next = {
-        clientes: (clientesData || []).map(mapClienteFromDb),
+        clientes: (clientesRes.data || []).map(mapClienteFromDb),
         veiculos: (veiculosRes.data || []).map(mapVeiculoFromDb),
-        ordensServico: (osData || []).map(mapOSFromDb),
+        ordensServico: (osRes.data || []).map(mapOSFromDb),
         servicos: servicosRes.error ? [] : (servicosRes.data || []),
         usuarios: usuariosRes.error ? [] : (usuariosRes.data || []),
-        funcionarios: funcData,
+        funcionarios: funcionariosRes.data || [],
       }
       setCurrentUserId(sessionData?.user?.id || usuariosRes.data?.[0]?.id || null)
       setSupabaseConnected(true)
@@ -392,17 +400,6 @@ function useDatabaseState() {
 
   // Endereco em branco nao vira linha vazia na tabela: apaga a que existir.
   // Assim "limpar o endereco" e uma operacao possivel pela tela.
-  const salvarEnderecoCliente = async (idCliente, endereco) => {
-    if (!isUuid(idCliente) || endereco === undefined) return
-
-    const consulta = enderecoVazio(endereco)
-      ? supabaseDb.from('endereco').delete().eq('id_cliente', idCliente)
-      : supabaseDb.from('endereco').upsert(normalizeEnderecoForDb(idCliente, endereco), { onConflict: 'id_cliente' })
-
-    const { error } = await consulta
-    if (error) console.error('Erro ao salvar endereco do cliente:', error)
-  }
-
   // Resolve com o registro JA gravado. Quem vai referenciar o cliente por FK
   // (veiculo, O.S.) precisa esperar: o item aparece na lista na hora, mas so
   // existe no banco depois do insert. Em erro, o item otimista sai da lista —
@@ -411,25 +408,48 @@ function useDatabaseState() {
     const localCliente = { ...newC, id: isUuid(newC.id) ? newC.id : newUuid() }
     salvarState({ clientes: [...clientes, localCliente] })
 
-    const { data, error } = await supabaseDb.from('cliente').insert(normalizeClienteForDb(localCliente)).select().single()
+    const enderecoDb = enderecoVazio(localCliente.endereco_estruturado)
+      ? null
+      : normalizeEnderecoForDb(localCliente.id, localCliente.endereco_estruturado)
+    if (enderecoDb) delete enderecoDb.id_cliente
+    const { data, error } = await supabaseDb.rpc('salvar_cliente_com_endereco', {
+      p_id_cliente: localCliente.id,
+      p_cliente: normalizeClienteForDb(localCliente),
+      p_endereco: enderecoDb,
+      p_novo: true,
+    }).single()
     if (error) {
       console.error('Erro ao salvar cliente no Supabase:', error)
       salvarState({ clientes: clientes.filter(c => c.id !== localCliente.id) })
       throw error
     }
-    await salvarEnderecoCliente(data.id, localCliente.endereco_estruturado)
     const saved = { ...mapClienteFromDb(data), endereco_estruturado: localCliente.endereco_estruturado ?? null }
     salvarState({ clientes: [saved, ...clientes.filter(c => c.id !== localCliente.id)] })
     return saved
   }
 
-  const updateCliente = (id, updatedC) => {
+  const updateCliente = async (id, updatedC) => {
+    const anterior = clientes
     const next = clientes.map(c => c.id === id ? { ...c, ...updatedC } : c)
     salvarState({ clientes: next })
-    supabaseDb.from('cliente').update(normalizeClienteForDb({ ...clientes.find(c => c.id === id), ...updatedC })).eq('id', id).then(({ error }) => {
-      if (error) console.error('Erro ao atualizar cliente no Supabase:', error)
-    })
-    salvarEnderecoCliente(id, updatedC.endereco_estruturado)
+    try {
+      const merged = { ...clientes.find(c => c.id === id), ...updatedC }
+      const enderecoDb = enderecoVazio(merged.endereco_estruturado)
+        ? null
+        : normalizeEnderecoForDb(id, merged.endereco_estruturado)
+      if (enderecoDb) delete enderecoDb.id_cliente
+      const { error } = await supabaseDb.rpc('salvar_cliente_com_endereco', {
+        p_id_cliente: id,
+        p_cliente: normalizeClienteForDb(merged),
+        p_endereco: enderecoDb,
+        p_novo: false,
+      })
+      if (error) throw error
+    } catch (error) {
+      salvarState({ clientes: anterior })
+      await carregarDados()
+      throw error
+    }
   }
 
   const deleteCliente = (id) => {
@@ -499,39 +519,69 @@ function useDatabaseState() {
     const localOS = { ...newOS, id: isUuid(newOS.id) ? newOS.id : newUuid(), created_at: new Date().toISOString() }
     const userId = currentUserId || newOS.id_usuario
 
-    const { data, error } = await supabaseDb
-      .from('ordem_servico')
-      .insert(pickOSFields(localOS, userId))
-      .select()
-      .single()
+    const { data, error } = await supabaseDb.rpc('criar_ordem_servico_com_itens', {
+      p_dados: pickOSFields(localOS, userId),
+      p_servicos: normalizarServicosOS(localOS.servicos_itens || []),
+      p_pecas: normalizarPecasOS(localOS.pecas_itens || []),
+    }).single()
 
     if (error) throw error
 
     const servicos = localOS.servicos_itens || []
     const pecas = localOS.pecas_itens || []
-    await syncItensOS(supabaseDb, data.id, servicos, pecas)
 
     const saved = { ...mapOSFromDb(data), servicos_itens: servicos, pecas_itens: pecas }
     salvarState({ ordensServico: [saved, ...ordensServico] })
     return saved
   }
 
-  const updateOrdemServico = (id, updatedOS) => {
+  const updateOrdemServico = async (id, updatedOS) => {
     const original = ordensServico.find(os => os.id === id) || {}
     const merged = { ...original, ...updatedOS }
     const data = ordensServico.map(os => os.id === id ? merged : os)
     salvarState({ ordensServico: data })
     const userId = currentUserId || merged.id_usuario
-    if (isUuid(id)) {
-      supabaseDb.from('ordem_servico').update(pickOSFields(merged, userId)).eq('id', id).then(({ error }) => {
-        if (error) console.error('Erro ao atualizar OS no Supabase:', error)
+    if (!isUuid(id)) return merged
+
+    try {
+      const camposPermitidos = new Set([
+        'id_veiculo', 'id_usuario', 'id_mecanico', 'id_atendente', 'descricao',
+        'diagnostico', 'status', 'prioridade', 'data_abertura', 'data_encerramento',
+        'km_entrada', 'valor_total', 'forma_pagamento', 'observacoes',
+        'observacoes_finais', 'desconto_tipo', 'desconto_valor',
+        'desconto_percentual', 'valor_servicos', 'valor_pecas',
+        'valor_comissao_mecanico', 'valor_comissao_atendente',
+      ])
+      const normalizado = pickOSFields({ ...updatedOS, id: undefined }, userId)
+      const cabecalho = Object.fromEntries(
+        Object.entries(normalizado).filter(([chave]) => camposPermitidos.has(chave) && updatedOS[chave] !== undefined)
+      )
+      const substituiItens = updatedOS.servicos_itens !== undefined || updatedOS.pecas_itens !== undefined
+      const { error } = await supabaseDb.rpc('salvar_ordem_servico_com_itens', {
+        p_id_os: id,
+        p_dados: cabecalho,
+        p_servicos: substituiItens ? normalizarServicosOS(merged.servicos_itens || []) : null,
+        p_pecas: substituiItens ? normalizarPecasOS(merged.pecas_itens || []) : null,
       })
-      // So sincroniza itens quando o update realmente mexeu neles (evita apagar
-      // itens em updates de status, ex.: reabertura da OS).
-      if (updatedOS.servicos_itens !== undefined || updatedOS.pecas_itens !== undefined) {
-        syncItensOS(supabaseDb, id, merged.servicos_itens || [], merged.pecas_itens || [])
-      }
+      if (error) throw error
+      return merged
+    } catch (error) {
+      salvarState({ ordensServico })
+      throw error
     }
+  }
+
+  const finalizarOrdemServico = async (id, fechamento) => {
+    const { error } = await supabaseDb.rpc('finalizar_ordem_servico', {
+      p_id_os: id,
+      p_desconto_tipo: fechamento.desconto_tipo,
+      p_desconto_valor: Number(fechamento.desconto_valor || 0),
+      p_desconto_percentual: fechamento.desconto_percentual ?? null,
+      p_forma_pagamento: fechamento.forma_pagamento,
+      p_observacoes_finais: fechamento.observacoes_finais || null,
+    })
+    if (error) throw error
+    await carregarDados()
   }
 
   const addFuncionario = (novo) => {
@@ -598,6 +648,7 @@ function useDatabaseState() {
     deleteServico,
     addOrdemServico,
     updateOrdemServico,
+    finalizarOrdemServico,
     deleteOrdemServico,
     addFuncionario,
     updateFuncionario,

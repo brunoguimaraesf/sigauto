@@ -147,6 +147,12 @@
   gap: 4px;
 }
 
+.erroSalvar {
+  color: var(--color-danger);
+  font-size: 0.78rem;
+  font-weight: 600;
+}
+
 .linhaCampos {
   display: grid;
   grid-template-columns: 1fr 1fr;
