@@ -52,6 +52,7 @@ async function request(method, path, body) {
 export const api = {
   get: (path) => request('GET', path),
   post: (path, body) => request('POST', path, body),
+  patch: (path, body) => request('PATCH', path, body),
 }
 
 // Helpers por módulo. Só existem para as rotas que o backend realmente serve:
@@ -84,4 +85,9 @@ export const iaApi = {
     const limiteSeguro = normalizarInteiroPositivo(limite, 10, 50)
     return api.get(`/ia/recomendacoes?page=${paginaSegura}&limit=${limiteSeguro}`)
   },
+}
+
+export const usuariosApi = {
+  criar: (dados) => api.post('/auth/usuarios', dados),
+  atualizar: (id, dados) => api.patch(`/auth/usuarios/${id}`, dados),
 }
