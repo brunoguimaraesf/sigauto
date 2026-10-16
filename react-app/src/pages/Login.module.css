@@ -108,17 +108,18 @@
 .campoIcone {
   position: absolute;
   left: 14px;
-  top: 14px;
+  top: 50%;
+  transform: translateY(-50%);
   pointer-events: none;
 }
 
 /* Acompanha .form-control: abre espaco para o icone. */
-.campoEmail {
+.campo > .campoEmail {
   padding-left: 42px;
 }
 
 /* Espaco para o icone a esquerda e o olho a direita. */
-.campoSenha {
+.campo > .campoSenha {
   padding-left: 42px;
   padding-right: 42px;
 }

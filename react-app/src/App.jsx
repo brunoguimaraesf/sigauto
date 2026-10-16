@@ -1,33 +1,49 @@
+import { lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { useAuth } from './context/AuthContext'
 import { ProtectedRoute } from './components/ui/ProtectedRoute'
 import { Sidebar } from './components/Sidebar'
 import { Header } from './components/Header'
 import { Chatbot } from './components/ui/Chatbot'
 import { DataProvider } from './hooks/useDatabase'
+import css from './App.module.css'
 
-// Pages
-import { Login } from './pages/Login'
-import { Dashboard } from './pages/Dashboard'
-import { Veiculos } from './pages/Veiculos'
-import { Clientes } from './pages/Clientes'
-import { Servicos } from './pages/Servicos'
-import { Analytics } from './pages/Analytics'
-import { Historico } from './pages/Historico'
-import { Relatorios } from './pages/Relatorios'
-import { PainelIA } from './pages/PainelIA'
-import { Usuarios } from './pages/Usuarios'
-import { Funcionarios } from './pages/Funcionarios'
-import { ConfiguracaoOficina } from './pages/ConfiguracaoOficina'
+// Cada tela vira um chunk independente. O shell (auth, menu e dados) continua
+// imediato; bibliotecas pesadas de relatorio/PDF so baixam quando necessarias.
+const pagina = (importar, nome) => lazy(() => importar().then(modulo => ({ default: modulo[nome] })))
+const Login = pagina(() => import('./pages/Login'), 'Login')
+const Dashboard = pagina(() => import('./pages/Dashboard'), 'Dashboard')
+const Veiculos = pagina(() => import('./pages/Veiculos'), 'Veiculos')
+const Clientes = pagina(() => import('./pages/Clientes'), 'Clientes')
+const Servicos = pagina(() => import('./pages/Servicos'), 'Servicos')
+const Analytics = pagina(() => import('./pages/Analytics'), 'Analytics')
+const Historico = pagina(() => import('./pages/Historico'), 'Historico')
+const Relatorios = pagina(() => import('./pages/Relatorios'), 'Relatorios')
+const PainelIA = pagina(() => import('./pages/PainelIA'), 'PainelIA')
+const Usuarios = pagina(() => import('./pages/Usuarios'), 'Usuarios')
+const Funcionarios = pagina(() => import('./pages/Funcionarios'), 'Funcionarios')
+const ConfiguracaoOficina = pagina(() => import('./pages/ConfiguracaoOficina'), 'ConfiguracaoOficina')
+const ListaOS = pagina(() => import('./pages/OrdemServico/ListaOS'), 'ListaOS')
+const AbrirOS = pagina(() => import('./pages/OrdemServico/AbrirOS'), 'AbrirOS')
+const AtualizarOS = pagina(() => import('./pages/OrdemServico/AtualizarOS'), 'AtualizarOS')
+const EncerrarOS = pagina(() => import('./pages/OrdemServico/EncerrarOS'), 'EncerrarOS')
+const ListaEstoque = pagina(() => import('./pages/Estoque/ListaEstoque'), 'ListaEstoque')
 
-// OS Pages
-import { ListaOS } from './pages/OrdemServico/ListaOS'
-import { AbrirOS } from './pages/OrdemServico/AbrirOS'
-import { AtualizarOS } from './pages/OrdemServico/AtualizarOS'
-import { EncerrarOS } from './pages/OrdemServico/EncerrarOS'
+function CarregandoTela() {
+  return <div className={css.carregando} role="status">Carregando tela...</div>
+}
 
-// Estoque Pages
-import { ListaEstoque } from './pages/Estoque/ListaEstoque'
+function PaginaInicial() {
+  const { perfil } = useAuth()
+  if (perfil === 'mecanico') return <Navigate to="/ordens-servico" replace />
+  return <ProtectedRoute requiredRoles={['gestor', 'atendente']}><Dashboard /></ProtectedRoute>
+}
+
+function RedirecionamentoPadrao() {
+  const { perfil } = useAuth()
+  return <Navigate to={perfil === 'mecanico' ? '/ordens-servico' : '/'} replace />
+}
 
 function AppLayout() {
   return (
@@ -36,12 +52,11 @@ function AppLayout() {
       <Sidebar />
       <main className="main-content">
         <Header />
+        <Suspense fallback={<CarregandoTela />}>
         <Routes>
           {/* Dashboard */}
           <Route path="/" element={
-            <ProtectedRoute requiredRoles={['gestor', 'atendente']}>
-              <Dashboard />
-            </ProtectedRoute>
+            <PaginaInicial />
           } />
 
           {/* Ordens de Serviço */}
@@ -84,8 +99,9 @@ function AppLayout() {
           <Route path="/configuracao-oficina" element={<ProtectedRoute requiredRoles={['gestor']}><ConfiguracaoOficina /></ProtectedRoute>} />
 
           {/* Redirect raiz para dashboard se logado */}
-          <Route path="*" element={<Navigate to="/" replace />} />
+          <Route path="*" element={<RedirecionamentoPadrao />} />
         </Routes>
+        </Suspense>
       </main>
       <Chatbot />
     </div>
@@ -97,10 +113,10 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route path="/*" element={<AppLayout />} />
-        </Routes>
+          <Routes>
+            <Route path="/login" element={<Suspense fallback={<CarregandoTela />}><Login /></Suspense>} />
+            <Route path="/*" element={<AppLayout />} />
+          </Routes>
       </AuthProvider>
     </BrowserRouter>
   )

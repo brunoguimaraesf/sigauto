@@ -1,0 +1,7 @@
+.carregando {
+  min-height: 40vh;
+  display: grid;
+  place-items: center;
+  color: var(--text-secondary);
+  font-size: 0.875rem;
+}
