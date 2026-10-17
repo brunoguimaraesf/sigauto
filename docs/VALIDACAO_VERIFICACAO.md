@@ -56,7 +56,7 @@ TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
     falha fechada das consultas, sanitização de dados quantitativos e PII antes do Gemini
     e da persistência, precedência das métricas calculadas, paginação e histórico.
     `app.integration.test.js` confirma bloqueio gestor-only e o limite de requisições da IA.
-- **Frontend (197 testes, 28 arquivos)**:
+- **Frontend (207 testes, 29 arquivos)**:
   - Funções puras (`utils/*.test.js`) — placa, estoque (alerta/saldo/moeda/resumo),
     endereço/CEP, finanças da OS e status de OS.
   - **Componente (React Testing Library)** — 16 suítes, entre elas `GlassPanel.test.jsx`,
@@ -82,9 +82,11 @@ TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
       com valor unitário e total), valor final persistido com o desconto que ele implica,
       emissão sem logotipo, O.S. cancelada e não concluída identificadas, 60 itens paginando com
       cabeçalho repetido e resumo não partido, nome `OS-<numero>-<data>.pdf`, e **salvar e
-      imprimir sobre o mesmo documento**, desconto persistido e navegação da guia reservada.
-    - `components/ui/AcoesDocumentoOS.test.jsx` — reserva a guia no gesto do clique, antes
-      do carregamento assíncrono do logotipo, e baixa o mesmo PDF quando o pop-up é bloqueado.
+      imprimir sobre o mesmo documento**, desconto persistido e a URL temporária que o
+      visualizador consome (sem abrir guia nenhuma).
+    - `components/ui/AcoesDocumentoOS.test.jsx` — abre o visualizador na própria página,
+      revoga a URL temporária ao fechar, imprime reaproveitando o documento já montado e
+      avisa, sem gerar documento, quando a oficina não está cadastrada.
     - `pages/OrdemServico/AtualizarOS.test.jsx` — tabela de casos com os **cinco status**
       (`aberta`, `em_andamento`, `aguardando_peca`, `concluida`, `cancelada`): em todos, Salvar PDF
       e Imprimir existem e recebem os dados corretos; sem configuração da oficina, aviso acessível
@@ -105,7 +107,7 @@ TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
   inclusive o conjunto exato de clientes do mecânico; `estoque_os_test.sql` verifica baixa,
   presença do trigger do ledger, idempotência e rollback integral por saldo insuficiente. Ambos rodam na CI contra o
   mesmo banco dedicado do E2E.
-- **Total: 488 testes unitários/integração/componente (197 frontend + 291 backend), todos aprovados**, medidos em 16/10/2026. O Playwright coleta **17 E2E**; a execução completa com o banco dedicado ocorre na CI porque requer Docker/Supabase local.
+- **Total: 498 testes unitários/integração/componente (207 frontend + 291 backend), todos aprovados**, medidos em 17/10/2026. O Playwright coleta **17 E2E**; a execução completa com o banco dedicado ocorre na CI porque requer Docker/Supabase local.
 - **Como executar:** `npm test` (unitários, em `backend/` e `react-app/`) e
   `npm run test:e2e` (E2E em `react-app/`, requer o app rodando).
 
@@ -150,7 +152,7 @@ A divergência está registrada em [`DER.md`](DER.md), seção de divergências 
 | UC06 | RF05 | Configurar a oficina (cadastro único + logotipo) | ConfiguracaoOficina.jsx, useDatabase (`configuracao_oficina`), migração 18 | Implementado | `ConfiguracaoOficina.test.jsx` + `useDatabase.test.jsx` + auditoria de RLS/Storage |
 | UC06 | RF05 | Emitir a O.S. em PDF ou imprimir, em qualquer status | utils/osPdf.js, components/ui/AcoesDocumentoOS.jsx | Implementado | `utils/osPdf.test.js` + testes por status em `AtualizarOS`/`EncerrarOS` + E2E |
 | UC07 | RF06 | Consultar histórico | Historico.jsx | Implementado | Teste funcional |
-| UC08 | RF07 | Emitir relatórios (exportação) | Relatorios.jsx (CSV/PDF/XLSX) | Implementado | Teste funcional + validação de export |
+| UC08 | RF07 | Emitir relatórios (exportação) | Relatorios.jsx (CSV/PDF/XLSX) | Implementado | `pages/Relatorios.test.jsx` — filtro por funcionário (inclusive homônimos), fechamento dos totais de comissão e validação de export |
 | UC09 | RF09 | Manter estoque (alertas) | Estoque/ListaEstoque + utils/estoque | Implementado | Teste unitário (alerta) |
 | UC10 | RF13 | Manter serviços | Servicos.jsx | Implementado | Teste unitário + UAT |
 | UC11 | RF10 | Movimentar estoque e consultar histórico | ListaEstoque + `movimentacao_estoque` + migração 22 | Implementado | Unitário de saldo + SQL de ledger, baixa e idempotência |
@@ -187,4 +189,4 @@ cd backend && npm test
 cd react-app && npm test
 ```
 
-Saída medida em 16/10/2026: **488 testes unitários/integração/componente aprovados** (291 backend + 197 frontend), lint aprovado nos dois projetos e build de produção aprovado. O Playwright coleta **17 E2E**. A execução E2E e dos dois scripts SQL está incorporada à CI com Supabase efêmero; nesta estação local ela não foi executada por ausência de Docker/Podman.
+Saída medida em 17/10/2026: **498 testes unitários/integração/componente aprovados** (291 backend + 207 frontend), lint aprovado nos dois projetos e build de produção aprovado. O Playwright coleta **17 E2E**. A execução E2E e dos dois scripts SQL está incorporada à CI com Supabase efêmero; nesta estação local ela não foi executada por ausência de Docker/Podman.
