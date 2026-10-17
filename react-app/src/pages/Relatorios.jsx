@@ -40,10 +40,22 @@ export function Relatorios() {
     return d.toISOString().split('T')[0]
   })
   const [dataFim, setDataFim] = useState(new Date().toISOString().split('T')[0])
+  // '' = todos. Guarda o id do funcionario, nunca o nome: dois colaboradores
+  // podem ser homonimos e as comissoes de um apareceriam no relatorio do outro.
+  const [funcionarioSel, setFuncionarioSel] = useState('')
+
+  // Casa a OS com o funcionario selecionado. O fallback do resolveEquipe cobre a
+  // OS antiga, aberta antes de id_mecanico/id_atendente existirem.
+  const daEquipe = (os) => {
+    if (!funcionarioSel) return true
+    if (os.id_mecanico === funcionarioSel || os.id_atendente === funcionarioSel) return true
+    const { mecanico, atendente } = resolveEquipe(os, funcionarios)
+    return mecanico?.id === funcionarioSel || atendente?.id === funcionarioSel
+  }
 
   const osNoPeriodo = ordensServico.filter(os => {
     const dt = new Date(os.data_abertura || os.created_at)
-    return dt >= new Date(dataInicio) && dt <= new Date(`${dataFim}T23:59:59`)
+    return dt >= new Date(dataInicio) && dt <= new Date(`${dataFim}T23:59:59`) && daEquipe(os)
   })
   const getOSDateInPeriod = (os, field) => {
     const dt = new Date(os[field] || os.data_abertura || os.created_at)
@@ -183,6 +195,7 @@ export function Relatorios() {
         if ((mecanico || snapshotMecanico) && (Number(snapshotMecanico?.valor || 0) > 0 || Number(mecanico?.comissao_percentual || 0) > 0)) {
           linhasComissao.push({
             perfil: 'Mecanico',
+            idFuncionario: snapshotMecanico?.id_funcionario || mecanico?.id || null,
             nome: snapshotMecanico?.nome || mecanico?.nome || 'Mecanico nao identificado',
             numero,
             cliente: c.nome || '-',
@@ -198,6 +211,7 @@ export function Relatorios() {
         if ((atendente || snapshotAtendente) && (Number(snapshotAtendente?.valor || 0) > 0 || Number(atendente?.comissao_percentual || 0) > 0)) {
           linhasComissao.push({
             perfil: 'Atendente',
+            idFuncionario: snapshotAtendente?.id_funcionario || atendente?.id || null,
             nome: snapshotAtendente?.nome || atendente?.nome || 'Atendente nao identificado',
             numero,
             cliente: c.nome || '-',
@@ -211,22 +225,29 @@ export function Relatorios() {
         }
       })
 
-      const totalComissao = linhasComissao.reduce((s, item) => s + item.valor, 0)
-      const totalMecanicos = linhasComissao.filter(item => item.perfil === 'Mecanico').reduce((s, item) => s + item.valor, 0)
-      const totalAtendentes = linhasComissao.filter(item => item.perfil === 'Atendente').reduce((s, item) => s + item.valor, 0)
-      const profissionais = new Set(linhasComissao.map(item => `${item.perfil}:${item.nome}`)).size
+      // O filtro corta a LINHA, nao a OS: numa OS com mecanico e atendente, so a
+      // comissao do selecionado entra, e os totais fecham com a tabela.
+      const linhasDoFiltro = funcionarioSel
+        ? linhasComissao.filter(item => item.idFuncionario === funcionarioSel)
+        : linhasComissao
+
+      const totalComissao = linhasDoFiltro.reduce((s, item) => s + item.valor, 0)
+      const totalMecanicos = linhasDoFiltro.filter(item => item.perfil === 'Mecanico').reduce((s, item) => s + item.valor, 0)
+      const totalAtendentes = linhasDoFiltro.filter(item => item.perfil === 'Atendente').reduce((s, item) => s + item.valor, 0)
+      const profissionais = new Set(linhasDoFiltro.map(item => item.idFuncionario || `${item.perfil}:${item.nome}`)).size
+      const osComComissao = new Set(linhasDoFiltro.map(item => item.numero)).size
 
       return {
         titulo: 'Comissoes no Periodo',
         totais: [
-          { label: 'O.S. Concluidas', valor: concluidas.length },
+          { label: 'O.S. Concluidas', valor: funcionarioSel ? osComComissao : concluidas.length },
           { label: 'Profissionais', valor: profissionais },
           { label: 'Total Comissoes', valor: formatCurrency(totalComissao) },
           { label: 'Mecanicos', valor: formatCurrency(totalMecanicos) },
           { label: 'Atendentes', valor: formatCurrency(totalAtendentes) },
         ],
         colunas: ['Profissional', 'Perfil', 'O.S.', 'Cliente', 'Placa', 'Base Serv.', 'Base Pecas', '%', 'Comissao', 'Data'],
-        linhas: linhasComissao
+        linhas: [...linhasDoFiltro]
           .sort((a, b) => a.nome.localeCompare(b.nome) || new Date(a.data) - new Date(b.data))
           .map(item => [
             item.nome,
@@ -260,6 +281,12 @@ export function Relatorios() {
   const dados = gerarDados()
   const tipo = TIPOS.find(t => t.id === tipoSel)
   const Icon = tipo.icon
+  // Posicao de estoque nao passa por OS, logo nao tem funcionario responsavel.
+  const aceitaFiltroFuncionario = tipoSel !== 'estoque'
+  const funcionarioAtivo = funcionarios.find(f => f.id === funcionarioSel) || null
+  const sufixoArquivo = funcionarioAtivo
+    ? `_${funcionarioAtivo.nome.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\w]+/g, '-').toLowerCase()}`
+    : ''
 
   const exportarCSV = () => {
     const rows = [dados.colunas, ...dados.linhas]
@@ -268,7 +295,7 @@ export function Relatorios() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `${tipoSel}_${dataInicio}_${dataFim}.csv`
+    a.download = `${tipoSel}${sufixoArquivo}_${dataInicio}_${dataFim}.csv`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -313,6 +340,24 @@ export function Relatorios() {
               <label>Data Fim</label>
               <input type="date" className="form-control" value={dataFim} onChange={e => setDataFim(e.target.value)} />
             </div>
+            <div className={`form-group ${css.campo} ${css.campoFuncionario}`}>
+              <label htmlFor="filtro-funcionario">Funcionario</label>
+              <select
+                id="filtro-funcionario"
+                className="form-control"
+                value={funcionarioSel}
+                onChange={e => setFuncionarioSel(e.target.value)}
+                disabled={!aceitaFiltroFuncionario}
+                title={aceitaFiltroFuncionario ? undefined : 'A posicao de estoque nao depende de funcionario.'}
+              >
+                <option value="">Todos os funcionarios</option>
+                {funcionarios.map(f => (
+                  <option key={f.id} value={f.id}>
+                    {f.nome}{f.cargo ? ` - ${f.cargo}` : ''}
+                  </option>
+                ))}
+              </select>
+            </div>
           </div>
           <button className={`btn-secondary ${css.btnExportar}`} onClick={exportarCSV}>
             <Download size={14} /> Exportar CSV
@@ -322,7 +367,7 @@ export function Relatorios() {
 
       <GlassPanel className="panel stagger-4">
         <div className={`panel-header ${css.panelHeader}`}>
-          <h3><Icon size={18} className={css.tituloIcone} />{dados.titulo}</h3>
+          <h3><Icon size={18} className={css.tituloIcone} />{dados.titulo}{funcionarioAtivo && aceitaFiltroFuncionario ? ` - ${funcionarioAtivo.nome}` : ''}</h3>
         </div>
 
         {dados.totais.length > 0 && (
@@ -344,7 +389,7 @@ export function Relatorios() {
               <thead><tr>{dados.colunas.map((c, i) => <th key={i}>{c}</th>)}</tr></thead>
               <tbody>
                 {dados.linhas.map((linha, i) => (
-                  <tr key={i}>{linha.map((cel, j) => <td key={j}>{cel}</td>)}</tr>
+                  <tr key={i}>{linha.map((cel, j) => <td key={j} data-label={dados.colunas[j]}>{cel}</td>)}</tr>
                 ))}
               </tbody>
             </table>
