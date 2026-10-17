@@ -126,3 +126,23 @@
   color: var(--neon-orange);
   font-size: 15px;
 }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .panelHeader,
+  .panelHeaderCompacto {
+    margin-bottom: 16px;
+  }
+
+  .ranking {
+    gap: 16px;
+  }
+
+  /* Nome do servico e valor em linhas proprias: lado a lado o nome longo
+     empurrava o valor para fora do cartao. */
+  .servico {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}

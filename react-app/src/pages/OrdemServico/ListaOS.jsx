@@ -158,12 +158,12 @@ export function ListaOS() {
               <tbody>
                 {filtradas.map(os => (
                   <tr key={os.id}>
-                    <td>
+                    <td data-label="Nº O.S.">
                       <strong className={css.numero}>
                         #{os.numero_os}
                       </strong>
                     </td>
-                    <td>
+                    <td data-label="Cliente / veículo">
                       <span className={css.cliente}>{os.clienteNome}</span>
                       <span className={css.veiculo}>{os.veiculoInfo}</span>
                       {os.descricao && (
@@ -172,21 +172,21 @@ export function ListaOS() {
                         </span>
                       )}
                     </td>
-                    <td>
+                    <td data-label="Placa">
                       <span className={css.placa}>{os.placa}</span>
                     </td>
-                    <td><PrioridadeBadge prioridade={os.prioridade} /></td>
-                    <td className={css.celulaTextoMenor}>
+                    <td data-label="Prioridade"><PrioridadeBadge prioridade={os.prioridade} /></td>
+                    <td data-label="Equipe" className={css.celulaTextoMenor}>
                       <span className={css.linha}>Mec.: {os.mecanicoNome}</span>
                       <span className={css.linha}>At.: {os.atendenteNome}</span>
                     </td>
-                    <td><StatusBadge status={os.status} /></td>
-                    <td className={css.celulaTextoMenor}>
+                    <td data-label="Status"><StatusBadge status={os.status} /></td>
+                    <td data-label="Valores" className={css.celulaTextoMenor}>
                       <span className={css.linha}>Serv.: {formatCurrency(os.valorServicos)}</span>
                       <span className={css.linha}>Pecas: {formatCurrency(os.valorPecas)}</span>
                       <strong className={css.total}>{formatCurrency(os.valorTotal)}</strong>
                     </td>
-                    <td className={css.celulaTextoMenor}>
+                    <td data-label="Abertura" className={css.celulaTextoMenor}>
                       {(() => { const d = new Date(os.data_abertura || os.criado_em); return isNaN(d) ? '—' : d.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: '2-digit', hour: '2-digit', minute: '2-digit' }) })()}
                     </td>
                     <td>

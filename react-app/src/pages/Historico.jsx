@@ -96,28 +96,28 @@ export function Historico() {
               <tbody>
                 {filtrados.map(os => (
                   <tr key={os.id}>
-                    <td>
+                    <td data-label="Nº O.S.">
                       <strong className={css.numero}>
                         #{os.numero_os || os.id?.slice(-4)?.toUpperCase()}
                       </strong>
                     </td>
-                    <td>
+                    <td data-label="Cliente / veículo">
                       <span className={css.cliente}>{os.clienteNome}</span>
                       <span className={css.veiculo}>{os.veiculoInfo}</span>
                     </td>
-                    <td><span className={css.placa}>{os.placa}</span></td>
-                    <td>
+                    <td data-label="Placa"><span className={css.placa}>{os.placa}</span></td>
+                    <td data-label="Status">
                       <span className={css.badgeStatus} style={{ color: STATUS_COLORS[os.status] || 'var(--text-secondary)' }}>
                         {STATUS_MAP[os.status] || os.status}
                       </span>
                     </td>
-                    <td className={css.celulaTextoMenor}>
+                    <td data-label="Abertura" className={css.celulaTextoMenor}>
                       {(() => { const d = new Date(os.data_abertura || os.criado_em); return isNaN(d) ? '—' : d.toLocaleDateString('pt-BR') })()}
                     </td>
-                    <td className={css.celulaTextoMenor}>
+                    <td data-label="Encerramento" className={css.celulaTextoMenor}>
                       {os.data_encerramento ? new Date(os.data_encerramento).toLocaleDateString('pt-BR') : '—'}
                     </td>
-                    <td className={css.valor}>
+                    <td data-label="Valor" className={css.valor}>
                       {os.valor_total || os.preco_final ? `R$ ${Number(os.valor_total || os.preco_final).toLocaleString('pt-BR')}` : '—'}
                     </td>
                     <td>

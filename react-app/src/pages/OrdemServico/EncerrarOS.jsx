@@ -36,10 +36,10 @@ function ItensTable({ items }) {
         <tbody>
           {items.map((item, i) => (
             <tr key={item.id || i}>
-              <td>{item.descricao}</td>
-              <td className={css.alinhadoDireita}>{item.quantidade}</td>
-              <td className={css.alinhadoDireita}>{formatCurrency(item.valor_unitario)}</td>
-              <td className={css.totalItem}>{formatCurrency(getLineTotal(item))}</td>
+              <td data-label="Descrição">{item.descricao}</td>
+              <td data-label="Qtd" className={css.alinhadoDireita}>{item.quantidade}</td>
+              <td data-label="Unit." className={css.alinhadoDireita}>{formatCurrency(item.valor_unitario)}</td>
+              <td data-label="Total" className={css.totalItem}>{formatCurrency(getLineTotal(item))}</td>
             </tr>
           ))}
         </tbody>

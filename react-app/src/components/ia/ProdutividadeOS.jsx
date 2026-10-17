@@ -47,13 +47,13 @@ export function ProdutividadeOS({ produtividade }) {
       <section className={css.secao} aria-label="Ordens abertas há mais tempo">
         <h4 className={css.secaoTitulo}>OS abertas há mais tempo</h4>
         {antigas.length === 0 ? <p className={css.vazio}>Não há OS abertas para listar.</p> : (
-          <div className={css.scroll}><table className={`data-table ${css.tabelaAntigas}`}><thead><tr><th>OS</th><th>Status</th><th>Data de abertura</th></tr></thead><tbody>{antigas.map((os, indice) => <tr key={os.id ?? `${os.numero_os}-${indice}`}><td>{os.numero_os ?? '—'}</td><td>{os.status ?? '—'}</td><td>{data(os.data_abertura)}</td></tr>)}</tbody></table></div>
+          <div className={css.scroll}><table className={`data-table ${css.tabelaAntigas}`}><thead><tr><th>OS</th><th>Status</th><th>Data de abertura</th></tr></thead><tbody>{antigas.map((os, indice) => <tr key={os.id ?? `${os.numero_os}-${indice}`}><td data-label="OS">{os.numero_os ?? '—'}</td><td data-label="Status">{os.status ?? '—'}</td><td data-label="Abertura">{data(os.data_abertura)}</td></tr>)}</tbody></table></div>
         )}
       </section>
       <section className={css.secao} aria-label="Conclusões por mecânico">
         <h4 className={css.secaoTitulo}>Conclusões por mecânico</h4>
         {porMecanico.length === 0 ? <p className={css.vazio}>Não há conclusões por mecânico no período.</p> : (
-          <div className={css.scroll}><table className={`data-table ${css.tabelaMecanicos}`}><thead><tr><th>Mecânico</th><th>OS concluídas</th><th>Valor médio</th></tr></thead><tbody>{porMecanico.map((mecanico, indice) => <tr key={mecanico.id_mecanico ?? `${mecanico.nome}-${indice}`}><td>{mecanico.nome || 'Mecânico não identificado'}</td><td>{numero(mecanico.quantidade_concluida)}</td><td>{Number.isFinite(Number(mecanico.valor_medio)) ? Number(mecanico.valor_medio).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—'}</td></tr>)}</tbody></table></div>
+          <div className={css.scroll}><table className={`data-table ${css.tabelaMecanicos}`}><thead><tr><th>Mecânico</th><th>OS concluídas</th><th>Valor médio</th></tr></thead><tbody>{porMecanico.map((mecanico, indice) => <tr key={mecanico.id_mecanico ?? `${mecanico.nome}-${indice}`}><td data-label="Mecânico">{mecanico.nome || 'Mecânico não identificado'}</td><td data-label="OS concluídas">{numero(mecanico.quantidade_concluida)}</td><td data-label="Valor médio">{Number.isFinite(Number(mecanico.valor_medio)) ? Number(mecanico.valor_medio).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' }) : '—'}</td></tr>)}</tbody></table></div>
         )}
       </section>
     </GlassPanel>

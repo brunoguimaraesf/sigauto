@@ -123,3 +123,30 @@
   align-items: center;
   gap: 6px;
 }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  /* A grade do formulario passa a ter uma coluna (ver .form-row no index.css),
+     entao o campo largo nao tem duas colunas para ocupar. */
+  .campoLargo {
+    grid-column: span 1;
+  }
+
+  .logoArea {
+    gap: 16px;
+  }
+
+  .logoControles {
+    min-width: 0;
+  }
+
+  .logoBotoes > * {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .acoesForm .btnSalvar {
+    width: 100%;
+    justify-content: center;
+  }
+}

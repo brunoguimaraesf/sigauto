@@ -33,3 +33,14 @@
 .tabela {
   min-width: 620px;
 }
+
+/* Ver nota em ComparacaoPeriodo: no modo cartao a largura minima atrapalha. */
+@media (max-width: 768px) {
+  .scroll {
+    overflow-x: visible;
+  }
+
+  .tabela {
+    min-width: 0;
+  }
+}

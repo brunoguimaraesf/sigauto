@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react'
-import { Bell, Wrench, Clock, Package, CheckCircle } from 'lucide-react'
+import { Bell, Wrench, Clock, Package, CheckCircle, Menu } from 'lucide-react'
 import { useDatabase } from '../hooks/useDatabase'
 import { useNavigate } from 'react-router-dom'
 import css from './Header.module.css'
 
-export function Header() {
+// `onAbrirMenu` abre a gaveta de navegacao. O botao so aparece abaixo de 768px
+// (`.btn-menu` nasce com `display: none`), onde a sidebar deixa de ser fixa.
+export function Header({ onAbrirMenu }) {
   const { ordensServico, veiculos, clientes } = useDatabase()
   const [open, setOpen] = useState(false)
   const ref = useRef(null)
@@ -56,6 +58,11 @@ export function Header() {
 
   return (
     <header className={`top-header ${css.header}`}>
+      {onAbrirMenu && (
+        <button className="btn-menu" onClick={onAbrirMenu} aria-label="Abrir menu">
+          <Menu size={22} />
+        </button>
+      )}
       <div ref={ref} className={css.wrapper}>
         <button
           className={`btn-icon ${css.bell}${open ? ` ${css.bellOpen}` : ''}`}

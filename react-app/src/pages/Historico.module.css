@@ -145,3 +145,33 @@
   font-weight: 600;
   color: var(--neon-orange);
 }
+
+/* ── Mobile ──
+   Busca, status e as duas datas em coluna. A largura fixa de 160px dos filtros
+   cai: com ela as datas ficavam cortadas ao lado da busca. */
+@media (max-width: 768px) {
+  .filtros {
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .busca {
+    min-width: 0;
+    width: 100%;
+  }
+
+  :global(.form-control).campoFiltro {
+    width: 100%;
+    flex: 1 1 auto;
+  }
+
+  .grade {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .totalValor {
+    font-size: 24px;
+  }
+}

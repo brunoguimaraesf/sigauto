@@ -152,7 +152,7 @@ export function Funcionarios() {
                   ].filter(Boolean).join(' + ')
                   return (
                     <tr key={f.id}>
-                      <td>
+                      <td data-label="Funcionário">
                         <div className={css.celulaNome}>
                           <div className={css.avatar}>
                             {f.nome?.charAt(0)?.toUpperCase()}
@@ -160,12 +160,12 @@ export function Funcionarios() {
                           <strong className={css.nome}>{f.nome}</strong>
                         </div>
                       </td>
-                      <td>
+                      <td data-label="Cargo">
                         <span className={css.cargo} style={{ color: cc.color, background: cc.bg, border: `1px solid ${cc.border}` }}>
                           <CargoIcon size={11} /> {f.cargo}
                         </span>
                       </td>
-                      <td className={css.celulaTextoMenor}>
+                      <td data-label="Comissão" className={css.celulaTextoMenor}>
                         {Number(f.comissao_percentual || 0) > 0 ? (
                           <>
                             <strong className={css.comissaoValor}>{Number(f.comissao_percentual || 0).toLocaleString('pt-BR')}%</strong>
@@ -173,7 +173,7 @@ export function Funcionarios() {
                           </>
                         ) : '-'}
                       </td>
-                      <td className={css.celulaTexto}>{login?.email || '-'}</td>
+                      <td data-label="Login vinculado" className={css.celulaTexto}>{login?.email || '-'}</td>
                       <td>
                         <div className={css.acoes}>
                           <button className={`btn-secondary ${css.btnEditar}`} onClick={() => abrirEditar(f)}>

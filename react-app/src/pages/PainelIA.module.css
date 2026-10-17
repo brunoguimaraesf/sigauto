@@ -296,3 +296,37 @@
 @keyframes spin {
   to { transform: rotate(360deg); }
 }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  /* Data a esquerda e acao a direita nao cabem: empilham. */
+  .registroHistorico {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  :global(.panel-header).detalheHeader {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .paginacao {
+    justify-content: space-between;
+  }
+
+  .descricaoInicial {
+    max-width: none;
+  }
+
+  :global(.panel).estadoCentral,
+  :global(.panel).recomendacoesVazias {
+    padding: 40px 20px;
+  }
+
+  :global(.btn-primary).btnAnalisar,
+  :global(.btn-secondary).btnHistorico {
+    justify-content: center;
+    flex: 1 1 auto;
+  }
+}

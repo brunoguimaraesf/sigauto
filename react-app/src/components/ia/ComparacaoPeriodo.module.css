@@ -45,3 +45,16 @@
   color: var(--text-secondary);
   font-size: 13px;
 }
+
+/* Abaixo de 768px a tabela global vira cartao empilhado: a largura minima e o
+   table-layout fixo impediriam o empilhamento e devolveriam o scroll lateral. */
+@media (max-width: 768px) {
+  .tabela {
+    min-width: 0;
+    table-layout: auto;
+  }
+
+  .tabela .num {
+    text-align: right;
+  }
+}

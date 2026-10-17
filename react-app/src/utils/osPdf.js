@@ -417,31 +417,19 @@ export async function salvarDocumentoOS(dados) {
   doc.save(nomeArquivoOS(dados.os, dados.emitidoEm))
 }
 
-// A reserva precisa ocorrer dentro do clique, antes de qualquer await (como o
-// download da logomarca), para que o bloqueador de pop-ups reconheca o gesto.
-export function reservarGuiaDocumento(windowImpl = window) {
-  const guia = windowImpl.open('about:blank', '_blank')
-  if (guia) guia.opener = null
-  return guia
-}
-
-// Abre o MESMO PDF numa nova guia, no visualizador do navegador (que ja tem
-// salvar e imprimir), em vez de baixar o arquivo direto. A URL temporaria e
-// revogada por tempo: revogar antes da guia carregar deixaria a aba em branco.
-export function abrirDocumentoOS(dados, windowImpl = window, guiaReservada = null) {
+// Monta o MESMO PDF do download e devolve a URL temporaria que o visualizador
+// da propria pagina consome. Nao abre guia nenhuma: `window.open` era bloqueado
+// pelo ajuste de pop-ups do site (ligado por padrao no Safari do iPhone) e a
+// tela caia no download. Quem chama revoga a URL ao fechar o visualizador —
+// revogar antes disso deixaria o iframe em branco.
+export function criarUrlDocumentoOS(dados, windowImpl = window) {
   const doc = criarDocumentoOS(dados)
   const url = windowImpl.URL.createObjectURL(doc.output('blob'))
-  const guia = guiaReservada || windowImpl.open(url, '_blank')
-  if (!guia) {
-    windowImpl.URL.revokeObjectURL(url)
-    throw new Error('O navegador bloqueou a nova guia. Libere os pop-ups deste site e tente novamente.')
+  return {
+    url,
+    nomeArquivo: nomeArquivoOS(dados.os, dados.emitidoEm),
+    revogar: () => windowImpl.URL.revokeObjectURL(url),
   }
-  if (guiaReservada) {
-    if (typeof guia.location?.replace === 'function') guia.location.replace(url)
-    else guia.location.href = url
-  }
-  windowImpl.setTimeout(() => windowImpl.URL.revokeObjectURL(url), 60000)
-  return guia
 }
 
 // Imprime o MESMO PDF do download, num iframe oculto (sem popup). A URL

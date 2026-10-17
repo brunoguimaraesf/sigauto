@@ -264,3 +264,38 @@
 .campoQtd.campoQtd {
   width: 90px;
 }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .linhaCampos {
+    grid-template-columns: 1fr;
+  }
+
+  /* Os tres totais em coluna: lado a lado cada um fica com ~100px e o valor
+     monetario quebra no meio. */
+  .chips {
+    flex-direction: column;
+  }
+
+  .acoesTopo {
+    width: 100%;
+  }
+
+  .acoesTopo > * {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .acaoSalvar .btnSalvar.btnSalvar {
+    width: 100%;
+  }
+
+  .painelVazio.painelVazio {
+    padding: 40px 20px;
+  }
+
+  /* No modo cartao a coluna de quantidade ocupa a linha inteira do <td>. */
+  .campoQtd.campoQtd {
+    width: 110px;
+  }
+}

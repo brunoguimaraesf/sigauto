@@ -187,18 +187,20 @@ export function Clientes() {
                   
                   return (
                     <tr key={c.id}>
-                      <td className={css.celulaNome}>
-                        <div className={css.avatar}>
-                          {c.nome?.charAt(0) || 'C'}
-                        </div>
-                        <div>
-                          <strong className={css.nome}>{c.nome}</strong>
-                          <span className={css.documento}>
-                            {c.tipo_pessoa === 'juridica' ? 'CNPJ' : 'CPF'}: {c.cpf_cnpj || 'Nao informado'}
-                          </span>
+                      <td data-label="Cliente">
+                        <div className={css.celulaNome}>
+                          <div className={css.avatar}>
+                            {c.nome?.charAt(0) || 'C'}
+                          </div>
+                          <div>
+                            <strong className={css.nome}>{c.nome}</strong>
+                            <span className={css.documento}>
+                              {c.tipo_pessoa === 'juridica' ? 'CNPJ' : 'CPF'}: {c.cpf_cnpj || 'Nao informado'}
+                            </span>
+                          </div>
                         </div>
                       </td>
-                      <td>
+                      <td data-label="Contato">
                         <span className={css.telefone}>{c.telefone}</span>
                         <span className={css.email}>{c.email}</span>
                         {formatarEndereco(c.endereco_estruturado) && (
@@ -207,7 +209,7 @@ export function Clientes() {
                           </span>
                         )}
                       </td>
-                      <td>
+                      <td data-label="Veículos">
                         {clientCars.length === 0 ? (
                           <span className={css.semVeiculo}>Nenhum veículo na garagem</span>
                         ) : (
@@ -224,7 +226,7 @@ export function Clientes() {
                           </div>
                         )}
                       </td>
-                      <td className={css.contagem}>
+                      <td data-label="Carros" className={css.contagem}>
                         {clientCars.length}
                       </td>
                       <td>

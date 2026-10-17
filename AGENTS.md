@@ -100,7 +100,7 @@ cd backend   && npx vitest run        # unit + integração da API
 
 Rode antes de considerar uma mudança concluída. Ambiente: Windows (PowerShell + Git Bash).
 
-Linha de base medida em 16/10/2026: **197 testes de frontend** (28 arquivos), **291 de backend** (14 arquivos) aprovados e **17 E2E** coletados. A CI executa E2E e os testes SQL contra Supabase efêmero. Caiu o número? Alguma suíte parou de ser coletada.
+Linha de base medida em 17/10/2026: **207 testes de frontend** (29 arquivos), **291 de backend** (14 arquivos) aprovados e **17 E2E** coletados. A CI executa E2E e os testes SQL contra Supabase efêmero. Caiu o número? Alguma suíte parou de ser coletada.
 
 ## Deploy
 

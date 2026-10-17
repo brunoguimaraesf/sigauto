@@ -62,6 +62,13 @@
   flex: 1;
 }
 
+/* Nome de funcionario e mais longo que uma data: o campo ganha largura propria
+   para o select nao truncar o nome no meio. */
+.campoFuncionario {
+  flex: 2;
+  min-width: 220px;
+}
+
 /* Acompanha .btn-secondary do index.css. */
 .btnExportar {
   padding: 10px 16px;
@@ -119,4 +126,56 @@
   text-align: center;
   padding: 48px;
   color: var(--text-secondary);
+}
+
+/* ── Mobile ──
+   Os cartoes de tipo passam a ocupar meia largura (dois por linha) e os campos
+   de periodo empilham, para o seletor de data nao ficar cortado. */
+@media (max-width: 768px) {
+  .cardTipo {
+    flex: 1 1 calc(50% - 6px);
+    min-width: 0;
+    padding: 14px 10px;
+  }
+
+  .filtros {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .filtrosCampos {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .btnExportar {
+    align-self: stretch;
+    justify-content: center;
+  }
+
+  .total {
+    flex: 1 1 calc(50% - 8px);
+    min-width: 0;
+    padding: 14px 10px;
+  }
+
+  .totalValor {
+    font-size: 19px;
+  }
+
+  .panelHeader {
+    margin-bottom: 16px;
+  }
+
+  .vazio {
+    padding: 32px 16px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cardTipo,
+  .total {
+    flex: 1 1 100%;
+  }
 }
