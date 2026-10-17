@@ -37,3 +37,16 @@
 .campoCurto {
   max-width: 200px;
 }
+
+/* ── Mobile ──
+   No cartao a descricao tem a largura toda: o corte em 400px nao faz sentido. */
+@media (max-width: 768px) {
+  .descricao {
+    max-width: none;
+    text-align: right;
+  }
+
+  .campoCurto {
+    max-width: none;
+  }
+}

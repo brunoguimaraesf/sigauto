@@ -191,3 +191,31 @@
   gap: 16px;
   margin-bottom: 12px;
 }
+
+/* ── Mobile ── */
+@media (max-width: 768px) {
+  .gradeEquipe,
+  .gradeDetalhes {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .linha3 {
+    grid-template-columns: 1fr;
+  }
+
+  :global(.panel).painelSucesso {
+    padding: 40px 20px;
+  }
+
+  .acoesSucesso > * {
+    flex: 1 1 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .linha2 {
+    grid-template-columns: 1fr;
+  }
+}

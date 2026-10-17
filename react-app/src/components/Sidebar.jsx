@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { NavLink, useNavigate } from 'react-router-dom'
+import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import { LayoutDashboard, CarFront, Users, Wrench, BarChart3, FileText, Package, Brain, UserCog, HardHat, History, LogOut, Building2 } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { supabaseDb } from '../supabaseClient'
@@ -13,9 +13,13 @@ const PERFIL_COLORS = {
   mecanico: { color: '#5FD08A', label: 'Mecanico' },
 }
 
-export function Sidebar() {
+// `aberta` e `onFechar` so tem efeito abaixo de 768px, onde o CSS transforma a
+// sidebar em gaveta sobreposta. Em telas largas ela e coluna fixa e a classe de
+// aberto nao muda nada.
+export function Sidebar({ aberta = false, onFechar = () => {} }) {
   const { user, perfil, isAuthenticated, logout } = useAuth()
   const navigate = useNavigate()
+  const { pathname } = useLocation()
   const pc = PERFIL_COLORS[perfil] || { color: 'var(--text-secondary)', label: perfil || 'Usuario' }
   const [qtdAlertas, setQtdAlertas] = useState(0)
 
@@ -36,6 +40,18 @@ export function Sidebar() {
     carregarAlertas()
   }, [])
 
+  // Trocar de tela fecha a gaveta: no mobile o link navega por baixo do overlay
+  // e, sem isto, a tela nova nasceria coberta.
+  useEffect(() => { onFechar() }, [pathname])
+
+  // Esc fecha a gaveta. Registrado so quando ela esta aberta.
+  useEffect(() => {
+    if (!aberta) return
+    const onTecla = (e) => { if (e.key === 'Escape') onFechar() }
+    document.addEventListener('keydown', onTecla)
+    return () => document.removeEventListener('keydown', onTecla)
+  }, [aberta])
+
   const handleLogout = async () => {
     await logout()
     navigate('/login')
@@ -46,7 +62,7 @@ export function Sidebar() {
   const nc = ({ isActive }) => isActive ? 'nav-link active' : 'nav-link'
 
   return (
-    <nav className="sidebar">
+    <nav className={`sidebar${aberta ? ' sidebar-aberta' : ''}`} aria-label="Navegacao principal">
       <div className="brand">
         <div className="brand-logo">
           <img src="/logo-sigauto.png" alt="Logo SIGAUTO" />

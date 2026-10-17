@@ -252,3 +252,45 @@
   font-size: 14px;
   margin-bottom: 16px;
 }
+
+/* ── Mobile ──
+   O cartao perde o respiro de 48px por 40px: em 360px sobravam ~230px uteis
+   para os campos. `100dvh` evita o corte pela barra do navegador movel. */
+@media (max-width: 768px) {
+  .tela {
+    min-height: 100dvh;
+    align-items: flex-start;
+    overflow-y: auto;
+  }
+
+  .cartao {
+    margin: 16px 12px;
+    padding: 32px 20px;
+  }
+
+  .marca {
+    margin-bottom: 28px;
+  }
+
+  .logoCaixa {
+    width: 84px;
+    height: 84px;
+    margin-bottom: 14px;
+  }
+
+  .titulo {
+    font-size: 23px;
+  }
+
+  .demo {
+    margin-top: 20px;
+    padding: 12px;
+  }
+
+  /* E-mail e perfil nao cabem na mesma linha num botao de ~290px. */
+  .demoAccount {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 3px;
+  }
+}

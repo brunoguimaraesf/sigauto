@@ -50,6 +50,7 @@
 }
 
 .email {
+  display: block;
   font-size: 12px;
   color: var(--text-secondary);
 }
@@ -136,4 +137,34 @@
   font-size: 11px;
   color: var(--text-muted);
   margin-top: 8px;
+}
+
+/* ── Mobile ──
+   As tres grades do formulario de endereco empilham: em 360px as colunas de
+   140px e 120px nao deixam largura utilizavel para o campo ao lado. */
+@media (max-width: 768px) {
+  .linhaCep,
+  .linhaNumero,
+  .linhaCidade {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .linhaNumero,
+  .linhaCidade {
+    margin-top: 10px;
+  }
+
+  .garagem {
+    justify-content: flex-end;
+  }
+
+  .acoes {
+    width: 100%;
+  }
+
+  .acoes > * {
+    flex: 1;
+    justify-content: center;
+  }
 }

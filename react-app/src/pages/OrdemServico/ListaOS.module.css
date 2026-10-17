@@ -106,3 +106,43 @@
   color: var(--status-done);
   border-color: var(--color-success);
 }
+
+/* ── Mobile ──
+   Busca e seletor de status em linhas proprias; a descricao perde o corte por
+   largura fixa porque no cartao ela tem a largura toda disponivel. */
+@media (max-width: 768px) {
+  .filtros {
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 16px;
+  }
+
+  .busca {
+    min-width: 0;
+    width: 100%;
+  }
+
+  .filtroStatus {
+    width: 100%;
+  }
+
+  .selectStatus {
+    width: 100%;
+    flex: 1;
+  }
+
+  .descricao {
+    max-width: none;
+    white-space: normal;
+    text-align: right;
+  }
+
+  .acoes {
+    width: 100%;
+  }
+
+  .acoes > * {
+    flex: 1;
+    justify-content: center;
+  }
+}

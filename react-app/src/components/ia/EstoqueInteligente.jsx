@@ -27,7 +27,7 @@ function Tabela({ titulo, descricao, itens, colunas, vazio }) {
             <tbody>
               {itens.map((item, indice) => (
                 <tr key={item.id ?? item.codigo ?? `${item.nome}-${indice}`}>
-                  {colunas.map((coluna) => <td key={coluna.titulo}>{coluna.renderizar(item)}</td>)}
+                  {colunas.map((coluna) => <td key={coluna.titulo} data-label={coluna.titulo}>{coluna.renderizar(item)}</td>)}
                 </tr>
               ))}
             </tbody>

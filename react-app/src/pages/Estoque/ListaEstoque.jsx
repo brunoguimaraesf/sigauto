@@ -265,8 +265,8 @@ export function ListaEstoque() {
               <tbody>
                 {filtrados.map(item => (
                   <tr key={item.id}>
-                    <td><span className={css.codigo}>{item.codigo}</span></td>
-                    <td>
+                    <td data-label="Código"><span className={css.codigo}>{item.codigo}</span></td>
+                    <td data-label="Item">
                       <div className={css.celulaNome}>
                         <div className={css.icone}>
                           <Package size={14} color="var(--neon-orange)" />
@@ -277,14 +277,14 @@ export function ListaEstoque() {
                         </div>
                       </div>
                     </td>
-                    <td><span className={css.unidade}>{item.unidade}</span></td>
-                    <td>
+                    <td data-label="Unidade"><span className={css.unidade}>{item.unidade}</span></td>
+                    <td data-label="Quantidade">
                       <span className={css.quantidade} style={{ color: item.quantidade === 0 ? 'var(--color-danger)' : item.quantidade <= item.qtd_minima ? 'var(--color-warning)' : 'var(--text-primary)' }}>
                         {item.quantidade}
                       </span>
                     </td>
-                    <td className={css.minimo}>{item.qtd_minima}</td>
-                    <td>
+                    <td data-label="Mínimo" className={css.minimo}>{item.qtd_minima}</td>
+                    <td data-label="Alerta">
                       {item.quantidade === 0 ? (
                         <span className={css.situacaoZerada}>
                           <AlertTriangle size={12} /> CRÍTICO
@@ -297,7 +297,7 @@ export function ListaEstoque() {
                         <span className={css.situacaoNormal}>OK</span>
                       )}
                     </td>
-                    <td className={css.preco}>
+                    <td data-label="Preço unit." className={css.preco}>
                       {item.preco_unit ? `R$ ${item.preco_unit.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}` : '—'}
                     </td>
                     <td>
@@ -346,19 +346,19 @@ export function ListaEstoque() {
               <tbody>
                 {movimentacoes.map(mov => {
                   return <tr key={mov.id}>
-                    <td>{new Date(mov.data_hora).toLocaleString('pt-BR')}</td>
-                    <td>{mov.item_codigo ? `${mov.item_codigo} · ` : ''}{mov.item_nome || 'Item removido'}</td>
-                    <td>
+                    <td data-label="Data">{new Date(mov.data_hora).toLocaleString('pt-BR')}</td>
+                    <td data-label="Item">{mov.item_codigo ? `${mov.item_codigo} · ` : ''}{mov.item_nome || 'Item removido'}</td>
+                    <td data-label="Tipo">
                       <span className={mov.tipo === 'entrada' ? css.movEntrada : mov.tipo === 'saida' ? css.movSaida : css.movAjuste}>
                         {mov.tipo === 'entrada' ? 'Entrada' : mov.tipo === 'saida' ? 'Saída' : 'Ajuste'}
                       </span>
                     </td>
-                    <td>{Number(mov.quantidade).toLocaleString('pt-BR')} {mov.item_unidade || ''}</td>
-                    <td>
+                    <td data-label="Quantidade">{Number(mov.quantidade).toLocaleString('pt-BR')} {mov.item_unidade || ''}</td>
+                    <td data-label="Motivo / O.S.">
                       {mov.motivo || 'Sem motivo informado'}
                       {mov.numero_os && <span className={css.movOs}> O.S. #{mov.numero_os}</span>}
                     </td>
-                    <td>{mov.responsavel_nome || 'Usuário não identificado'}</td>
+                    <td data-label="Responsável">{mov.responsavel_nome || 'Usuário não identificado'}</td>
                   </tr>
                 })}
               </tbody>

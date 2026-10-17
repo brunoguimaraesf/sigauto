@@ -116,18 +116,20 @@ export function Servicos() {
               <tbody>
                 {filteredServicos.map((s) => (
                   <tr key={s.id}>
-                    <td className={css.celulaNome}>
-                      <div className={css.icone}>
-                        <Wrench size={18} />
-                      </div>
-                      <div>
-                        <strong className={css.nome}>{s.nome}</strong>
+                    <td data-label="Serviço">
+                      <div className={css.celulaNome}>
+                        <div className={css.icone}>
+                          <Wrench size={18} />
+                        </div>
+                        <div>
+                          <strong className={css.nome}>{s.nome}</strong>
+                        </div>
                       </div>
                     </td>
-                    <td className={css.descricao}>
+                    <td data-label="Descrição" className={css.descricao}>
                       {s.descricao}
                     </td>
-                    <td className={css.preco}>
+                    <td data-label="Preço base" className={css.preco}>
                       R$ {s.preco.toLocaleString('pt-BR')}
                     </td>
                     <td>

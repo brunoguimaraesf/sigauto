@@ -418,10 +418,10 @@ function ItensTable({ items, onRemove, locked }) {
         <tbody>
           {items.map(item => (
             <tr key={item.id}>
-              <td>{item.descricao}</td>
-              <td>{item.quantidade}</td>
-              <td>{formatCurrency(item.valor_unitario)}</td>
-              <td>{formatCurrency(getLineTotal(item))}</td>
+              <td data-label="Descrição">{item.descricao}</td>
+              <td data-label="Qtd">{item.quantidade}</td>
+              <td data-label="Valor unit.">{formatCurrency(item.valor_unitario)}</td>
+              <td data-label="Total">{formatCurrency(getLineTotal(item))}</td>
               <td>
                 {!locked && (
                   <button type="button" className="btn-danger" onClick={() => onRemove(item.id)} title="Remover item">
@@ -473,10 +473,10 @@ function ItensModal({ tipo, busca, setBusca, catalogo, selecionados, onAdd, onQt
               <tbody>
                 {filtrados.map(item => (
                   <tr key={item.id}>
-                    <td>{item.codigo || item.id}</td>
-                    <td>{item.nome}</td>
-                    <td>{formatCurrency(tipo === 'servico' ? item.preco : item.preco_unit)}</td>
-                    {tipo === 'peca' && <td>{item.quantidade} {item.unidade}</td>}
+                    <td data-label="Código">{item.codigo || item.id}</td>
+                    <td data-label="Nome">{item.nome}</td>
+                    <td data-label="Valor">{formatCurrency(tipo === 'servico' ? item.preco : item.preco_unit)}</td>
+                    {tipo === 'peca' && <td data-label="Saldo">{item.quantidade} {item.unidade}</td>}
                     <td><button type="button" className={`btn-secondary ${css.btnAdicionarItem}`} onClick={() => onAdd(item)}>Adicionar</button></td>
                   </tr>
                 ))}
@@ -513,10 +513,10 @@ function ItensSelecionados({ items, onQty, onRemove }) {
         <tbody>
           {items.map(item => (
             <tr key={item.id}>
-              <td>{item.descricao}</td>
-              <td><input className={`form-control ${css.campoQtd}`} type="number" min="0.01" step="0.01" value={item.quantidade} onChange={e => onQty(item.id, e.target.value)} /></td>
-              <td>{formatCurrency(item.valor_unitario)}</td>
-              <td>{formatCurrency(getLineTotal(item))}</td>
+              <td data-label="Descrição">{item.descricao}</td>
+              <td data-label="Qtd"><input className={`form-control ${css.campoQtd}`} type="number" min="0.01" step="0.01" value={item.quantidade} onChange={e => onQty(item.id, e.target.value)} /></td>
+              <td data-label="Valor unit.">{formatCurrency(item.valor_unitario)}</td>
+              <td data-label="Total">{formatCurrency(getLineTotal(item))}</td>
               <td><button type="button" className="btn-danger" onClick={() => onRemove(item.id)}><Trash2 size={12} /></button></td>
             </tr>
           ))}

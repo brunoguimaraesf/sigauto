@@ -156,26 +156,28 @@ export function Veiculos() {
                   const client = clientes.find(c => c.id === (v.cliente_id || v.id_cliente)) || { nome: 'Desconhecido' }
                   return (
                     <tr key={v.id}>
-                      <td className={css.celulaNome}>
-                        <div className={css.icone}>
-                          <CarFront size={18} />
-                        </div>
-                        <div>
-                          <strong className={css.nome}>{v.marca} {v.modelo}</strong>
-                          {v.observacoes && (
-                            <span className={css.observacao}>
-                              {v.observacoes}
-                            </span>
-                          )}
+                      <td data-label="Veículo">
+                        <div className={css.celulaNome}>
+                          <div className={css.icone}>
+                            <CarFront size={18} />
+                          </div>
+                          <div>
+                            <strong className={css.nome}>{v.marca} {v.modelo}</strong>
+                            {v.observacoes && (
+                              <span className={css.observacao}>
+                                {v.observacoes}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </td>
-                      <td>
+                      <td data-label="Placa">
                         <span className={css.placa}>{v.placa}</span>
                         <span className={css.anoCor}>{v.ano} - {v.cor}</span>
                       </td>
-                      <td>{client.nome}</td>
-                      <td>{v.servico_atual || <span className={css.semServico}>Nenhum ativo</span>}</td>
-                      <td>
+                      <td data-label="Proprietário">{client.nome}</td>
+                      <td data-label="Serviço atual">{v.servico_atual || <span className={css.semServico}>Nenhum ativo</span>}</td>
+                      <td data-label="Status">
                         <span className={`status-badge ${v.status === 'Concluido' || v.status === 'Concluído' ? 'status-done' : v.status === 'Em Andamento' ? 'status-progress' : 'status-pending'}`}>
                           {v.status || 'Pendente'}
                         </span>

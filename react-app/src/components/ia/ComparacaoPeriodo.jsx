@@ -87,11 +87,11 @@ function TabelaRanking({ titulo, itens }) {
             <tbody>
               {linhas.map((item) => (
                 <tr key={item.rotulo}>
-                  <td>{item.rotulo}</td>
-                  <td className={css.num}>{formatarNumero(item.atual)}</td>
-                  <td className={css.num}>{formatarNumero(item.anterior)}</td>
-                  <td className={css.num}>{formatarNumero(item.diferenca)}</td>
-                  <td className={css.num}><SinalVariacao valor={item.variacao_percentual} /></td>
+                  <td data-label="Item">{item.rotulo}</td>
+                  <td data-label="Atual" className={css.num}>{formatarNumero(item.atual)}</td>
+                  <td data-label="Anterior" className={css.num}>{formatarNumero(item.anterior)}</td>
+                  <td data-label="Diferença" className={css.num}>{formatarNumero(item.diferenca)}</td>
+                  <td data-label="Variação" className={css.num}><SinalVariacao valor={item.variacao_percentual} /></td>
                 </tr>
               ))}
             </tbody>
@@ -137,11 +137,11 @@ export function ComparacaoPeriodo({ periodoAtual, periodoAnterior, comparacoes }
                 const config = FORMATADORES[chave]
                 return (
                   <tr key={chave}>
-                    <td>{config.titulo}</td>
-                    <td className={css.num}>{config.formatar(valores?.atual)}</td>
-                    <td className={css.num}>{config.formatar(valores?.anterior)}</td>
-                    <td className={css.num}>{config.formatar(valores?.diferenca)}</td>
-                    <td className={css.num}><SinalVariacao valor={valores?.variacao_percentual} /></td>
+                    <td data-label="Indicador">{config.titulo}</td>
+                    <td data-label="Atual" className={css.num}>{config.formatar(valores?.atual)}</td>
+                    <td data-label="Anterior" className={css.num}>{config.formatar(valores?.anterior)}</td>
+                    <td data-label="Diferença" className={css.num}>{config.formatar(valores?.diferenca)}</td>
+                    <td data-label="Variação" className={css.num}><SinalVariacao valor={valores?.variacao_percentual} /></td>
                   </tr>
                 )
               })}

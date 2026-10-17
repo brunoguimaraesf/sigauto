@@ -93,3 +93,29 @@
 .linhaPropria {
   display: block;
 }
+
+/* ── Mobile ──
+   As duas colunas de blocos (cliente e veiculo) viram uma, e as acoes do
+   rodape passam a ocupar a largura inteira, com a primaria em cima pelo
+   `column-reverse` (a ordem no JSX e cancelar depois confirmar). */
+@media (max-width: 768px) {
+  .colunas {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .acoesForm {
+    flex-direction: column-reverse;
+    gap: 10px;
+  }
+
+  .acoesForm > * {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .resumo {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+}

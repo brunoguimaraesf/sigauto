@@ -1,4 +1,4 @@
-import { lazy, Suspense } from 'react'
+import { lazy, Suspense, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { useAuth } from './context/AuthContext'
@@ -46,12 +46,23 @@ function RedirecionamentoPadrao() {
 }
 
 function AppLayout() {
+  // A gaveta de navegacao do mobile. O estado vive aqui porque o botao que abre
+  // esta no Header e a gaveta e a Sidebar, irmaos no layout.
+  const [menuAberto, setMenuAberto] = useState(false)
+
   return (
     <DataProvider>
     <div className="app-container">
-      <Sidebar />
+      <Sidebar aberta={menuAberto} onFechar={() => setMenuAberto(false)} />
+      {menuAberto && (
+        <div
+          className="sidebar-overlay"
+          onClick={() => setMenuAberto(false)}
+          aria-hidden="true"
+        />
+      )}
       <main className="main-content">
-        <Header />
+        <Header onAbrirMenu={() => setMenuAberto(true)} />
         <Suspense fallback={<CarregandoTela />}>
         <Routes>
           {/* Dashboard */}

@@ -179,3 +179,29 @@
 .rodapeBtn {
   font-size: 11px;
 }
+
+/* ── Mobile ──
+   O dropdown de 340px estoura uma tela de 360px: passa a se ancorar nas duas
+   bordas do cabecalho em vez de so na direita. */
+@media (max-width: 768px) {
+  .wrapper {
+    position: static;
+  }
+
+  .dropdown {
+    position: fixed;
+    top: var(--header-height);
+    left: 8px;
+    right: 8px;
+    width: auto;
+  }
+
+  .lista {
+    max-height: 60dvh;
+  }
+
+  .rodape {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+}

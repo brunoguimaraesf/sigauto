@@ -182,7 +182,7 @@ export function Usuarios() {
                   const pc = PERFIL_COLORS[u.perfil] || PERFIL_COLORS.atendente
                   return (
                     <tr key={u.id}>
-                      <td>
+                      <td data-label="Usuário">
                         <div className={css.celulaNome}>
                           <div className={css.avatar}>
                             {u.nome?.charAt(0)?.toUpperCase()}
@@ -190,14 +190,14 @@ export function Usuarios() {
                           <strong className={css.nome}>{u.nome}</strong>
                         </div>
                       </td>
-                      <td className={css.celulaTexto}>{u.email}</td>
-                      <td className={css.celulaTexto}>{u.telefone || '-'}</td>
-                      <td>
+                      <td data-label="E-mail" className={css.celulaTexto}>{u.email}</td>
+                      <td data-label="Telefone" className={css.celulaTexto}>{u.telefone || '-'}</td>
+                      <td data-label="Perfil">
                         <span className={css.perfil} style={{ color: pc.color, background: pc.bg, border: `1px solid ${pc.border}` }}>
                           <PerfilIcon size={11} /> {u.perfil}
                         </span>
                       </td>
-                      <td>
+                      <td data-label="Status">
                         <span className={css.status} style={{ color: u.ativo ? 'var(--status-done)' : 'var(--text-muted)', background: u.ativo ? 'var(--color-success-tint)' : 'var(--text-secondary)', border: `1px solid ${u.ativo ? 'var(--color-success-border)' : 'var(--border-color)'}` }}>
                           {u.ativo ? 'Ativo' : 'Inativo'}
                         </span>

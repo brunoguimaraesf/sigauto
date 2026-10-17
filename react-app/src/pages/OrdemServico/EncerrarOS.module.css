@@ -321,3 +321,56 @@
 :global(.btn-primary).btnConfirmarFinalizacao {
   background: var(--color-success);
 }
+
+/* ── Mobile ──
+   As duas grades de duas colunas (itens e fechamento) empilham. A linha do
+   desconto tambem: o seletor de tipo e o campo nao cabem lado a lado em 360px. */
+@media (max-width: 768px) {
+  .gradeItens,
+  .gradeFechamento {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+
+  .chips {
+    flex-wrap: wrap;
+  }
+
+  .linhaDesconto {
+    flex-wrap: wrap;
+  }
+
+  .tiposDesconto {
+    width: 100%;
+  }
+
+  .tipoDesconto {
+    flex: 1;
+  }
+
+  .campoDesconto {
+    flex: 1 1 100%;
+  }
+
+  .valorFinal,
+  .totalCobrado {
+    font-size: 26px;
+  }
+
+  .acoesForm {
+    flex-direction: column-reverse;
+  }
+
+  .acoesForm > * {
+    width: 100%;
+    justify-content: center;
+  }
+
+  :global(.panel).painelVazio {
+    padding: 40px 20px;
+  }
+
+  :global(.panel).painelSucesso {
+    padding: 40px 20px;
+  }
+}

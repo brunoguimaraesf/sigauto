@@ -57,7 +57,9 @@
   padding: 24px;
 }
 
-/* Primeira celula da tabela: icone redondo mais o nome do registro. */
+/* Primeira celula da tabela: icone redondo mais o nome do registro.
+   Deve ser usado em uma <div className={css.celulaNome}> interna ao <td>,
+   nunca no <td> diretamente para preservar o display: table-cell da linha. */
 .celulaNome {
   display: flex;
   align-items: center;
@@ -214,4 +216,58 @@
   border-radius: var(--radius-sm);
   color: var(--neon-orange);
   font-size: 13px;
+}
+
+/* ── Mobile ──
+   Regras compartilhadas pelas sete telas de listagem. Abaixo de 768px a tabela
+   global vira cartao (ver index.css), entao a celula de acoes passa a ser uma
+   faixa no pe do cartao: os botoes dividem a largura em vez de ficarem
+   apertados numa coluna. */
+@media (max-width: 768px) {
+  .topo {
+    gap: 12px;
+  }
+
+  .btnNovo,
+  .btnAtualizar {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .acoesTopo {
+    width: 100%;
+  }
+
+  .acoes,
+  .acoesCompactas {
+    width: 100%;
+  }
+
+  .acoes > *,
+  .acoesCompactas > * {
+    flex: 1;
+    justify-content: center;
+  }
+
+  .buscaBarra {
+    margin-bottom: 16px;
+  }
+
+  .panelHeader {
+    margin-bottom: 16px;
+  }
+
+  .vazio {
+    padding: 32px 16px;
+  }
+}
+
+/* No modo cartao o <td> alinha o valor a direita e o rotulo flutua a esquerda;
+   a celula de nome e um flex que se estreita ao lado do rotulo, entao precisa
+   encostar na borda direita junto com os demais valores. */
+@media (max-width: 768px) {
+  .celulaNome,
+  .celulaNomeCompacta {
+    justify-content: flex-end;
+  }
 }
