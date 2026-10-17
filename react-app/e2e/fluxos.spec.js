@@ -57,10 +57,14 @@ for (const [status, rotulo] of [['aberta', 'aberta'], ['concluida', 'concluída'
     await expect(visualizar).toBeVisible()
     await expect(page.getByRole('button', { name: /Imprimir/i })).toBeVisible()
 
-    const popupPromise = page.waitForEvent('popup')
+    // O documento abre num visualizador DENTRO da pagina: nova guia dependia de
+    // pop-up, que o navegador do usuario bloqueava.
     await visualizar.click()
-    const popup = await popupPromise
-    await popup.waitForURL(/^blob:/, { timeout: 15000 })
-    await popup.close()
+    const visualizador = page.getByRole('dialog', { name: /Documento da ordem de servi/i })
+    await expect(visualizador).toBeVisible({ timeout: 15000 })
+    await expect(visualizador.locator('iframe')).toHaveAttribute('src', /^blob:/)
+    await expect(visualizador.getByRole('link', { name: /Baixar PDF/i })).toBeVisible()
+    await visualizador.getByRole('button', { name: /Fechar visualizador/i }).click()
+    await expect(visualizador).toBeHidden()
   })
 }

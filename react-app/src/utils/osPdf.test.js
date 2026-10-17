@@ -42,8 +42,8 @@ vi.mock('jspdf-autotable', () => ({
 }))
 
 import {
-  criarDocumentoOS, salvarDocumentoOS, abrirDocumentoOS, imprimirDocumentoOS, nomeArquivoOS,
-  reservarGuiaDocumento, resumoFinanceiroOS, ERRO_OFICINA_AUSENTE,
+  criarDocumentoOS, salvarDocumentoOS, criarUrlDocumentoOS, imprimirDocumentoOS, nomeArquivoOS,
+  resumoFinanceiroOS, ERRO_OFICINA_AUSENTE,
 } from './osPdf'
 
 const OFICINA = {
@@ -204,50 +204,26 @@ describe('salvar e imprimir', () => {
     expect(registro.docs[0].salvoComo).toBe('OS-42-2026-10-14.pdf')
   })
 
-  it('visualizar abre o mesmo PDF numa nova guia', () => {
+  it('visualizar devolve a URL temporaria do mesmo PDF, sem abrir guia', () => {
     const revoke = vi.fn()
-    const open = vi.fn(() => ({ focus: vi.fn() }))
+    const open = vi.fn()
     const win = {
       document,
       open,
       URL: { createObjectURL: vi.fn(() => 'blob:os-42'), revokeObjectURL: revoke },
-      setTimeout: (fn) => fn(),
+      setTimeout: vi.fn(),
     }
-    abrirDocumentoOS(dados(), win)
-    expect(open).toHaveBeenCalledWith('blob:os-42', '_blank')
-    expect(revoke).toHaveBeenCalledWith('blob:os-42')
+
+    const documento = criarUrlDocumentoOS(dados(), win)
+
+    expect(documento.url).toBe('blob:os-42')
+    expect(documento.nomeArquivo).toBe('OS-42-2026-10-14.pdf')
+    expect(open).not.toHaveBeenCalled()
     expect(registro.docs).toHaveLength(1)
-  })
 
-  it('reserva a guia antes do trabalho assincrono e navega nela depois', () => {
-    const replace = vi.fn()
-    const guia = { opener: window, location: { replace } }
-    const open = vi.fn(() => guia)
-    const win = {
-      document,
-      open,
-      URL: { createObjectURL: vi.fn(() => 'blob:os-42'), revokeObjectURL: vi.fn() },
-      setTimeout: vi.fn(),
-    }
-
-    expect(reservarGuiaDocumento(win)).toBe(guia)
-    expect(open).toHaveBeenCalledWith('about:blank', '_blank')
-    expect(guia.opener).toBeNull()
-
-    abrirDocumentoOS(dados(), win, guia)
-    expect(open).toHaveBeenCalledTimes(1)
-    expect(replace).toHaveBeenCalledWith('blob:os-42')
-  })
-
-  it('visualizar avisa quando o navegador bloqueia a guia', () => {
-    const revoke = vi.fn()
-    const win = {
-      document,
-      open: vi.fn(() => null),
-      URL: { createObjectURL: vi.fn(() => 'blob:os-42'), revokeObjectURL: revoke },
-      setTimeout: vi.fn(),
-    }
-    expect(() => abrirDocumentoOS(dados(), win)).toThrow(/pop-ups/i)
+    // A URL sobrevive ao retorno: o iframe do visualizador ainda vai carregar.
+    expect(revoke).not.toHaveBeenCalled()
+    documento.revogar()
     expect(revoke).toHaveBeenCalledWith('blob:os-42')
   })
 

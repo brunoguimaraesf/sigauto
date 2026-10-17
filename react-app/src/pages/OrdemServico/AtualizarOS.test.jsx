@@ -4,14 +4,13 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { AtualizarOS } from './AtualizarOS'
 import { useDatabase } from '../../hooks/useDatabase'
-import { abrirDocumentoOS, imprimirDocumentoOS } from '../../utils/osPdf'
+import { criarUrlDocumentoOS, imprimirDocumentoOS } from '../../utils/osPdf'
 
 vi.mock('../../hooks/useDatabase', () => ({ useDatabase: vi.fn() }))
 vi.mock('../../utils/osPdf', () => ({
-  abrirDocumentoOS: vi.fn(() => ({})),
+  criarUrlDocumentoOS: vi.fn(() => ({ url: 'blob:os', nomeArquivo: 'OS.pdf', revogar: vi.fn() })),
   imprimirDocumentoOS: vi.fn(async () => {}),
   carregarLogoDataUrl: vi.fn(async () => null),
-  reservarGuiaDocumento: vi.fn(() => ({ location: { replace: vi.fn() }, close: vi.fn() })),
   salvarDocumentoOS: vi.fn(async () => {}),
 }))
 
@@ -73,17 +72,19 @@ describe('Tela de Atualizar O.S.', () => {
       useDatabase.mockReturnValue({ ...baseDb, ordensServico: [osStatus], oficina })
       renderAt('o1')
 
+      // Imprimir primeiro: com o visualizador aberto existem dois botoes de
+      // imprimir na tela (o da acao e o do rodape do visualizador).
+      fireEvent.click(screen.getByRole('button', { name: /Imprimir/i }))
+      await waitFor(() => expect(imprimirDocumentoOS).toHaveBeenCalledTimes(1))
+
       fireEvent.click(screen.getByRole('button', { name: /Visualizar PDF/i }))
-      await waitFor(() => expect(abrirDocumentoOS).toHaveBeenCalledTimes(1))
-      expect(abrirDocumentoOS.mock.calls[0][0]).toMatchObject({
+      await waitFor(() => expect(criarUrlDocumentoOS).toHaveBeenCalledTimes(1))
+      expect(criarUrlDocumentoOS.mock.calls[0][0]).toMatchObject({
         os: expect.objectContaining({ id: 'o1', status }),
         cliente: expect.objectContaining({ nome: 'João Silva' }),
         veiculo: expect.objectContaining({ placa: 'ABC1D23' }),
         oficina,
       })
-
-      fireEvent.click(screen.getByRole('button', { name: /Imprimir/i }))
-      await waitFor(() => expect(imprimirDocumentoOS).toHaveBeenCalledTimes(1))
     },
   )
 
@@ -92,6 +93,6 @@ describe('Tela de Atualizar O.S.', () => {
     renderAt('o1')
     fireEvent.click(screen.getByRole('button', { name: /Visualizar PDF/i }))
     expect(await screen.findByRole('alert')).toHaveTextContent(/oficina ainda não foram cadastrados/i)
-    expect(abrirDocumentoOS).not.toHaveBeenCalled()
+    expect(criarUrlDocumentoOS).not.toHaveBeenCalled()
   })
 })

@@ -4,16 +4,15 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { MemoryRouter, Routes, Route } from 'react-router-dom'
 import { EncerrarOS } from './EncerrarOS'
 import { useDatabase } from '../../hooks/useDatabase'
-import { abrirDocumentoOS, imprimirDocumentoOS } from '../../utils/osPdf'
+import { criarUrlDocumentoOS, imprimirDocumentoOS } from '../../utils/osPdf'
 
 vi.mock('../../hooks/useDatabase', () => ({ useDatabase: vi.fn() }))
 // O conteudo do PDF e testado em utils/osPdf.test.js; aqui so a integracao.
 vi.mock('../../utils/osPdf', () => ({
   PAGAMENTO_LABEL: { pix: 'Pix', dinheiro: 'Dinheiro' },
-  abrirDocumentoOS: vi.fn(() => ({})),
+  criarUrlDocumentoOS: vi.fn(() => ({ url: 'blob:os', nomeArquivo: 'OS.pdf', revogar: vi.fn() })),
   imprimirDocumentoOS: vi.fn(async () => {}),
   carregarLogoDataUrl: vi.fn(async () => null),
-  reservarGuiaDocumento: vi.fn(() => ({ location: { replace: vi.fn() }, close: vi.fn() })),
   salvarDocumentoOS: vi.fn(async () => {}),
 }))
 
@@ -57,10 +56,12 @@ describe('Tela de Encerrar O.S.', () => {
       servicos_itens: [], pecas_itens: [], valor_total: 200,
     }))
     renderAt('o1')
-    fireEvent.click(screen.getByRole('button', { name: /Visualizar PDF/i }))
-    await waitFor(() => expect(abrirDocumentoOS).toHaveBeenCalledTimes(1))
+    // Imprimir primeiro: com o visualizador aberto existem dois botoes de
+    // imprimir na tela (o da acao e o do rodape do visualizador).
     fireEvent.click(screen.getByRole('button', { name: /Imprimir/i }))
     await waitFor(() => expect(imprimirDocumentoOS).toHaveBeenCalledTimes(1))
+    fireEvent.click(screen.getByRole('button', { name: /Visualizar PDF/i }))
+    await waitFor(() => expect(criarUrlDocumentoOS).toHaveBeenCalledTimes(1))
   })
 
   it('a previa do encerramento leva o desconto e a forma de pagamento escolhidos', async () => {
@@ -71,7 +72,7 @@ describe('Tela de Encerrar O.S.', () => {
     renderAt('o1')
     fireEvent.change(screen.getByDisplayValue('0'), { target: { value: '10' } })
     fireEvent.click(screen.getByRole('button', { name: /Visualizar PDF/i }))
-    await waitFor(() => expect(abrirDocumentoOS).toHaveBeenCalledTimes(1))
-    expect(abrirDocumentoOS.mock.calls[0][0].desconto).toEqual({ descontoValor: 20, descontoPercentual: 10 })
+    await waitFor(() => expect(criarUrlDocumentoOS).toHaveBeenCalledTimes(1))
+    expect(criarUrlDocumentoOS.mock.calls[0][0].desconto).toEqual({ descontoValor: 20, descontoPercentual: 10 })
   })
 })
