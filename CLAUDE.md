@@ -12,7 +12,7 @@ SIGAuto — Sistema Inteligente de Gestão de Oficinas Automotivas. TFC UniRV 20
 
 - `react-app/` — Frontend React 19 + Vite (o cliente principal).
 - `backend/` — API Express (ESM), **só o que não pode rodar no navegador**: `authRoutes`, `chatbotRoutes` e `iaRoutes` (health incluso), porque dependem da chave do Gemini e da `service_role`. O cadastro administrativo de conta (`POST /auth/usuarios`) pertence aqui porque usa `auth.admin`; os demais cadastros passam direto pelo Supabase sob RLS. Não crie rota CRUD comum aqui.
-- `database/` — Scripts SQL numerados, aplicados **em ordem** no Supabase (**01 → 28**).
+- `database/` — Scripts SQL numerados, aplicados **em ordem** no Supabase (**01 → 29**).
 - `docs/` — a especificação e o modelo de dados. Leia antes de implementar: ver **Documentação** abaixo.
 
 ## Documentação
@@ -74,6 +74,7 @@ Migrações que o README não cobre:
 - **`26_enforcement_os_estoque.sql`** — fase restritiva pós-frontend: torna o ledger append-only, ativa os guards de saldo/finalização e impede alteração direta dos itens de OS concluída ou cancelada.
 - **`27_repara_trigger_estoque.sql`** — reinstala o trigger que aplica o ledger ao saldo, reconcilia movimentos automáticos de OS quando detecta que o trigger estava ausente e restaura a view autenticada do histórico. O script bloqueia o ledger durante o reparo e, depois que instala o trigger, a reaplicação não reconcilia novamente.
 - **`28_repara_guard_custo_estoque.sql`** — reinstala os objetos da 19 que não existiam no banco publicado: a view `item_estoque_publico`, a função `fn_guard_custo_gestor` e o trigger `trg_item_estoque_guard_custo`. A 19 ficou pela metade: o `DROP POLICY` de `pol_estoque_atendente_select` foi aplicado, mas a view que a substituiria não — a tela de estoque ficava **vazia para o atendente**, sem erro, porque o fallback do frontend lê a tabela e o RLS filtra linha em silêncio; e o `custo` ficava gravável por quem não pode lê-lo. Difere da 19 em um ponto: a sentinela do INSERT por não gestor segue a nulidade real da coluna (`NULL` se anulável, `0` se `NOT NULL`), porque a 15 tambem nunca foi aplicada e `custo` nasceu `NOT NULL DEFAULT 0` à mão. Divergência registrada em `docs/DER.md`. A 28 fecha ainda um terceiro defeito, alheio à 19: as três views que ignoram o RLS por design revogavam privilégio só de `PUBLIC` e `anon`, e `REVOKE ... FROM PUBLIC` não apaga concessão nominal a `authenticated` — o default privilege do Supabase deixava `INSERT`/`UPDATE`/`DELETE` em `funcionario_publico`, `item_estoque_publico` e `historico_movimentacao_estoque`. `funcionario_publico` é auto-atualizável e expõe `id_usuario`: um mecânico repontava um funcionário para o próprio `auth.uid()` e lia comissão alheia e CPF/CNPJ de todos os clientes. **View que ignora RLS precisa de `REVOKE` nominal de `authenticated`, não só de `PUBLIC` e `anon`.**
+- **`29_hardening_os_usuario_estoque.sql`** — fecha os achados A-05–A-10: limita colunas editáveis da OS por perfil, exige RPC transacional para cancelar com estorno idempotente, impede auto-reativação de usuário, filtra autoria/comissões no RPC de OS, reserva ajuste absoluto de estoque ao gestor e instala uma allowlist global para funções `SECURITY DEFINER`. O frontend que chama `cancelar_ordem_servico` deve ser publicado em rollout coordenado logo após a migração; canceladas históricas exigem conciliação manual.
 
 ## Remoção dos legados concluída
 
@@ -87,7 +88,7 @@ estruturado. Não reintroduza fallbacks para essas colunas removidas.
 - **Design system imutável:** tema escuro + laranja (`--neon-orange: #E8590C`), fonte Manrope, em `react-app/src/index.css`. Não altere cores/tipografia/layout global sem pedido explícito.
 - **Idioma:** código, UI e mensagens de commit em **português**.
 - **Commits:** não commite a cada alteração; agrupe em commits significativos e **só quando pedido**. **Sem marca de IA** (nada de "Co-Authored-By" ou "Generated with"). Trabalhe em branch, nunca direto na `main`.
-- **Migrações de banco:** nunca reescreva scripts já aplicados; adicione um novo arquivo numerado (**o próximo é o `29`**). Migração deve ser transacional e idempotente, com backfill e pós-condição antes de qualquer `DROP`. Mexeu no schema? Atualize o [`docs/DER.md`](docs/DER.md) **no mesmo commit**.
+- **Migrações de banco:** nunca reescreva scripts já aplicados; adicione um novo arquivo numerado (**o próximo é o `30`**). Migração deve ser transacional e idempotente, com backfill e pós-condição antes de qualquer `DROP`. Mexeu no schema? Atualize o [`docs/DER.md`](docs/DER.md) **no mesmo commit**.
 - **Segredos:** a `SUPABASE_SERVICE_ROLE_KEY` e a `GEMINI_API_KEY` só existem no backend. O frontend usa exclusivamente a chave `anon` + RLS. Nunca mova uma dessas chaves para o `react-app/`.
 
 ## Testes
@@ -100,7 +101,7 @@ cd backend   && npx vitest run        # unit + integração da API
 
 Rode antes de considerar uma mudança concluída. Ambiente: Windows (PowerShell + Git Bash).
 
-Linha de base medida em 17/10/2026: **207 testes de frontend** (29 arquivos), **291 de backend** (14 arquivos) aprovados e **17 E2E** coletados. A CI executa E2E e os testes SQL contra Supabase efêmero. Caiu o número? Alguma suíte parou de ser coletada.
+Linha de base medida em 18/10/2026: **382 testes de frontend** (35 arquivos), **394 de backend** (20 arquivos), **24 E2E** e **3 suítes SQL** aprovados. A CI executa E2E e os testes SQL contra Supabase efêmero. Caiu o número? Alguma suíte parou de ser coletada.
 
 ## Deploy
 
