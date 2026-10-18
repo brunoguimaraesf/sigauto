@@ -12,6 +12,7 @@ const PERFIL_COLORS = {
   atendente: { color: 'var(--color-warning)', bg: 'var(--color-warning-tint)', border: 'var(--color-warning-border)' },
   mecanico: { color: 'var(--color-success)', bg: 'var(--color-success-tint)', border: 'var(--color-success-border)' },
 }
+const PERFIS_VALIDOS = new Set(['gestor', 'atendente', 'mecanico'])
 
 export function Usuarios() {
   const { reloadDatabase } = useDatabase()
@@ -85,6 +86,17 @@ export function Usuarios() {
     setSalvando(true)
 
     try {
+      if (!PERFIS_VALIDOS.has(fPerfil)) {
+        throw new Error('Selecione um perfil de acesso valido.')
+      }
+      const emailNormalizado = fEmail.trim().toLowerCase()
+      const emailDuplicado = usuarios.some(usuario =>
+        usuario.id !== editandoId && String(usuario.email || '').trim().toLowerCase() === emailNormalizado
+      )
+      if (emailDuplicado) {
+        throw new Error('Este e-mail ja esta cadastrado.')
+      }
+
       if (editandoId) {
         await usuariosApi.atualizar(editandoId, montarPayloadUsuario())
       } else {
@@ -93,7 +105,7 @@ export function Usuarios() {
         }
 
         await usuariosApi.criar({
-          email: fEmail,
+          email: emailNormalizado,
           senha: fSenha,
           nome: fNome,
           perfil: fPerfil,

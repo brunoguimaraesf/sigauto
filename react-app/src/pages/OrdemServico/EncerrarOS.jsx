@@ -69,7 +69,10 @@ export function EncerrarOS() {
   const [finalizando, setFinalizando] = useState(false)
   const [erroEncerramento, setErroEncerramento] = useState('')
 
-  const descontoNum = Math.max(0, Number(desconto) || 0)
+  const descontoInformado = Math.max(0, Number(desconto) || 0)
+  const descontoNum = tipoDesconto === 'pct'
+    ? Math.min(100, descontoInformado)
+    : Math.min(totals.valorTotal, descontoInformado)
   const descontoValor = tipoDesconto === 'pct'
     ? totals.valorTotal * (descontoNum / 100)
     : descontoNum
@@ -113,12 +116,6 @@ export function EncerrarOS() {
               try {
                 await updateOrdemServico(id, {
                   status: 'em_andamento',
-                  data_encerramento: null,
-                  forma_pagamento: 'a_definir',
-                  desconto_tipo: null,
-                  desconto_valor: 0,
-                  desconto_percentual: null,
-                  observacoes_finais: null,
                 })
                 navigate(`/ordens-servico/${id}`)
               } catch (error) {

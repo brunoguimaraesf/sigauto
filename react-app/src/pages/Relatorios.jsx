@@ -182,9 +182,15 @@ export function Relatorios() {
         const c = getCliente(os)
         const { mecanico, atendente } = getResponsaveisOS(os)
         const calculatedComissoes = calcOSCommissions(os, mecanico, atendente)
-        const comissoes = Object.keys(os.comissoes_snapshot || {}).length
-          ? os.comissoes_snapshot
-          : calculatedComissoes
+        // A escolha e POR PAPEL. Escolher o objeto inteiro ("tem snapshot? usa
+        // tudo dele") zerava o papel ausente: `os_comissao` recebe uma linha por
+        // papel, e uma OS encerrada sem atendente tem snapshot so do mecanico —
+        // a linha do atendente saia com percentual e valor 0.
+        const snapshot = os.comissoes_snapshot || {}
+        const comissoes = {
+          mecanico: snapshot.mecanico || calculatedComissoes.mecanico,
+          atendente: snapshot.atendente || calculatedComissoes.atendente,
+        }
         const totalsOS = calcOSTotals(os)
         const numero = `#${os.numero_os || os.id?.slice(-4)?.toUpperCase()}`
         const dataBase = os.data_encerramento || os.data_abertura || os.created_at

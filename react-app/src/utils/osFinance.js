@@ -9,7 +9,19 @@ export const toMoney = (value) => {
   return Number.isFinite(parsed) ? parsed : 0
 }
 
-export const getLineTotal = (item) => toMoney(item.quantidade || 1) * toMoney(item.valor_unitario)
+// Quantidade da linha. O `|| 1` antigo ficava nas DUAS pontas com regras
+// diferentes: a tela fazia `item.quantidade || 1` (a string "0" e truthy, virava
+// 0 e o total aparecia R$ 0,00) e a gravacao fazia `Number(x) || 1` (0 e falsy,
+// gravava 1 e cobrava o item). Tela e banco discordavam em silencio. Agora a
+// regra e uma so: ausente, nao numerico, zero ou negativo vale 1, mantendo o
+// valor calculado na tela igual ao que sera persistido.
+export const normalizarQuantidade = (valor) => {
+  if (valor === null || valor === undefined || String(valor).trim() === '') return 1
+  const parsed = Number(String(valor).replace(',', '.'))
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 1
+}
+
+export const getLineTotal = (item) => normalizarQuantidade(item.quantidade) * toMoney(item.valor_unitario)
 
 export const calcOSTotals = (os) => {
   const servicos = os?.servicos_itens || []

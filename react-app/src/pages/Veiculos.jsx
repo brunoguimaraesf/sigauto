@@ -59,6 +59,11 @@ export function Veiculos() {
       alert('Associe um proprietario ao veiculo.')
       return
     }
+    const clienteSelecionado = clientes.find(cliente => cliente.id === clienteId)
+    if (!clienteSelecionado || clienteSelecionado.ativo === false) {
+      alert('Selecione um proprietario ativo para o veiculo.')
+      return
+    }
 
     const placaNormalizada = normalizarPlaca(placa)
     if (!placaValida(placa)) {
@@ -187,7 +192,7 @@ export function Veiculos() {
                           <button className={`btn-secondary ${css.btnAcao}`} onClick={() => handleOpenEdit(v)}>
                             <Edit2 size={12} /> Editar
                           </button>
-                          <button className={`btn-danger ${css.btnIcone}`} onClick={() => confirm(`Excluir ${v.marca} ${v.modelo} (${v.placa})?`) && deleteVeiculo(v.id)}>
+                          <button className={`btn-danger ${css.btnIcone}`} onClick={() => confirm(`Excluir ${v.marca} ${v.modelo} (${v.placa})?`) && deleteVeiculo(v.id).catch(err => alert(`Nao foi possivel inativar o veiculo: ${err?.message || 'erro desconhecido'}`))}>
                             <Trash2 size={14} />
                           </button>
                         </div>

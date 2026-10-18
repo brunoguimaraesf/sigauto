@@ -95,16 +95,23 @@ export function Clientes() {
     // Validação de formato no próprio caminho de escrita (o app grava direto no
     // Supabase). Campos opcionais só são checados quando preenchidos.
     if (!nome.trim()) { alert('Informe o nome do cliente.'); return }
+    if (!telefone.trim()) { alert('Informe o telefone do cliente.'); return }
     if (cpfCnpj.trim() && !validarCpfCnpj(cpfCnpj, tipoPessoa)) {
       alert(`${tipoPessoa === 'juridica' ? 'CNPJ' : 'CPF'} inválido. Confira o número informado.`)
       return
     }
     if (email.trim() && !validarEmail(email)) { alert('E-mail inválido.'); return }
 
+    const documento = cpfCnpj.replace(/\D/g, '')
+    const documentoDuplicado = documento && clientes.some(cliente =>
+      cliente.id !== editingId && String(cliente.cpf_cnpj || '').replace(/\D/g, '') === documento
+    )
+    if (documentoDuplicado) { alert('CPF/CNPJ ja cadastrado para outro cliente.'); return }
+
     const payload = {
-      nome,
-      email,
-      telefone,
+      nome: nome.trim(),
+      email: email.trim(),
+      telefone: telefone.trim(),
       cpf_cnpj: cpfCnpj,
       tipo_pessoa: tipoPessoa,
       endereco_estruturado: endereco
@@ -241,7 +248,9 @@ export function Clientes() {
                             className={`btn-danger ${css.btnIcone}`}
                             onClick={() => {
                               if (confirm(`Tem certeza que deseja excluir o cliente ${c.nome}?`)) {
-                                deleteCliente(c.id)
+                                deleteCliente(c.id).catch(err => {
+                                  alert(`Nao foi possivel inativar o cliente: ${err?.message || 'erro desconhecido'}`)
+                                })
                               }
                             }}
                           >

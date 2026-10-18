@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState, createElement } from 'react'
 import { supabase, supabaseDb } from '../supabaseClient'
 import { somenteDigitos, enderecoVazio } from '../utils/endereco'
+import { normalizarQuantidade } from '../utils/osFinance'
 
 const DataContext = createContext(null)
 
@@ -159,14 +160,14 @@ const pickOSFields = (os, userId) => ({
 const normalizarServicosOS = (servicos = []) => (servicos || []).map(it => ({
     id_servico: isUuid(it.catalogo_id) ? it.catalogo_id : null,
     descricao: String(it.descricao || 'Servico').slice(0, 200),
-    quantidade: Number(it.quantidade) || 1,
+    quantidade: normalizarQuantidade(it.quantidade),
     valor_unitario: Number(it.valor_unitario) || 0,
   }))
 
 const normalizarPecasOS = (pecas = []) => (pecas || []).map(it => ({
     id_item: isUuid(it.item_id) ? it.item_id : null,
     descricao: String(it.descricao || 'Peca').slice(0, 200),
-    quantidade: Number(it.quantidade) || 1,
+    quantidade: normalizarQuantidade(it.quantidade),
     valor_unitario: Number(it.valor_unitario) || 0,
   }))
 
@@ -452,11 +453,18 @@ function useDatabaseState() {
     }
   }
 
-  const deleteCliente = (id) => {
+  // A inativacao era fire-and-forget: em erro de RLS ou de rede so sobrava um
+  // console.error, a linha saia da lista e voltava no proximo reload. Agora o
+  // estado otimista e desfeito e o erro sobe para a tela decidir o que dizer.
+  const deleteCliente = async (id) => {
+    const anterior = clientes
     salvarState({ clientes: clientes.filter(c => c.id !== id) })
-    supabaseDb.from('cliente').update({ ativo: false }).eq('id', id).then(({ error }) => {
-      if (error) console.error('Erro ao inativar cliente no Supabase:', error)
-    })
+    const { error } = await supabaseDb.from('cliente').update({ ativo: false }).eq('id', id)
+    if (error) {
+      salvarState({ clientes: anterior })
+      console.error('Erro ao inativar cliente no Supabase:', error)
+      throw error
+    }
   }
 
   // Mesmo contrato do addCliente: resolve com o veiculo gravado, rejeita em erro.
@@ -484,11 +492,15 @@ function useDatabaseState() {
     })
   }
 
-  const deleteVeiculo = (id) => {
+  const deleteVeiculo = async (id) => {
+    const anterior = veiculos
     salvarState({ veiculos: veiculos.filter(v => v.id !== id) })
-    supabaseDb.from('veiculo').update({ ativo: false }).eq('id', id).then(({ error }) => {
-      if (error) console.error('Erro ao inativar veiculo no Supabase:', error)
-    })
+    const { error } = await supabaseDb.from('veiculo').update({ ativo: false }).eq('id', id)
+    if (error) {
+      salvarState({ veiculos: anterior })
+      console.error('Erro ao inativar veiculo no Supabase:', error)
+      throw error
+    }
   }
 
   const addServico = (newS) => {
@@ -602,20 +614,34 @@ function useDatabaseState() {
     })
   }
 
-  const deleteFuncionario = (id) => {
+  const deleteFuncionario = async (id) => {
+    const anterior = funcionarios
     salvarState({ funcionarios: funcionarios.filter(f => f.id !== id) })
-    supabaseDb.from('funcionario').update({ ativo: false }).eq('id', id).then(({ error }) => {
-      if (error) console.error('Erro ao inativar funcionario no Supabase:', error)
-    })
+    const { error } = await supabaseDb.from('funcionario').update({ ativo: false }).eq('id', id)
+    if (error) {
+      salvarState({ funcionarios: anterior })
+      console.error('Erro ao inativar funcionario no Supabase:', error)
+      throw error
+    }
   }
 
-  const deleteOrdemServico = (id) => {
-    salvarState({ ordensServico: ordensServico.filter(os => os.id !== id) })
-    if (isUuid(id)) {
-      supabaseDb.from('ordem_servico').update({ status: 'cancelada' }).eq('id', id).then(({ error }) => {
-        if (error) console.error('Erro ao cancelar OS no Supabase:', error)
+  const deleteOrdemServico = async (id) => {
+    if (!isUuid(id)) {
+      salvarState({
+        ordensServico: ordensServico.map(item => item.id === id
+          ? { ...item, status: 'cancelada', data_encerramento: new Date().toISOString() }
+          : item),
       })
+      return
     }
+    const { error } = await supabaseDb.rpc('cancelar_ordem_servico', {
+      p_id_os: id,
+    })
+    if (error) {
+      console.error('Erro ao cancelar OS no Supabase:', error)
+      throw error
+    }
+    await carregarDados()
   }
 
   return {
