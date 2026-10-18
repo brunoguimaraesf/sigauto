@@ -137,7 +137,7 @@ BEGIN
     IF v_cnt <> v_total_os THEN RAISE EXCEPTION 'FALHA atendente: deveria ver % OS, viu %', v_total_os, v_cnt; END IF;
 
     RESET ROLE;
-    RAISE NOTICE 'OK atendente: acesso operacional a clientes e OS.', v_total_cli;
+    RAISE NOTICE 'OK atendente: acesso operacional a % clientes e as OS.', v_total_cli;
   END IF;
 
   RAISE NOTICE '=== RLS MATRIX: todos os invariantes de seguranca passaram ===';
