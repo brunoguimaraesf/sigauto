@@ -59,3 +59,8 @@ docs/*
 !docs/importar-ders.py
 !docs/img/
 !docs/img/**
+
+# Supabase efemero local: copias geradas das migracoes e estado do CLI.
+# Reproduzidas por script (ver CONTEXTO.md); o schema versionado e database/.
+supabase/migrations/
+supabase/.temp/

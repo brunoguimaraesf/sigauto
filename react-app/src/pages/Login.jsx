@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Eye, EyeOff, Mail, Lock, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
+import { DEMO_LOGIN_HABILITADO } from '../demoLogin'
 import { supabase } from '../supabaseClient'
 import css from './Login.module.css'
 
@@ -172,8 +173,11 @@ export function Login() {
           </button>
         </div>
 
-        {/* Contas de demonstração */}
-        <div className={css.demo}>
+        {/* Contas de demonstração — so no servidor de desenvolvimento.
+            Em producao isto publicava e-mail e senha de contas REAIS de gestor
+            no HTML e no bundle: qualquer visitante entrava com acesso total. */}
+        {DEMO_LOGIN_HABILITADO && (
+        <div className={css.demo} data-canario="CANARIO_DEMO_LOGIN">
           <p className={css.demoTitulo}>
             Contas de demonstração
           </p>
@@ -196,6 +200,7 @@ export function Login() {
             Clique para preencher automaticamente
           </p>
         </div>
+        )}
 
         <p className={css.rodape}>
           TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
