@@ -198,7 +198,7 @@ cd react-app && npx playwright test
 cd backend && npx vitest run
 ```
 
-Cobertura medida em 16/10/2026: **197** testes de frontend (28 arquivos) + **291** de backend (14 arquivos), todos aprovados, e **17** cenários E2E coletados. A CI executa os E2E e os testes SQL de RLS/estoque contra um Supabase efêmero dedicado.
+Cobertura medida em 18/10/2026: **382** testes de frontend (35 arquivos) + **394** de backend (20 arquivos), todos aprovados, **24** cenários E2E e **3** suítes SQL aprovados. A CI executa os E2E e os testes SQL de RLS/estoque/hardening contra um Supabase efêmero dedicado.
 
 ---
 
