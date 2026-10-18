@@ -84,11 +84,23 @@ async function montarContextoOficina() {
   }
 }
 
+// Igual ao do iaController: query string nao confiavel virando inteiro seguro.
+function normalizarInteiroPositivo(valor, padrao, maximo) {
+  const texto = String(valor ?? '').trim()
+  if (!/^\d+$/.test(texto)) return padrao
+
+  const numero = Number(texto)
+  if (!Number.isSafeInteger(numero) || numero < 1) return padrao
+  return Math.min(numero, maximo)
+}
+
+
 export async function mensagem(req, res, next) {
   try {
-    const { pergunta, historico: historicoSessao } = req.body
+    const { pergunta, historico: historicoSessao } = req.body || {}
+    const perguntaNormalizada = typeof pergunta === 'string' ? pergunta.trim() : ''
 
-    if (!pergunta || !pergunta.trim()) {
+    if (!perguntaNormalizada) {
       return res.status(400).json({
         erro: true,
         codigo: 'MENSAGEM_OBRIGATORIA',
@@ -112,7 +124,12 @@ export async function mensagem(req, res, next) {
         .eq('id_usuario', req.user.id)
         .order('criado_em', { ascending: false })
         .limit(10)
-      historicoOrdenado = (historico || []).reverse()
+      historicoOrdenado = (historico || [])
+        .reverse()
+        .map(m => ({
+          remetente: m.remetente,
+          conteudo: String(m.conteudo).slice(0, 4000)
+        }))
     }
 
     // O contexto completo nunca chega ao modelo: o que sai daqui é o recorte
@@ -123,24 +140,34 @@ export async function mensagem(req, res, next) {
     )
 
     const resposta = await responderChatbot(
-      pergunta.trim(),
+      perguntaNormalizada,
       req.user.perfil,
       historicoOrdenado,
       contexto
     )
 
-    await supabase.from('mensagem_chatbot').insert([
-      {
-        id_usuario: req.user.id,
-        remetente: 'usuario',
-        conteudo: pergunta.trim()
-      },
-      {
-        id_usuario: req.user.id,
-        remetente: 'chatbot',
-        conteudo: resposta
+    try {
+      const { error } = await supabase.from('mensagem_chatbot').insert([
+        {
+          id_usuario: req.user.id,
+          remetente: 'usuario',
+          conteudo: perguntaNormalizada
+        },
+        {
+          id_usuario: req.user.id,
+          remetente: 'chatbot',
+          conteudo: resposta
+        }
+      ])
+
+      if (error) {
+        console.error('[Chatbot] Falha ao persistir conversa:', error.message || error)
       }
-    ])
+    } catch (error) {
+      // A resposta do Gemini já foi gerada. Falhar apenas a persistência não
+      // deve descartá-la nem transformar uma resposta válida em erro HTTP 500.
+      console.error('[Chatbot] Falha ao persistir conversa:', error.message || error)
+    }
 
     return res.status(200).json({
       erro: false,
@@ -153,15 +180,18 @@ export async function mensagem(req, res, next) {
 
 export async function historico(req, res, next) {
   try {
-    const { page = 1, limit = 50 } = req.query
-    const offset = (parseInt(page) - 1) * parseInt(limit)
+    // `parseInt('abc')` dava NaN e `range(NaN, NaN)` estourava 500; `page=0` ou
+    // negativo dava offset negativo. Mesma normalizacao do iaController.
+    const pagina = normalizarInteiroPositivo(req.query.page, 1, 10000)
+    const limite = normalizarInteiroPositivo(req.query.limit, 50, 200)
+    const offset = (pagina - 1) * limite
 
     const { data, error, count } = await supabase
       .from('mensagem_chatbot')
       .select('*', { count: 'exact' })
       .eq('id_usuario', req.user.id)
       .order('criado_em', { ascending: true })
-      .range(offset, offset + parseInt(limit) - 1)
+      .range(offset, offset + limite - 1)
 
     if (error) throw error
 
@@ -169,10 +199,10 @@ export async function historico(req, res, next) {
       erro: false,
       dados: data,
       paginacao: {
-        total: count,
-        pagina: parseInt(page),
-        limite: parseInt(limit),
-        totalPaginas: Math.ceil(count / parseInt(limit))
+        total: count ?? 0,
+        pagina,
+        limite,
+        totalPaginas: Math.ceil((count ?? 0) / limite)
       }
     })
   } catch (err) {
