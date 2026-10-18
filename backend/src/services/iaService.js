@@ -229,6 +229,73 @@ ${MAPA_DO_SISTEMA}${contexto ? `\n\nDADOS ATUAIS DA OFICINA (JSON, use para resp
   return texto
 }
 
+function extrairObjetoJson(texto) {
+  const conteudo = typeof texto === 'string' ? texto.trim() : ''
+  let parseouConteudoCompleto = false
+  let valorCompleto
+
+  try {
+    valorCompleto = JSON.parse(conteudo)
+    parseouConteudoCompleto = true
+  } catch {
+    // A resposta pode vir cercada por Markdown ou por uma breve introdução.
+  }
+
+  if (parseouConteudoCompleto) {
+    if (valorCompleto !== null && typeof valorCompleto === 'object' && !Array.isArray(valorCompleto)) {
+      return valorCompleto
+    }
+    throw new Error('Falha ao interpretar resposta da IA: JSON inválido')
+  }
+
+  let inicio = -1
+  let profundidade = 0
+  let emString = false
+  let escapado = false
+
+  for (let indice = 0; indice < conteudo.length; indice++) {
+    const caractere = conteudo.charAt(indice)
+
+    if (emString) {
+      if (escapado) escapado = false
+      else if (caractere === '\\') escapado = true
+      else if (caractere === '"') emString = false
+      continue
+    }
+
+    if (caractere === '"' && profundidade > 0) {
+      emString = true
+    } else if (caractere === '{') {
+      if (profundidade === 0) inicio = indice
+      profundidade += 1
+    } else if (caractere === '}' && profundidade > 0) {
+      profundidade -= 1
+      if (profundidade !== 0) continue
+
+      try {
+        const valor = JSON.parse(conteudo.slice(inicio, indice + 1))
+        if (valor !== null && typeof valor === 'object' && !Array.isArray(valor)) {
+          return valor
+        }
+      } catch {
+        // Continua procurando outro objeto JSON de nivel superior.
+      }
+      inicio = -1
+    }
+  }
+
+  throw new Error('Falha ao interpretar resposta da IA: JSON inválido')
+}
+
+function validarContratoRecomendacoes(valor) {
+  if (typeof valor?.resumo !== 'string'
+      || !Array.isArray(valor?.recomendacoes)
+      || !Array.isArray(valor?.alertas)) {
+    throw new Error('Falha ao interpretar resposta da IA: JSON inválido')
+  }
+  return valor
+}
+
 export async function gerarRecomendacoesIA(dadosHistorico) {
   const systemPrompt = `Você é um analista de dados especializado em oficinas mecânicas.
 Analise os dados históricos fornecidos e retorne recomendações consultivas de negócio em formato JSON.
@@ -277,13 +344,5 @@ Não inclua texto fora do JSON. Responda sempre em português brasileiro.`
   })
 
   const texto = result.response.text()
-  try {
-    const jsonMatch = texto.match(/\{[\s\S]*\}/)
-    if (jsonMatch) {
-      return JSON.parse(jsonMatch[0])
-    }
-    return JSON.parse(texto)
-  } catch {
-    throw new Error('Falha ao interpretar resposta da IA: JSON inválido')
-  }
+  return validarContratoRecomendacoes(extrairObjetoJson(texto))
 }

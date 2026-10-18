@@ -3,7 +3,13 @@
    ilegivel. */
 .modal {
   max-width: 980px;
+  /* `height: 90dvh` fixo estourava: o .modal-overlay tem 24px de padding em
+     cima e embaixo, entao 90dvh + 48px passa da tela e o cabecalho — com o
+     botao de fechar — ficava ACIMA da area visivel, sem rolagem possivel. O
+     E2E pegou isso: "element is outside of the viewport". O `max-height: 100%`
+     respeita o padding do overlay. */
   height: 90dvh;
+  max-height: 100%;
   display: flex;
   flex-direction: column;
 }

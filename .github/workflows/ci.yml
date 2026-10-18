@@ -23,6 +23,12 @@ jobs:
       - run: npm ci
       - run: npm run lint
       - run: npm run build
+      # Rede de seguranca do gate das contas de demonstracao. O `npm run build`
+      # ja roda a mesma verificacao (scripts/verifica-bundle.mjs), inclusive no
+      # build da Vercel; este passo e a segunda barreira, e falha FECHADA: dist
+      # ausente ou vazio aborta em vez de passar em silencio.
+      - name: Garantir que nenhuma credencial de demonstracao entrou no bundle
+        run: npm run verifica:bundle
       - run: npm test
 
   backend:
@@ -88,11 +94,13 @@ jobs:
       - name: Criar fixtures deterministicas
         run: node e2e/setup-database.mjs
         working-directory: react-app
-      - name: Validar matriz de acesso e baixa de estoque
+      - name: Provar idempotencia e validar seguranca do banco
         shell: bash
         run: |
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/29_hardening_os_usuario_estoque.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/rls_matrix_test.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/estoque_os_test.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/hardening_29_test.sql
       - run: npx playwright install --with-deps chromium
         working-directory: react-app
       - run: npm run test:e2e -- --workers=1

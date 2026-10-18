@@ -1,8 +1,10 @@
 # Modelo de dados (DER) — SIGAuto
 
-> **Fonte:** os scripts de `database/` (01 → 27), lidos como DDL. **Não** é uma
+> **Fonte:** os scripts de `database/` (01 → 29), lidos como DDL. **Não** é uma
 > transcrição do diagrama da especificação: quando os dois divergirem, **o schema
 > é a verdade**, e a divergência está registrada na última seção deste arquivo.
+> A migração 29 foi aplicada e reaplicada com sucesso no Supabase efêmero. Isso
+> valida o schema local; a aplicação em produção continua pendente de rollout.
 >
 > Mexeu no schema? Acrescente uma nova migração numerada e **atualize este
 > arquivo no mesmo commit**.
@@ -123,7 +125,7 @@ erDiagram
         uuid id PK
         uuid id_os FK "NOT NULL, ON DELETE CASCADE"
         varchar papel "mecanico ou atendente, UNIQUE por OS"
-        uuid id_funcionario FK "ON DELETE SET NULL"
+        uuid id_funcionario FK "ON DELETE SET NULL, INDEX desde a 29"
         varchar nome "snapshot"
         decimal percentual "CHECK 0..100"
         boolean sobre_servicos
@@ -190,7 +192,7 @@ erDiagram
     }
     os_baixa_estoque {
         uuid id_os PK,FK
-        uuid id_item PK,FK
+        uuid id_item PK,FK "INDEX adicional desde a 29"
         numeric quantidade_baixada "estado idempotente"
         timestamptz atualizado_em
     }
@@ -289,14 +291,17 @@ O logotipo fica no bucket privado `logos-oficina` do Supabase Storage, limitado 
 - **A OS aponta para os dois lados.** `id_usuario` → `usuario` (quem **registrou**, para auditoria); `id_mecanico` e `id_atendente` → `funcionario` (quem **executou**, para comissão). Estas duas FKs foram reapontadas de `usuario` para `funcionario` na migração 11.
 - **`endereco` em tabela própria, 1:1 com `cliente`.** Não virou coluna em `cliente` porque é opcional e com ciclo de vida próprio: a maioria dos clientes de balcão nunca informa, e sete colunas nulas sujariam a entidade principal.
 - **`os_servico` e `os_peca` guardam `descricao` própria**, e a FK para o catálogo é `SET NULL`. Assim o item lançado na OS sobrevive à inativação do serviço ou da peça de origem — o histórico não se reescreve.
-- **`movimentacao_estoque.id_os` identifica a origem operacional.** Movimentos manuais normalmente não têm OS; baixas automáticas e devoluções por ajuste da OS mantêm o vínculo.
-- **A baixa automática ocorre somente na conclusão da OS.** `finalizar_ordem_servico` calcula a diferença entre `os_peca` e `os_baixa_estoque`, captura as comissões, cria movimentos e conclui a OS na mesma transação. Repetir a requisição não duplica a baixa; após reabertura, somente a diferença é baixada ou devolvida. A migração 22 registra como baseline as peças das OS já concluídas, evitando dupla baixa histórica.
+- **`movimentacao_estoque.id_os` identifica a origem operacional.** Movimentos manuais normalmente não têm OS; baixas automáticas e estornos de cancelamento mantêm o vínculo. Desde a migração 29, somente gestor pode lançar `tipo = 'ajuste'`; atendente continua autorizado a lançar entrada/saída manual com autoria e motivo.
+- **Conclusão e cancelamento são transações próprias.** `finalizar_ordem_servico` calcula a diferença entre `os_peca` e `os_baixa_estoque`, captura as comissões, cria movimentos e conclui a OS na mesma transação. `cancelar_ordem_servico`, criado na migração 29, bloqueia a O.S., estorna exatamente a quantidade ainda registrada em `os_baixa_estoque`, zera esse estado e muda o status na mesma transação. Os dois caminhos são idempotentes; repetir cancelamento não cria segundo estorno. A migração 22 registra como baseline as peças das OS já concluídas, evitando dupla baixa histórica.
+- **Canceladas históricas não recebem backfill automático.** Uma O.S. cancelada antes da migração 29 pode manter baixa registrada. O schema não permite distinguir defeito antigo de conciliação física feita fora do sistema; esses casos exigem revisão manual antes de chamar o RPC ou lançar movimento compensatório.
+- **O cabeçalho da O.S. tem guard de coluna desde a migração 29.** `id_usuario` é imutável; as comissões escalares só podem ser sincronizadas por `fn_snapshot_comissoes_os`; mecânico altera apenas `diagnostico`, `observacoes` e status operacionais; atendente só reabre uma O.S. encerrada alterando `status`. A comparação por JSONB faz coluna futura nascer bloqueada para esses perfis.
 - **Nada é excluído, tudo é inativado** (RN05): `ativo BOOLEAN` em `cliente`, `veiculo`, `usuario`, `funcionario`, `servico_catalogo` e `item_estoque`. A OS não tem `ativo` — ela é **cancelada** pelo `status`.
 - **`atualizado_em` é mantido por trigger** (`fn_set_atualizado_em`), não pela aplicação. Não grave esse campo manualmente.
 - **`item_estoque.quantidade` só muda pelo ledger.** `fn_update_estoque_quantidade` aplica cada `movimentacao_estoque`, e `fn_guard_saldo_estoque` recusa alteração direta. Correções geram movimento compensatório; linhas do histórico não são editadas nem apagadas por usuários da aplicação.
 - **A migração 27 garante o vínculo ledger → saldo.** Ela bloqueia novas movimentações durante o reparo, reconcilia os movimentos automáticos somente quando detecta que `trg_movimentacao_atualiza_estoque` estava ausente, recria o trigger e restaura `historico_movimentacao_estoque`. Em reaplicações o trigger já existe, portanto os movimentos não são descontados novamente; a pós-condição aborta se ele terminar ausente ou desativado.
 - **O endereço é normalizado pelo banco** (`fn_normaliza_endereco`, `13_endereco_cliente.sql:87`): `cep` fica só com dígitos e `uf` em maiúsculas, em todo INSERT/UPDATE, **antes** dos CHECKs. A aplicação não precisa normalizar.
 - **`usuario` nasce sozinho, mas inativo**, por trigger (`fn_handle_new_auth_user`, redefinido na migração 20). Somente a rota administrativa autenticada ativa a conta e sincroniza o `funcionario` correspondente.
+- **Autoedição não altera autorização.** A forma final de `pol_usuario_self_update`, na migração 29, exige conta ativa e preserva os valores anteriores de `perfil` e `ativo`; desativar uma conta impede que ela se reative com o próprio JWT.
 - **`criado_em` / `atualizado_em` são omitidos do diagrama** nas entidades existentes, por convenção — exceto onde a data **é** o dado, não metadado (`mensagem_chatbot.criado_em`, `movimentacao_estoque.data_hora`). `configuracao_oficina` explicita os dois metadados para registrar o contrato completo da migração 18.
 - **A margem do estoque não é coluna.** `item_estoque` guarda `custo` e `preco_unit`; a margem é derivada e calculada na tela (`ListaEstoque.jsx`). Não crie coluna para ela.
 - **`configuracao_oficina` é singleton e não representa multiempresa.** Existe no máximo uma linha por instalação. `nome_fantasia` e `cnpj` são obrigatórios; os demais dados identificam a oficina no documento da ordem de serviço.
@@ -307,7 +312,7 @@ O logotipo fica no bucket privado `logos-oficina` do Supabase Storage, limitado 
 
 ## Funções, triggers e quem pode executar
 
-Toda função `SECURITY DEFINER` **ignora o RLS por construção** — ela roda com os privilégios de quem a definiu. Como a chave `anon` está no bundle do frontend, `EXECUTE` aberto nessas funções é leitura de dados do negócio **sem login**, por RPC do PostgREST. Foi o achado crítico da migração 14, e a 16 fechou as quatro que sobraram.
+Toda função `SECURITY DEFINER` **ignora o RLS por construção** — ela roda com os privilégios de quem a definiu. Como a chave `anon` está no bundle do frontend, `EXECUTE` aberto nessas funções é leitura ou escrita de dados do negócio **sem login**, por RPC do PostgREST. As migrações 14 e 16 fecharam os grants então conhecidos; a 29 substitui a verificação incremental por uma allowlist global.
 
 Esta tabela é o contrato. **Função nova `SECURITY DEFINER` entra aqui no mesmo commit**, com `EXECUTE` revogado e `search_path` fixado.
 
@@ -325,15 +330,17 @@ Esta tabela é o contrato. **Função nova `SECURITY DEFINER` entra aqui no mesm
 | `get_clientes_frequentes()` | consulta | ninguém | **16** |
 | `get_historico_veiculo(uuid)` | consulta | ninguém | **16** |
 | `fn_guard_saldo_estoque()` | trigger | ninguém | **22** |
-| `fn_guard_finalizacao_os()` | trigger | ninguém | **22** |
+| `fn_guard_atualizacao_os()` | trigger | ninguém | **29** |
+| `fn_guard_finalizacao_os()` | trigger | ninguém | **22**, redefinida pela **29** |
 | `finalizar_ordem_servico(...)` | procedimento transacional | **`authenticated`**, com autorização interna para gestor/atendente | `PUBLIC` e `anon` na **22** |
-| `fn_snapshot_comissoes_os(...)` | procedimento interno | ninguém | **23** |
-| `salvar_ordem_servico_com_itens(...)` | procedimento transacional | **`authenticated`**, com autorização interna por perfil | `PUBLIC` e `anon` na **23** |
+| `fn_snapshot_comissoes_os(...)` | procedimento interno | ninguém | **23**, redefinida pela **29** |
+| `cancelar_ordem_servico(uuid)` | procedimento transacional | **`authenticated`**, com autorização interna para gestor/atendente | `PUBLIC` e `anon` na **29** |
+| `salvar_ordem_servico_com_itens(...)` | procedimento transacional | **`authenticated`**, com autorização interna por perfil e sem autoria/comissões na allowlist | `PUBLIC` e `anon` na **23**, redefinida pela **29** |
 | `criar_ordem_servico_com_itens(...)` | procedimento transacional | **`authenticated`**, restrito internamente a gestor/atendente | `PUBLIC` e `anon` na **23** |
 | `salvar_cliente_com_endereco(...)` | procedimento transacional | **`authenticated`**, restrito internamente a gestor/atendente | `PUBLIC` e `anon` na **23** |
 | `fn_guard_custo_gestor()` | trigger | ninguém | **19**, reinstalada pela **28** |
 
-São **19** funções `SECURITY DEFINER` no projeto (contando redefinições uma vez). As anteriores continuam fechadas conforme as migrações 14, 16 e 19; as funções novas das migrações 22–23 têm `search_path` fixo e não são executáveis por `anon`. Somente os quatro RPCs operacionais são concedidos a `authenticated`, todos com autorização interna fail-closed.
+São **21** funções `SECURITY DEFINER` no projeto (contando redefinições uma vez). A migração 29 revoga `PUBLIC` e `anon` de todas as funções da aplicação, fixa `search_path = public, pg_catalog` e concede `authenticated` somente a esta allowlist de seis assinaturas: `fn_perfil_usuario_atual`, `finalizar_ordem_servico`, `salvar_ordem_servico_com_itens`, `criar_ordem_servico_com_itens`, `salvar_cliente_com_endereco` e `cancelar_ordem_servico`. As cinco operações de negócio fazem autorização interna fail-closed; a função de perfil é helper das policies.
 
 **Duas funções que NÃO são `SECURITY DEFINER`** — e não devem se tornar:
 
@@ -344,7 +351,19 @@ São **19** funções `SECURITY DEFINER` no projeto (contando redefinições uma
 
 Revogar `EXECUTE` de função de trigger **não** impede o trigger de disparar — mas não pelo motivo que parece intuitivo: o privilégio da função de trigger é verificado **em `CREATE TRIGGER`** e **não é reavaliado a cada disparo** (comportamento firmado no conserto da CVE-2012-0866). O dono da função mantém `EXECUTE` implícito, então recriar o gatilho como `postgres` também continua funcionando.
 
-A migração 16 termina com uma pós-condição que **falha a transação** se qualquer `SECURITY DEFINER` de `public` estiver executável por `anon`, se alguma além de `fn_perfil_usuario_atual` estiver executável por `authenticated`, ou se alguma **view sem `security_invoker`** estiver legível por `anon` — view assim lê as tabelas com o privilégio do dono e passa por cima do RLS, que é o mesmo buraco por outra porta. Objetos de extensão são excluídos do filtro, para que uma extensão instalada em `public` não aborte a transação e desfaça os `REVOKE`.
+A pós-condição efetiva é a da migração 29. Ela falha a transação se existir `SECURITY DEFINER` da aplicação executável por `PUBLIC`/`anon`, se `authenticated` executar função fora da allowlist, se alguma função privilegiada estiver sem `search_path` fixo, se `anon` ler view própria de `public` ou se `authenticated` escrever em view que ignora RLS. Objetos de extensão são excluídos. A pós-condição antiga da 16 não conhece os RPCs das migrações 22, 23 e 29; por isso a 16 não deve ser reaplicada isoladamente em banco provisionado.
+
+## Migração 29 e rollout
+
+`29_hardening_os_usuario_estoque.sql` foi aplicada e reaplicada com sucesso no Supabase efêmero, junto de `hardening_29_test.sql`. A segunda execução valida a idempotência no estado local testado; **produção ainda não está declarada migrada**.
+
+O rollout precisa manter banco e frontend compatíveis:
+
+1. Faça backup e levante O.S. já canceladas com `os_baixa_estoque.quantidade_baixada > 0` para revisão manual.
+2. Aplique a migração 29 antes do frontend novo. O RPC `salvar_ordem_servico_com_itens` ignora os três campos antigos para tolerar o cliente anterior; em sentido contrário, o frontend novo chama `cancelar_ordem_servico`, que não existe antes da 29.
+3. Execute `rls_matrix_test.sql`, `estoque_os_test.sql` e `hardening_29_test.sql` no banco de destino ou em clone fiel.
+4. Publique frontend e backend do lote e valide salvar, finalizar, reabrir e cancelar O.S. com os três perfis.
+5. Concilie cada cancelada histórica antes de qualquer estorno. A migração não altera essas linhas automaticamente.
 
 ## Remoção das colunas legadas
 
@@ -366,11 +385,14 @@ A migração 20 antecipa a preservação do endereço textual para o frontend no
 | --- | --- | --- |
 | 1 | **RF09 / RN35:** `item_estoque` com custo unitário, preço de venda e margem calculada a partir dos dois | ✅ **Resolvido pela migração 15.** Até a 14 não existia coluna de custo, embora `ListaEstoque.jsx` já enviasse `custo` no payload e lesse `item.custo` — o custo nunca era persistido e o PostgREST rejeitava a coluna. A `15_custo_item_estoque.sql` adicionou `item_estoque.custo` **anulável**: `NULL` = não informado (o Quadro 28 marca o campo como Obrigatório = Não), `0` = custo zero. A margem segue derivada, calculada na tela, e é `—` nos três casos em que não dá para calcular: custo nulo, preço nulo, ou custo zero (divisão por zero). |
 | 4 | **RN38:** resposta local de contingência quando a IA do chatbot não responde | ⚠️ **Divergência deliberada, decidida pelo responsável do projeto.** O sistema **não tem mais fallback local**. O roteador de respostas fixas (`utils/chatbot.js`) foi removido; se as tentativas e os modelos falharem, o chatbot informa indisponibilidade, sem fabricar resposta local. A antiga divergência de RN42 foi resolvida: o Painel IA também informa indisponibilidade e não fabrica análise, recomendação ou número. |
-| 5 | **Quadro 13 / RN15:** descrição da OS com mínimo de 10 caracteres | ⚠️ **Só na aplicação.** Não existe `CHECK` de comprimento em nenhum dos 16 scripts; a validação vive na tela. Registrado para ninguém remover a validação do frontend supondo que o banco protege. |
+| 5 | **Quadro 13 / RN15:** descrição da OS com mínimo de 10 caracteres | ⚠️ **Só na aplicação.** Não existe `CHECK` de comprimento nos scripts 01–29; a validação vive na tela. Registrado para ninguém remover a validação do frontend supondo que o banco protege. |
 | 2 | **RF10 / Quadro 35:** histórico de movimentações com motivo e responsável | ✅ **Resolvido.** `movimentacao_estoque` armazena motivo, usuário, OS e origem; a tela de estoque lista os 100 movimentos mais recentes. A migração 22 torna o ledger append-only para usuários da aplicação. |
 | 3 | **Escopo excluído:** trilha de auditoria por operação | ✅ Coerente. `log_auditoria` existe e está completa, e o requisito diz que "a estrutura de dados foi mantida para versões futuras". Registrado aqui para ninguém concluir que a tabela está órfã por engano. |
 | 6 | **RN03:** o mecânico visualiza os dados do cliente da OS atribuída a ele | ✅ **Resolvido pela migração 20.** A policy agora liga `ordem_servico.id_mecanico` a `funcionario.id` e compara `funcionario.id_usuario` com `auth.uid()`. A matriz de RLS calcula e confere o conjunto exato de clientes visíveis ao mecânico. |
 | 7 | **RF05 / RN20 / RN21:** o encerramento grava desconto, observações finais e baixa as peças | ✅ **Resolvido pelas migrações 21 e 22.** Os campos próprios são persistidos e `finalizar_ordem_servico` valida saldo, gera movimentos, grava os totais e conclui a OS atomicamente. O PDF usa os valores persistidos; a derivação permanece apenas para registros históricos anteriores à 21. |
 | 8 | **O schema versionado divergia do banco publicado** nas migrações 15 e 19 | ⚠️ **Divergência de aplicação, não de especificação.** Constatado em 16/10/2026 no projeto `fkwsvneijhwmaayeulcs`: (a) a **15** nunca foi aplicada — `item_estoque.custo` existe, mas como `NOT NULL DEFAULT 0`, enquanto a 15 exige anulável e tem pós-condição que **aborta** se estiver `NOT NULL`; a coluna foi criada à mão. Consequência: `NULL` (não informado) e `0` (custo zero) ficam fundidos, o que a 15 recusa de propósito. **Não convertido:** decidir quais zeros são "não informado" é adivinhação e perde dado. (b) a **19** ficou pela metade — o `DROP POLICY` de `pol_estoque_atendente_select` foi aplicado, mas a view `item_estoque_publico`, a função `fn_guard_custo_gestor` e o trigger `trg_item_estoque_guard_custo` não existiam. Isso deixava a tela de estoque **vazia para o atendente** (sem policy de `SELECT` e sem view, o fallback do frontend lê a tabela e o RLS filtra linha sem devolver erro) e o `custo` **gravável por quem não pode lê-lo**. A migração **28** reinstala os três objetos, com pós-condição que falha a transação. O `fn_handle_new_auth_user` da 19 — a parte crítica, que fecha o escalonamento de perfil — estava de pé. |
+| 9 | **RF05 / Quadro de Visualizar PDF:** "se a nova guia for bloqueada, o sistema baixa o mesmo PDF" | ⚠️ **Divergência de especificação, aberta em 17/10/2026.** Não existe mais nova guia nem download involuntário: `window.open` saiu do caminho do documento, porque o bloqueio de pop-ups do site (ligado por padrão no Safari do iPhone) matava a guia e a tela baixava um arquivo que o usuário não pediu. O PDF abre num visualizador dentro da própria página, com Baixar PDF, Imprimir e Fechar. O texto do DERS ainda descreve o comportamento antigo em três pontos (`docs/REQUISITOS.md` linhas 1111, 1157 e 1184) e precisa ser corrigido no `.docx`, seguido de `python docs/importar-ders.py`. |
+| 10 | **RF07 / RN25:** relatório calculado "para o tipo e o período selecionados" | ⚠️ **Divergência de especificação, aberta em 17/10/2026.** A tela passou a ter um terceiro seletor, por funcionário, que vale para todos os tipos derivados de O.S. e para comissões. Não contradiz a RN25 — o CSV continua reproduzindo exatamente o relatório exibido —, mas a regra não menciona o filtro. Texto a ajustar no `.docx` e reimportar. |
+| 11 | **Schema local versus produção:** cancelamento transacional e hardenings A-05–A-10 | ⚠️ **Divergência de implantação, aberta em 18/10/2026.** A migração 29 cria `cancelar_ordem_servico`, guards, policies, índices e a allowlist global de `SECURITY DEFINER`; aplicação e reaplicação passaram no Supabase efêmero. O frontend local já chama o novo RPC. Produção só pode ser declarada coerente depois do rollout coordenado e dos três testes SQL no destino. Canceladas históricas ficam fora do backfill e exigem conciliação manual. |
 
 Lição da divergência 8: **não assuma que o número do script mais alto aplicado implica que os anteriores foram.** Antes de depender de um objeto de migração antiga, confira no catálogo (`to_regclass`, `pg_trigger`, `pg_policy`) em vez de confiar na numeração. A 27 e a 28 nasceram as duas de objetos que o schema versionado prometia e o banco não tinha.

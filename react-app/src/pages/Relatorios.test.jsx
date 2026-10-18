@@ -92,6 +92,36 @@ describe('Relatorios — filtro por funcionario (RF07)', () => {
     expect(linhas[0][0]).toBe('#1001')
   })
 
+  // RF07/RN22 — regressao: a escolha do snapshot era pelo OBJETO inteiro, entao
+  // uma OS encerrada com snapshot so do mecanico zerava a linha do atendente.
+  it('usa o snapshot papel por papel, sem zerar o papel que ficou de fora', async () => {
+    const osParcial = {
+      ...os('o3', 1003, MECANICO_A.id, 1000),
+      comissoes_snapshot: {
+        mecanico: {
+          id_funcionario: MECANICO_A.id,
+          nome: MECANICO_A.nome,
+          percentual: 10,
+          baseServicos: 1000,
+          basePecas: 0,
+          valor: 100,
+          sobreServicos: true,
+          sobrePecas: false,
+        },
+      },
+    }
+    useDatabase.mockReturnValue({ ...db, ordensServico: [osParcial] })
+    render(<Relatorios />)
+    fireEvent.click(screen.getByText('Comissoes'))
+    await selecionarFuncionario(ATENDENTE.id)
+
+    const linhas = linhasDaTabela()
+    expect(linhas).toHaveLength(1)
+    // 5% sobre os R$ 1.000,00 de servico, calculado ao vivo: nao e R$ 0,00.
+    expect(linhas[0][7]).toContain('5')
+    expect(linhas[0][8]).toContain('50,00')
+  })
+
   it('desabilita o filtro no relatorio de estoque, que nao tem funcionario', async () => {
     render(<Relatorios />)
     fireEvent.click(screen.getByText('Estoque'))

@@ -1,17 +1,27 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
+import { DEMO_LOGIN_HABILITADO } from '../demoLogin'
 
 // Exportado para quem precisa do perfil sem exigir o provider (telas testadas
 // isoladamente): `useAuth` continua lancando quando o provider falta.
 export const AuthContext = createContext(null)
 
-// Contas demo para uso sem Supabase configurado
-const DEMO_USERS = {
+// Contas demo para uso sem Supabase configurado. So no servidor de dev:
+// no build de producao isso embutia senha de conta real no artefato servido e,
+// num deploy sem as variaveis do Supabase, concedia perfil 'gestor' validando a
+// senha em JavaScript, sem servidor nenhum. Em producao o objeto fica vazio,
+// `loginDemo` sempre recusa e a falta de configuracao falha fechada. A
+// bandeira vem do vite.config.js e NAO depende de NODE_ENV (ver comentario la).
+// 'CANARIO_DEMO_LOGIN' nao tem funcao em runtime: existe para o verificador de
+// bundle (scripts/verifica-bundle.mjs) detectar se este bloco sobreviveu ao
+// build, independentemente de quais sejam as senhas.
+const DEMO_USERS = DEMO_LOGIN_HABILITADO ? {
+  _canario: 'CANARIO_DEMO_LOGIN',
   'gestor@sigauto.com':    { senha: 'Gestor123', perfil: 'gestor',    nome: 'Bruno Gestor' },
   'atendente@sigauto.com': { senha: 'Atend123',  perfil: 'atendente', nome: 'Ana Atendente' },
   'mecanico@sigauto.com':  { senha: 'Mec123456', perfil: 'mecanico',  nome: 'Carlos Mecânico' },
-}
+} : {}
 
 const isSupabaseReal = () => {
   const url = import.meta.env.VITE_SUPABASE_URL || ''
@@ -28,8 +38,16 @@ const buildDemoUser = (email, demo) => ({
 })
 
 const loginDemo = (email, senha) => {
-  const demo = DEMO_USERS[email.toLowerCase()]
-  if (!demo || demo.senha !== senha) {
+  if (!DEMO_LOGIN_HABILITADO) {
+    throw new Error('Configuracao do servidor ausente. Procure o administrador.')
+  }
+  // `DEMO_USERS[chave]` alcancava o prototipo: e-mail '__proto__' devolvia
+  // Object.prototype (truthy) e, com senha undefined, a comparacao passava.
+  // Nao era alcancavel pela tela (o input manda string), mas a classe fecha com
+  // chave propria e comparacao de string.
+  const chave = String(email || '').toLowerCase()
+  const demo = Object.hasOwn(DEMO_USERS, chave) ? DEMO_USERS[chave] : null
+  if (!demo || typeof demo.senha !== 'string' || typeof senha !== 'string' || demo.senha !== senha) {
     throw new Error('E-mail ou senha incorretos.')
   }
   return buildDemoUser(email, demo)

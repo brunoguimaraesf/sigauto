@@ -13,11 +13,13 @@ test.beforeEach(async ({ page }) => {
 
 test('busca de clientes filtra a lista', async ({ page }) => {
   await page.getByRole('link', { name: 'Clientes', exact: true }).click()
-  await expect(page.getByText('Carlos Eduardo Ferreira')).toBeVisible({ timeout: 15000 })
+  const tabela = page.getByRole('table')
+  const cliente = tabela.getByText('Carlos Eduardo Ferreira', { exact: true })
+  await expect(cliente).toBeVisible({ timeout: 15000 })
 
   const busca = page.getByPlaceholder(/Buscar clientes/i)
   await busca.fill('Carlos')
-  await expect(page.getByText('Carlos Eduardo Ferreira')).toBeVisible()
+  await expect(cliente).toBeVisible()
 
   await busca.fill('zzz-nao-existe-xyz')
   await expect(page.getByText(/Nenhum cliente/i)).toBeVisible()

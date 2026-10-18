@@ -13,6 +13,7 @@ const CARGO_COLORS = {
 }
 
 const isUuid = (v) => /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(v || '')
+const CARGOS_VALIDOS = new Set(['gestor', 'atendente', 'mecanico'])
 const emptyForm = {
   nome: '', cargo: 'mecanico', comissao_percentual: '0',
   comissao_sobre_servicos: false, comissao_sobre_pecas: false, id_usuario: '',
@@ -65,6 +66,7 @@ export function Funcionarios() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    if (!CARGOS_VALIDOS.has(form.cargo)) { setErroForm('Selecione um cargo valido.'); return }
     if (!form.nome.trim()) { setErroForm('Informe o nome do funcionário.'); return }
     setSalvando(true)
     const payload = {

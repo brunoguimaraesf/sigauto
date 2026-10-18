@@ -7,7 +7,7 @@ import { AcoesDocumentoOS } from '../../components/ui/AcoesDocumentoOS'
 import { useDatabase } from '../../hooks/useDatabase'
 import { supabaseDb } from '../../supabaseClient'
 import { AuthContext } from '../../context/AuthContext'
-import { calcOSCommissions, calcOSTotals, formatCurrency, getLineTotal, resolveEquipe, toMoney } from '../../utils/osFinance'
+import { calcOSCommissions, calcOSTotals, formatCurrency, getLineTotal, normalizarQuantidade, resolveEquipe, toMoney } from '../../utils/osFinance'
 
 function SummaryChip({ label, value, tone }) {
   return (
@@ -18,10 +18,15 @@ function SummaryChip({ label, value, tone }) {
   )
 }
 
+const normalizarItens = (itens) => itens.map(item => ({
+  ...item,
+  quantidade: normalizarQuantidade(item.quantidade),
+}))
+
 export function AtualizarOS() {
   const { id } = useParams()
   const navigate = useNavigate()
-  const { clientes, veiculos, funcionarios, servicos: catalogoServicos, ordensServico, updateOrdemServico } = useDatabase()
+  const { clientes, veiculos, funcionarios, servicos: catalogoServicos, ordensServico, updateOrdemServico, deleteOrdemServico } = useDatabase()
   const auth = useContext(AuthContext)
   const perfil = auth?.perfil
   const podeGerenciar = auth ? perfil === 'gestor' || perfil === 'atendente' : true
@@ -115,9 +120,11 @@ export function AtualizarOS() {
       }
     }
 
-    const nextTotals = calcOSTotals({ servicos_itens: nextServicos, pecas_itens: nextPecas })
+    const servicosNormalizados = normalizarItens(nextServicos)
+    const pecasNormalizadas = normalizarItens(nextPecas)
+    const nextTotals = calcOSTotals({ servicos_itens: servicosNormalizados, pecas_itens: pecasNormalizadas })
     const nextComissoes = calcOSCommissions(
-      { servicos_itens: nextServicos, pecas_itens: nextPecas },
+      { servicos_itens: servicosNormalizados, pecas_itens: pecasNormalizadas },
       mecanicoSelecionado,
       atendenteSelecionado
     )
@@ -127,9 +134,9 @@ export function AtualizarOS() {
         diagnostico,
         id_mecanico: mecanicoId || null,
         id_atendente: atendenteId || null,
-        servicos_executados: nextServicos.map(item => item.descricao).join('; '),
-        servicos_itens: nextServicos,
-        pecas_itens: nextPecas,
+        servicos_executados: servicosNormalizados.map(item => item.descricao).join('; '),
+        servicos_itens: servicosNormalizados,
+        pecas_itens: pecasNormalizadas,
         status,
         observacoes,
         forma_pagamento: formaPagamento,
@@ -155,6 +162,20 @@ export function AtualizarOS() {
   const handleSalvar = async (e) => {
     e.preventDefault()
     if (bloqueada) return
+    if (status === 'cancelada') {
+      if (!confirm('Confirmar cancelamento da O.S.? As peças baixadas serão estornadas.')) {
+        setStatus(os.status || 'aberta')
+        return
+      }
+      setErroSalvar('')
+      try {
+        await deleteOrdemServico(id)
+      } catch (error) {
+        setStatus(os.status || 'aberta')
+        setErroSalvar(error?.message || 'Não foi possível cancelar a ordem de serviço.')
+      }
+      return
+    }
     await persistirOS()
   }
 
@@ -193,13 +214,13 @@ export function AtualizarOS() {
   const salvarModal = async () => {
     let salvo
     if (modalTipo === 'servico') {
-      const nextServicos = [...servicosItens, ...selecionadosModal]
-      setServicosItens(nextServicos)
+      const nextServicos = normalizarItens([...servicosItens, ...selecionadosModal])
       salvo = await persistirOS(nextServicos, pecasItens)
+      if (salvo) setServicosItens(nextServicos)
     } else {
-      const nextPecas = [...pecasItens, ...selecionadosModal]
-      setPecasItens(nextPecas)
+      const nextPecas = normalizarItens([...pecasItens, ...selecionadosModal])
       salvo = await persistirOS(servicosItens, nextPecas)
+      if (salvo) setPecasItens(nextPecas)
     }
     if (salvo) setModalTipo(null)
   }
@@ -207,15 +228,13 @@ export function AtualizarOS() {
   const removerServico = async (itemId) => {
     if (bloqueada) return
     const nextServicos = servicosItens.filter(item => item.id !== itemId)
-    setServicosItens(nextServicos)
-    await persistirOS(nextServicos, pecasItens)
+    if (await persistirOS(nextServicos, pecasItens)) setServicosItens(nextServicos)
   }
 
   const removerPeca = async (itemId) => {
     if (bloqueada) return
     const nextPecas = pecasItens.filter(item => item.id !== itemId)
-    setPecasItens(nextPecas)
-    await persistirOS(servicosItens, nextPecas)
+    if (await persistirOS(servicosItens, nextPecas)) setPecasItens(nextPecas)
   }
 
   const reabrirOS = async () => {
@@ -224,12 +243,6 @@ export function AtualizarOS() {
     try {
       await updateOrdemServico(id, {
         status: 'em_andamento',
-        data_encerramento: null,
-        forma_pagamento: 'a_definir',
-        desconto_tipo: null,
-        desconto_valor: 0,
-        desconto_percentual: null,
-        observacoes_finais: null,
       })
       setStatus('em_andamento')
     } catch (error) {

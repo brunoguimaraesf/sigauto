@@ -13,18 +13,18 @@ TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
 
 | Ferramenta | Uso | Situação |
 |---|---|---|
-| **Vitest** | Testes unitários, de integração e de componente (frontend e backend) | **Implementado — 488 testes medidos** |
+| **Vitest** | Testes unitários, de integração e de componente (frontend e backend) | **Implementado — 776 testes medidos** |
 | **React Testing Library** | Testes de componente React (renderização isolada) | **Implementado** |
 | **Supertest** | Testes de integração da API Express | **Implementado** |
 | **ESLint** | Análise estática de código | Configurado (`npm run lint`). No backend, com **plugin de segurança** (`backend/eslint.config.js`) e execução na integração contínua |
 | **Vite build** | Verificação de compilação/empacotamento | `npm run build` |
 | **QA assistido em navegador** | Inspeção de telas, console e fluxos | Realizado (evidências em prints) |
-| **Playwright** | Testes ponta a ponta (E2E) dos fluxos | **Implementado — 17 testes E2E em banco Supabase efêmero na CI** |
+| **Playwright** | Testes ponta a ponta (E2E) dos fluxos | **Implementado — 24 testes E2E em banco Supabase efêmero na CI** |
 | **Postman/Insomnia** | Testes da API REST (endpoints) | Planejado |
 
 ### 2.1 Testes automatizados (Vitest)
 
-- **Backend (291 testes, 14 arquivos)**:
+- **Backend (394 testes, 20 arquivos)**:
   - `validators.test.js` — CPF, CNPJ, placa, e-mail, senha.
   - `security.test.js` — hardening de cabeçalhos, CORS e limites de payload.
   - `comRetry.test.js` — retry da IA em erros transitórios 503/429 (com timers falsos).
@@ -56,7 +56,7 @@ TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
     falha fechada das consultas, sanitização de dados quantitativos e PII antes do Gemini
     e da persistência, precedência das métricas calculadas, paginação e histórico.
     `app.integration.test.js` confirma bloqueio gestor-only e o limite de requisições da IA.
-- **Frontend (207 testes, 29 arquivos)**:
+- **Frontend (382 testes, 35 arquivos)**:
   - Funções puras (`utils/*.test.js`) — placa, estoque (alerta/saldo/moeda/resumo),
     endereço/CEP, finanças da OS e status de OS.
   - **Componente (React Testing Library)** — 16 suítes, entre elas `GlassPanel.test.jsx`,
@@ -93,21 +93,25 @@ TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
       e nenhum documento gerado.
     - `pages/OrdemServico/EncerrarOS.test.jsx` — O.S. já finalizada continua emitindo, e a prévia
       do encerramento leva o desconto e a forma de pagamento escolhidos na tela.
-- **E2E (Playwright) — 17 testes** — `react-app/e2e/`:
+- **E2E (Playwright) — 24 testes** — `react-app/e2e/`:
   - `login.spec.js` — login (ok/inválido), redirecionamento de rota protegida, entrada do
     mecânico diretamente em O.S. e espaçamento dos ícones nos campos de autenticação.
   - `navegacao.spec.js` — Clientes, Veículos, Estoque, Relatórios, Funcionários e chatbot.
   - `fluxos.spec.js` — busca de clientes, modal de novo cliente, dependência cliente→veículo na
     nova O.S. e a disponibilidade de **Salvar PDF / Imprimir** na O.S. aberta e na concluída
     abrindo a guia `blob:` real do documento).
-  - A CI inicia um Supabase efêmero, aplica as migrações 01–27, cria fixtures confirmadas e
+  - `jornada.spec.js` — jornada integrada cliente→veículo→O.S.→itens→persistência→desconto→
+    encerramento→PDF→logout, dados inválidos, falha de rede e restrições por perfil.
+  - A CI inicia um Supabase efêmero, aplica as migrações 01–29, reaplica a 29 para provar
+    idempotência, cria fixtures confirmadas e
     determinísticas e só então executa o navegador. Assim, ausência de dados não vira teste
     silenciosamente ignorado.
 - **Banco (SQL)** — `database/tests/rls_matrix_test.sql` confere a matriz de acesso por perfil,
   inclusive o conjunto exato de clientes do mecânico; `estoque_os_test.sql` verifica baixa,
-  presença do trigger do ledger, idempotência e rollback integral por saldo insuficiente. Ambos rodam na CI contra o
-  mesmo banco dedicado do E2E.
-- **Total: 498 testes unitários/integração/componente (207 frontend + 291 backend), todos aprovados**, medidos em 17/10/2026. O Playwright coleta **17 E2E**; a execução completa com o banco dedicado ocorre na CI porque requer Docker/Supabase local.
+  presença do trigger do ledger, idempotência e rollback integral por saldo insuficiente; e
+  `hardening_29_test.sql` valida A-05–A-10, grants, views, índices e cancelamento transacional.
+  Os três rodam na CI contra o mesmo banco dedicado do E2E.
+- **Total: 776 testes unitários/integração/componente (382 frontend + 394 backend), todos aprovados**, medidos em 18/10/2026. O Playwright executou **24 E2E**, e as **3 suítes SQL** passaram localmente no Supabase efêmero.
 - **Como executar:** `npm test` (unitários, em `backend/` e `react-app/`) e
   `npm run test:e2e` (E2E em `react-app/`, requer o app rodando).
 
@@ -189,4 +193,4 @@ cd backend && npm test
 cd react-app && npm test
 ```
 
-Saída medida em 17/10/2026: **498 testes unitários/integração/componente aprovados** (291 backend + 207 frontend), lint aprovado nos dois projetos e build de produção aprovado. O Playwright coleta **17 E2E**. A execução E2E e dos dois scripts SQL está incorporada à CI com Supabase efêmero; nesta estação local ela não foi executada por ausência de Docker/Podman.
+Saída medida em 18/10/2026: **776 testes unitários/integração/componente aprovados** (394 backend + 382 frontend), lint aprovado nos dois projetos e build de produção aprovado. O Playwright executou **24 E2E** e as **3 suítes SQL** passaram nesta estação contra o Supabase efêmero. A mesma execução está incorporada à CI.

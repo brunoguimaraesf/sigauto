@@ -4,6 +4,7 @@ import { GlassPanel } from '../../components/GlassPanel'
 import { Plus, Search, Filter, Eye, CheckCircle } from 'lucide-react'
 import { useDatabase } from '../../hooks/useDatabase'
 import { calcOSTotals, formatCurrency, resolveEquipe } from '../../utils/osFinance'
+import { statusOSCanonico } from '../../utils/os'
 import css from './ListaOS.module.css'
 
 const STATUS_COLORS = {
@@ -63,7 +64,9 @@ export function ListaOS() {
       os.veiculoInfo.toLowerCase().includes(termo) ||
       os.mecanicoNome.toLowerCase().includes(termo) ||
       os.atendenteNome.toLowerCase().includes(termo)
-    const matchStatus = filtroStatus === 'Todos' || os.status === filtroStatus
+    // Comparar por status canonico: o seletor oferece so os valores do enum e a
+    // OS legada gravada em portugues passa a ser encontrada pelo filtro certo.
+    const matchStatus = filtroStatus === 'Todos' || statusOSCanonico(os.status) === filtroStatus
     return matchBusca && matchStatus
   })
 
@@ -123,8 +126,6 @@ export function ListaOS() {
               <option value="aberta">Aberta</option>
               <option value="em_andamento">Em Andamento</option>
               <option value="aguardando_peca">Aguardando Peça</option>
-              <option value="Pendente">Pendente</option>
-              <option value="Em Andamento">Em Andamento</option>
               <option value="concluida">Concluída</option>
               <option value="cancelada">Cancelada</option>
             </select>

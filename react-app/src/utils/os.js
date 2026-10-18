@@ -18,6 +18,22 @@ const CLASSES = {
   cancelada: 'status-pending',
 }
 
+// Status canonico do enum a partir de qualquer valor gravado, inclusive os
+// legados em portugues ("Pendente", "Em Andamento", "Concluido"/"Concluído").
+// Serve para FILTRAR: comparar `os.status` cru com o valor do seletor deixava a
+// OS historica fora de qualquer filtro.
+const CANONICOS = {
+  aberta: 'aberta', Pendente: 'aberta',
+  em_andamento: 'em_andamento', 'Em Andamento': 'em_andamento',
+  aguardando_peca: 'aguardando_peca',
+  concluida: 'concluida', Concluido: 'concluida', 'Concluído': 'concluida',
+  cancelada: 'cancelada',
+}
+
+export function statusOSCanonico(status) {
+  return CANONICOS[status] || status || 'aberta'
+}
+
 export function statusOSLabel(status) {
   return LABELS[status] || status || 'Aberta'
 }
