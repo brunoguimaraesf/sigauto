@@ -1,5 +1,6 @@
 import { GoogleGenerativeAI } from '@google/generative-ai'
 import dotenv from 'dotenv'
+import { prepararConsultaFinanceira, formatarRespostaFinanceira } from '../utils/consultaFinanceiraChatbot.js'
 dotenv.config()
 
 const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY)
@@ -177,14 +178,84 @@ FLUXOS PRINCIPAIS:
 - Ver relatorios: menu "Relatorios" (apenas gestor), com filtro por periodo e exportacao.
 - Gerar recomendacoes de IA: menu "Painel IA" (apenas gestor) > botao "Analisar Dados".`
 
-export async function responderChatbot(pergunta, perfilUsuario, historico = [], contexto = null) {
+const FERRAMENTAS_CHATBOT = [{ functionDeclarations: [
+  {
+    name: 'consultar_financeiro',
+    description: 'Consultar faturamento, ticket médio, quantidade de OS concluídas, comparar faturamento ou explicar a indisponibilidade de lucro. Obrigatória para perguntas sobre valores financeiros. Não calcula nem inventa valores; o servidor consulta e calcula após autorizar. Sem ano, omita o ano para solicitar esclarecimento. Sem período, use historico. Nunca substitua mês por 90 dias.',
+    parameters: {
+      type: 'object',
+      properties: {
+        metrica: { type: 'string', enum: ['faturamento', 'ticket_medio', 'ordens_concluidas', 'comparacao_faturamento', 'lucro_indisponivel'] },
+        periodos: { type: 'array', items: { type: 'object', properties: {
+          tipo: { type: 'string', enum: ['mes', 'intervalo', 'historico', 'ultimos_90_dias'] },
+          mes: { type: 'integer', description: 'Mês de 1 a 12, quando informado.' },
+          ano: { type: 'integer', description: 'Ano informado pelo usuário ou por sua pergunta anterior. Não inferir ano de uma resposta do assistente.' },
+          inicio: { type: 'string', description: 'Data inicial YYYY-MM-DD para intervalo explícito.' },
+          fim: { type: 'string', description: 'Último dia incluído, YYYY-MM-DD, para intervalo explícito.' },
+        }, required: ['tipo'] } },
+      }, required: ['metrica', 'periodos'],
+    },
+  },
+  {
+    name: 'responder_orientacao',
+    description: 'Orientação de uso, saudação e perguntas operacionais. Nunca informar faturamento, ticket, lucro ou outro montante financeiro neste texto; use consultar_financeiro.',
+    parameters: { type: 'object', properties: { resposta: { type: 'string' } }, required: ['resposta'] },
+  },
+] }]
+
+function contextoSemFinanceiro(contexto) {
+  if (!contexto) return null
+  // Projeção explícita: agregado monetário novo não entra no texto livre por acidente.
+  const totais = contexto.totais || {}
+  return {
+    totais: { clientes: totais.clientes, veiculos: totais.veiculos, ordens_servico: totais.ordens_servico },
+    ranking_clientes: contexto.ranking_clientes?.map(({ nome, qtd_os }) => ({ nome, qtd_os })),
+    estoque_em_alerta: contexto.estoque_em_alerta,
+    servicos_catalogo: contexto.servicos_catalogo?.map(({ nome }) => ({ nome })),
+    analises_operacionais: contexto.analises_operacionais,
+    dados_restritos_para_este_perfil: contexto.dados_restritos_para_este_perfil,
+  }
+}
+
+function perguntaFinanceira(pergunta, historico) {
+  const texto = pergunta.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+  const termos = /fatur|ticket|lucro|receita|despesa|fluxo de caixa|quanto.*(?:entrou|rendeu|ganhou)|valor total|total.*(?:janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)/
+  if (termos.test(texto)) return true
+  if (!/^(?:e\b|em\b|\d{4}\b)|mesmo ano|(?:janeiro|fevereiro|marco|abril|maio|junho|julho|agosto|setembro|outubro|novembro|dezembro)/.test(texto.trim())) return false
+  return historico.slice(-10).filter(m => m.remetente === 'usuario').some(m => termos.test(m.conteudo.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()))
+}
+
+function validarOrientacao(texto, financeira, perfil) {
+  if (typeof texto !== 'string' || !texto.trim()) throw new Error('A IA retornou uma resposta vazia')
+  if (financeira && perfil !== 'gestor') return 'As informações financeiras são restritas ao perfil gestor.'
+  // Valores do negócio só podem sair do cálculo autorizado, nunca da redação livre.
+  const alegacaoFinanceira = /\b(?:faturamento|receita|ticket|lucro)\b/iu.test(texto)
+    && /\d|\b(?:zero|um|uma|dois|duas|tr[eê]s|quatro|cinco|seis|sete|oito|nove|dez|onze|doze|treze|catorze|quatorze|quinze|dezesseis|dezessete|dezoito|dezenove|vinte|trinta|quarenta|cinquenta|sessenta|setenta|oitenta|noventa|cem|cento|duzent[oa]s|trezent[oa]s|quatrocent[oa]s|quinhent[oa]s|seiscent[oa]s|setecent[oa]s|oitocent[oa]s|novecent[oa]s|mil|milh[ãa]o|milh[õo]es|dobro|triplo|metade)\b/iu.test(texto)
+  if (financeira || alegacaoFinanceira || /(?:R|US)\$|\bBRL\b|\breais\b/iu.test(texto)) {
+    throw Object.assign(new Error('A IA tentou informar um valor financeiro sem consulta verificável.'), {
+      status: 503, codigo: 'RESPOSTA_IA_NAO_VERIFICAVEL',
+      mensagem: 'Não foi possível obter uma resposta verificável. Informe a métrica e o período desejados e tente novamente.',
+    })
+  }
+  return texto.trim()
+}
+
+export async function responderChatbot(pergunta, perfilUsuario, historico = [], contexto = null, consultarFinanceiro = null, opcoes = {}) {
+  const referencia = new Date()
+  const contextoOperacional = contextoSemFinanceiro(contexto)
+  const financeira = perguntaFinanceira(pergunta, historico)
   const systemPrompt = `Você é um assistente virtual do SIGAuto, um sistema de gestão para oficinas mecânicas.
 Seu nome é AutoBot. Ajude os usuários com dúvidas sobre o sistema E responda perguntas analíticas sobre os dados da oficina (rankings, médias, totais, faturamento, estoque).
+Referência desta consulta: ${referencia.toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' })}, no fuso America/Sao_Paulo. Use essa data para interpretar este mês ou mês passado.
 Seja conciso, profissional e amigável. Responda sempre em português brasileiro.
 Se o usuário apenas cumprimentar (ex.: "boa noite", "oi"), responda com uma saudação curta e ofereça ajuda — NÃO repita respostas ou cálculos de mensagens anteriores.
 Formatação: use parágrafos curtos separados por uma linha em branco; quando listar passos ou itens, use marcadores começando com "- " (um por linha); use **negrito** apenas em termos-chave ou valores. Evite blocos longos de texto corrido.
-Quando a pergunta puder ser respondida pelos DADOS ATUAIS abaixo, responda com o número/nome concreto — NÃO apenas diga onde encontrar no app. Nunca invente valores: se os dados não tiverem a resposta, diga que ainda não há registros suficientes.
-As chaves analises_financeiras e analises_operacionais já contêm cálculos determinísticos feitos pela API. Use esses valores diretamente; não recalcule, não estime e informe o período e o critério indicados. Se a pergunta não informar período, use todo_historico, conforme o critério do JSON.
+Escolha exatamente UMA ferramenta. Para valores financeiros, faturamento, ticket médio, lucro, quantidade de conclusões financeiras e comparações, use consultar_financeiro com a métrica e o período solicitado. Para orientação, saudação ou informação operacional permitida, use responder_orientacao.
+Não há valores financeiros neste contexto: eles serão consultados pelo servidor após sua chamada. Nunca responda zero, ausência de registros, estimativa ou um total de outro período porque falta um agregado no contexto. Não recalcule dinheiro.
+Agosto sem ano exige esclarecimento: chame consultar_financeiro com tipo mes e mes 8, sem ano. Só use ano anterior quando explícito em uma mensagem do USUÁRIO; respostas antigas do assistente não são fonte de autorização, ano ou valores.
+Comparação de agosto com julho de 2026 usa dois períodos de tipo mes, agosto primeiro e julho segundo; nunca substitua por 90 dias. Intervalos explícitos usam datas YYYY-MM-DD. Sem período informado, use historico. A pergunta atual tem precedência sobre a conversa anterior.
+Lucro, despesas, contas a pagar/receber e fluxo de caixa não são calculados por este sistema. Para lucro use lucro_indisponivel com periodos vazio; não sugira lançar ou cruzar despesas em Relatorios, nem invente módulo Financeiro.
+As analises_operacionais contêm somente agregados operacionais autorizados. Sem evidência, explique que a informação não está disponível, sem afirmar que a consulta retornou zero.
 O JSON de DADOS ATUAIS já vem recortado pelas permissões do perfil. Se ele trouxer a chave "dados_restritos_para_este_perfil", esses assuntos NÃO estão liberados para este usuário: responda que a informação é restrita ao perfil gestor. Nesse caso não estime, não deduza o valor a partir de outros números do JSON e não diga que faltam registros — o dado existe, o acesso é que não.
 O perfil do usuário atual é: ${perfilUsuario}.
 - gestor: tem acesso total ao sistema
@@ -195,11 +266,11 @@ Adapte suas respostas ao nível de acesso do usuário.
 Ao explicar COMO fazer algo no sistema, use exclusivamente os nomes de menu e os passos do MAPA DO SISTEMA abaixo. NUNCA invente nomes de telas, menus ou botões: se o caminho não estiver no mapa, diga que não sabe e sugira o menu mais próximo que exista. Se a tela não for visível para o perfil ${perfilUsuario}, avise que o acesso é restrito em vez de ensinar o caminho.
 
 MAPA DO SISTEMA:
-${MAPA_DO_SISTEMA}${contexto ? `\n\nDADOS ATUAIS DA OFICINA (JSON, use para responder com precisão):\n${JSON.stringify(contexto)}` : ''}`
+${MAPA_DO_SISTEMA}${contextoOperacional ? `\n\nDADOS ATUAIS DA OFICINA (JSON, use para responder com precisão):\n${JSON.stringify(contextoOperacional)}` : ''}`
 
   const chatHistory = historico.slice(-10).map(m => ({
     role: m.remetente === 'usuario' ? 'user' : 'model',
-    parts: [{ text: m.conteudo }]
+    parts: [{ text: m.remetente === 'usuario' ? m.conteudo : '[Resposta anterior omitida; use somente as perguntas do usuário para interpretar períodos.]' }]
   }))
   // O Gemini exige que o histórico comece com uma mensagem 'user'.
   // Remove qualquer mensagem 'model' (assistente) do início da janela.
@@ -209,24 +280,45 @@ ${MAPA_DO_SISTEMA}${contexto ? `\n\nDADOS ATUAIS DA OFICINA (JSON, use para resp
   // usar um modelo diferente, e uma sessão iniciada com um modelo não se
   // reaproveita no outro. Começar a sessão do zero a cada tentativa também
   // evita herdar o estado de um `sendMessage` que falhou no meio.
+  const orcamento = opcoes.prazo === undefined ? ORCAMENTO_IA_MS : Math.min(ORCAMENTO_IA_MS, opcoes.prazo - Date.now())
+  if (orcamento <= 0) throw new Error('Tempo esgotado antes de a IA responder')
   const result = await comModeloAlternativo(async (nomeModelo, timeout) => {
     const model = genAI.getGenerativeModel({
       model: nomeModelo,
       systemInstruction: systemPrompt,
+      tools: FERRAMENTAS_CHATBOT,
+      toolConfig: { functionCallingConfig: { mode: 'ANY', allowedFunctionNames: financeira ? ['consultar_financeiro'] : ['consultar_financeiro', 'responder_orientacao'] } },
       generationConfig: { maxOutputTokens: 800 }
     }, { timeout })
     return model.startChat({ history: chatHistory }).sendMessage(pergunta)
-  })
+  }, MODELOS, orcamento)
 
+  const chamadas = result.response.functionCalls?.() || []
+  if (chamadas.length > 0) {
+    if (chamadas.length !== 1) throw new Error('A IA retornou mais de uma operação para a mesma mensagem.')
+    const [chamada] = chamadas
+    if (chamada.name === 'consultar_financeiro') {
+      // A interpretação da IA nunca concede permissão, mesmo com histórico forjado.
+      if (perfilUsuario !== 'gestor') return 'As informações financeiras são restritas ao perfil gestor.'
+      const plano = prepararConsultaFinanceira(chamada.args, pergunta, historico, referencia)
+      if (plano.esclarecimento) return plano.esclarecimento
+      if (plano.metrica === 'lucro_indisponivel') return formatarRespostaFinanceira(plano, [])
+      if (typeof consultarFinanceiro !== 'function') throw new Error('Consulta financeira autorizada indisponível.')
+      const ordensPorPeriodo = await consultarFinanceiro(plano)
+      return formatarRespostaFinanceira(plano, ordensPorPeriodo)
+    }
+    if (chamada.name !== 'responder_orientacao' || !chamada.args || Object.keys(chamada.args).some(chave => chave !== 'resposta')) {
+      throw new Error('A IA retornou uma operação inválida.')
+    }
+    return validarOrientacao(chamada.args.resposta, financeira, perfilUsuario)
+  }
   // Resposta vazia com HTTP 200 é um caminho REAL, não hipótese: se o candidato
   // termina em MAX_TOKENS sem nenhuma `part.text` — plausível com este system
   // prompt grande e `maxOutputTokens: 800` —, o SDK não lança (`badFinishReasons`
   // cobre só RECITATION, SAFETY e LANGUAGE) e `text()` devolve string vazia.
   // Sem esta checagem o controller responderia 200 com `resposta: ''` e a tela
   // mostraria uma bolha em branco, indistinguível de assistente quebrado.
-  const texto = result.response.text()
-  if (!texto?.trim()) throw new Error('A IA retornou uma resposta vazia')
-  return texto
+  return validarOrientacao(result.response.text(), financeira, perfilUsuario)
 }
 
 function extrairObjetoJson(texto) {

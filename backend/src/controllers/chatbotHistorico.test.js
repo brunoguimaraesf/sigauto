@@ -20,10 +20,10 @@ vi.mock('../services/supabaseClient.js', () => {
 
 const { historico } = await import('./chatbotController.js')
 
-const executar = async (query) => {
+const executar = async (query, perfil = 'gestor') => {
   const res = { status: vi.fn(() => res), json: vi.fn(() => res) }
   const next = vi.fn()
-  await historico({ user: { id: 'u1' }, query }, res, next)
+  await historico({ user: { id: 'u1', perfil }, query }, res, next)
   return { res, next, corpo: res.json.mock.calls[0]?.[0] }
 }
 
@@ -78,5 +78,15 @@ describe('GET /chatbot/historico — paginacao', () => {
     const { next, res } = await executar({})
     expect(next).toHaveBeenCalledTimes(1)
     expect(res.json).not.toHaveBeenCalled()
+  })
+})
+
+// RF11/RN43: hist?rico pode conter dados de um perfil anterior.
+describe('hist?rico ? autoriza??o', () => {
+  it.each(['atendente', 'mecanico'])('deve_recusar_historico_persistido_para_%s_sem_consultar_o_banco', async perfil => {
+    const { res, corpo } = await executar({}, perfil)
+    expect(res.status).toHaveBeenCalledWith(403)
+    expect(corpo.codigo).toBe('HISTORICO_RESTRITO')
+    expect(chamadas).toEqual([])
   })
 })

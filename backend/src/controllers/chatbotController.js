@@ -2,6 +2,15 @@ import { supabase } from '../services/supabaseClient.js'
 import { responderChatbot } from '../services/iaService.js'
 import { filtrarContextoPorPerfil } from '../utils/contextoPorPerfil.js'
 import { calcularContextoAnalitico } from '../utils/contextoAnalitico.js'
+import { consultarTodasPaginas } from '../utils/consultaCompleta.js'
+
+function erroConsulta(causa) {
+  return Object.assign(new Error('Não foi possível consultar os dados do chatbot.', { cause: causa }), {
+    status: 503,
+    codigo: 'DADOS_CHATBOT_INDISPONIVEIS',
+    mensagem: 'Não foi possível consultar os dados da oficina. Tente novamente; nenhum valor foi calculado.',
+  })
+}
 
 // Coleta e pré-agrega os dados da oficina para o chatbot responder perguntas
 // analíticas (ranking de clientes, ticket médio, faturamento, estoque em alerta).
@@ -9,25 +18,15 @@ import { calcularContextoAnalitico } from '../utils/contextoAnalitico.js'
 // o recorte por perfil é aplicado depois, em filtrarContextoPorPerfil.
 async function montarContextoOficina() {
   try {
-    const [clientesRes, veiculosRes, osRes, estoqueRes, servicosRes, movimentacoesRes] = await Promise.all([
-      supabase.from('cliente').select('id, nome').eq('ativo', true),
-      supabase.from('veiculo').select('id, id_cliente, marca, modelo').eq('ativo', true),
-      supabase.from('ordem_servico').select('id, id_veiculo, valor_total, status, data_abertura, data_encerramento'),
-      supabase.from('item_estoque').select('id, codigo, nome, quantidade, qtd_minima').eq('ativo', true),
-      supabase.from('servico_catalogo').select('nome, preco').eq('ativo', true),
-      supabase.from('movimentacao_estoque').select('id_item, tipo, quantidade, data_hora'),
+    const sinal = AbortSignal.timeout(5000)
+    const [clientes, veiculos, ordens, estoque, servicos, movimentacoes] = await Promise.all([
+      consultarTodasPaginas(() => supabase.from('cliente').select('id, nome', { count: 'exact' }).eq('ativo', true).order('id').abortSignal(sinal)),
+      consultarTodasPaginas(() => supabase.from('veiculo').select('id, id_cliente, marca, modelo', { count: 'exact' }).eq('ativo', true).order('id').abortSignal(sinal)),
+      consultarTodasPaginas(() => supabase.from('ordem_servico').select('id, id_veiculo, valor_total, status, data_abertura, data_encerramento', { count: 'exact' }).order('id').abortSignal(sinal)),
+      consultarTodasPaginas(() => supabase.from('item_estoque').select('id, codigo, nome, quantidade, qtd_minima', { count: 'exact' }).eq('ativo', true).order('id').abortSignal(sinal)),
+      consultarTodasPaginas(() => supabase.from('servico_catalogo').select('id, nome, preco', { count: 'exact' }).eq('ativo', true).order('id').abortSignal(sinal)),
+      consultarTodasPaginas(() => supabase.from('movimentacao_estoque').select('id, id_item, tipo, quantidade, data_hora', { count: 'exact' }).order('id').abortSignal(sinal)),
     ])
-
-    const falha = [clientesRes, veiculosRes, osRes, estoqueRes, servicosRes, movimentacoesRes]
-      .find(resultado => resultado.error)
-    if (falha) throw falha.error
-
-    const clientes = clientesRes.data || []
-    const veiculos = veiculosRes.data || []
-    const ordens = osRes.data || []
-    const estoque = estoqueRes.data || []
-    const servicos = servicosRes.data || []
-    const movimentacoes = movimentacoesRes.data || []
 
     // Map em vez de objeto literal: as chaves vêm do banco, e um Map não herda
     // do Object.prototype (sem risco de prototype pollution por chave dinâmica).
@@ -80,7 +79,30 @@ async function montarContextoOficina() {
     }
   } catch (err) {
     console.error('[Chatbot] Falha ao montar contexto da oficina:', err.message)
-    return null
+    throw erroConsulta(err)
+  }
+}
+
+// RF11/RN39/RN43: a tool interpreta; só este callback autorizado lê valores.
+// Nada de tabela/coluna/SQL do modelo entra na consulta.
+async function consultarFinanceiro(plano, perfil, prazo) {
+  if (perfil !== 'gestor') throw Object.assign(new Error('Informação restrita ao gestor.'), { status: 403, codigo: 'SEM_PERMISSAO' })
+  try {
+    const restante = prazo - Date.now()
+    if (restante <= 0) throw new Error('Prazo da operação esgotado.')
+    const sinal = AbortSignal.timeout(Math.min(restante, 5000))
+    return await Promise.all(plano.periodos.map(periodo => consultarTodasPaginas(() => {
+      let consulta = supabase.from('ordem_servico')
+        .select('id, valor_total, status, data_encerramento', { count: 'exact' })
+        .eq('status', 'concluida')
+        .order('id')
+        .abortSignal(sinal)
+      if (periodo.inicio) consulta = consulta.gte('data_encerramento', periodo.inicio)
+      if (periodo.fim) consulta = consulta.lt('data_encerramento', periodo.fim)
+      return consulta
+    })))
+  } catch (erro) {
+    throw erroConsulta(erro)
   }
 }
 
@@ -97,6 +119,7 @@ function normalizarInteiroPositivo(valor, padrao, maximo) {
 
 export async function mensagem(req, res, next) {
   try {
+    const prazo = Date.now() + 25000
     const { pergunta, historico: historicoSessao } = req.body || {}
     const perguntaNormalizada = typeof pergunta === 'string' ? pergunta.trim() : ''
 
@@ -117,19 +140,24 @@ export async function mensagem(req, res, next) {
         .filter(m => m && m.conteudo && (m.remetente === 'usuario' || m.remetente === 'chatbot'))
         .slice(-10)
         .map(m => ({ remetente: m.remetente, conteudo: String(m.conteudo).slice(0, 4000) }))
-    } else {
+    } else if (req.user.perfil === 'gestor') {
       const { data: historico } = await supabase
         .from('mensagem_chatbot')
         .select('remetente, conteudo')
         .eq('id_usuario', req.user.id)
         .order('criado_em', { ascending: false })
         .limit(10)
+        .abortSignal(AbortSignal.timeout(Math.max(1, Math.min(5000, prazo - Date.now()))))
       historicoOrdenado = (historico || [])
         .reverse()
         .map(m => ({
           remetente: m.remetente,
           conteudo: String(m.conteudo).slice(0, 4000)
         }))
+    } else {
+      // Registros antigos não guardam o perfil original; uma conta rebaixada não
+      // pode recuperar respostas financeiras que recebia enquanto era gestora.
+      historicoOrdenado = []
     }
 
     // O contexto completo nunca chega ao modelo: o que sai daqui é o recorte
@@ -143,10 +171,14 @@ export async function mensagem(req, res, next) {
       perguntaNormalizada,
       req.user.perfil,
       historicoOrdenado,
-      contexto
+      contexto,
+      plano => consultarFinanceiro(plano, req.user.perfil, prazo),
+      { prazo }
     )
 
     try {
+      const restante = prazo - Date.now()
+      if (restante <= 0) throw new Error('Prazo de persistência esgotado.')
       const { error } = await supabase.from('mensagem_chatbot').insert([
         {
           id_usuario: req.user.id,
@@ -158,7 +190,7 @@ export async function mensagem(req, res, next) {
           remetente: 'chatbot',
           conteudo: resposta
         }
-      ])
+      ]).abortSignal(AbortSignal.timeout(Math.min(restante, 2000)))
 
       if (error) {
         console.error('[Chatbot] Falha ao persistir conversa:', error.message || error)
@@ -180,6 +212,12 @@ export async function mensagem(req, res, next) {
 
 export async function historico(req, res, next) {
   try {
+    if (req.user.perfil !== 'gestor') {
+      return res.status(403).json({
+        erro: true, codigo: 'HISTORICO_RESTRITO',
+        mensagem: 'O histórico persistido é restrito ao gestor, pois pode conter respostas financeiras de perfis anteriores. A conversa atual continua disponível.',
+      })
+    }
     // `parseInt('abc')` dava NaN e `range(NaN, NaN)` estourava 500; `page=0` ou
     // negativo dava offset negativo. Mesma normalizacao do iaController.
     const pagina = normalizarInteiroPositivo(req.query.page, 1, 10000)

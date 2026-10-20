@@ -46,6 +46,7 @@ function RedirecionamentoPadrao() {
 }
 
 function AppLayout() {
+  const { user, perfil } = useAuth()
   // A gaveta de navegacao do mobile. O estado vive aqui porque o botao que abre
   // esta no Header e a gaveta e a Sidebar, irmaos no layout.
   const [menuAberto, setMenuAberto] = useState(false)
@@ -114,7 +115,7 @@ function AppLayout() {
         </Routes>
         </Suspense>
       </main>
-      <Chatbot />
+      <Chatbot key={`${user?.id}:${perfil}`} />
     </div>
     </DataProvider>
   )

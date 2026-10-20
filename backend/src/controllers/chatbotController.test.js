@@ -7,21 +7,23 @@ const DADOS = {
     { id: 'os1', id_veiculo: 'v1', valor_total: 6495, status: 'concluida', data_abertura: '2026-08-01', data_encerramento: '2026-08-02' },
   ],
   item_estoque: [{ id: 'p1', codigo: 'FIL-1', nome: 'Filtro de oleo', quantidade: 1, qtd_minima: 5 }],
-  servico_catalogo: [{ nome: 'Troca de oleo', preco: 120 }],
-  movimentacao_estoque: [{ id_item: 'p1', tipo: 'saida', quantidade: 3, data_hora: '2026-08-03' }],
+  servico_catalogo: [{ id: 's1', nome: 'Troca de oleo', preco: 120 }],
+  movimentacao_estoque: [{ id: 'm1', id_item: 'p1', tipo: 'saida', quantidade: 3, data_hora: '2026-08-03' }],
 }
 const ERROS = new Map()
 
 vi.mock('../services/supabaseClient.js', () => {
   const consulta = (tabela) => {
-    const resultado = { data: DADOS[tabela] || [], error: ERROS.get(tabela) || null }
+    const resultado = { data: DADOS[tabela] || [], error: ERROS.get(tabela) || null, count: (DADOS[tabela] || []).length }
     // Precisa ser encadeável (.select().eq()) e aguardável em qualquer ponto.
     const alvo = {
       select: () => alvo,
       eq: () => alvo,
       order: () => alvo,
       limit: () => alvo,
-      insert: async () => ({ data: null, error: null }),
+      range: () => alvo,
+      abortSignal: () => alvo,
+      insert: () => alvo,
       then: (ok, falha) => Promise.resolve(resultado).then(ok, falha),
     }
     return alvo
@@ -92,8 +94,9 @@ describe('chatbot — o contexto entregue ao modelo respeita o perfil', () => {
   it('falha de consulta nao vira metrica numerica falsa', async () => {
     ERROS.set('movimentacao_estoque', new Error('consulta indisponivel'))
 
-    const contexto = await contextoEnviadoAoModelo('gestor')
-
-    expect(contexto).toBeNull()
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {})
+    await expect(contextoEnviadoAoModelo('gestor')).rejects.toMatchObject({ status: 503, codigo: 'DADOS_CHATBOT_INDISPONIVEIS' })
+    expect(responderChatbot).not.toHaveBeenCalled()
+    log.mockRestore()
   })
 })

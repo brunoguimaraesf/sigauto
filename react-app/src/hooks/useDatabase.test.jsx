@@ -17,6 +17,7 @@ const mocks = vi.hoisted(() => ({
   // Escritas (insert/update/delete) e chamadas de RPC: o que sairia para o
   // PostgREST, mais a resposta que cada tabela/funcao deve devolver.
   escritas: [],
+  filtrosEscrita: [],
   respostasEscrita: {},
   chamadasRpc: [],
   respostasRpc: {},
@@ -42,7 +43,10 @@ vi.mock('../supabaseClient', () => {
     let payloadUpsert
     const consulta = {
       select: vi.fn(() => consulta),
-      eq: vi.fn(() => consulta),
+      eq: vi.fn((coluna, valor) => {
+        if (operacao === 'escrita') mocks.filtrosEscrita.push({ tabela, coluna, valor })
+        return consulta
+      }),
       order: vi.fn(() => consulta),
       insert: vi.fn((payload) => {
         operacao = 'escrita'
@@ -149,10 +153,43 @@ beforeEach(() => {
   mocks.falharFuncionarioPublico = false
   mocks.consultas = []
   mocks.escritas = []
+  mocks.filtrosEscrita = []
   mocks.respostasEscrita = {}
   mocks.chamadasRpc = []
   mocks.respostasRpc = {}
   banco = undefined
+})
+
+describe('RF13 — catálogo de serviços no DataProvider', () => {
+  it('RN46: inativa apenas o serviço removido, sem apagar o cadastro nem os itens de OS existentes', async () => {
+    const removido = { id: 'servico-1', nome: 'Troca de óleo', preco: 120, ativo: true }
+    const mantido = { id: 'servico-2', nome: 'Alinhamento', preco: 80, ativo: true }
+    mocks.tabelas.servico_catalogo = { data: [removido, mantido], error: null }
+    mocks.tabelas.ordem_servico = {
+      data: [{ id: 'os-1', numero_os: 15, os_servico: [
+        { id: 'item-1', id_servico: removido.id, nome: removido.nome, quantidade: 1, valor_unitario: 120 },
+      ], os_peca: [], os_comissao: [] }],
+      error: null,
+    }
+    await renderProvider()
+    expect(banco.servicos).toEqual([removido, mantido])
+    const historico = structuredClone(banco.ordensServico)
+    expect(historico[0].servicos_itens).toContainEqual(expect.objectContaining({
+      catalogo_id: removido.id, quantidade: 1, valor_unitario: 120,
+    }))
+
+    await act(async () => { banco.deleteServico(removido.id) })
+
+    expect(banco.servicos).toEqual([mantido])
+    expect(banco.ordensServico).toEqual(historico)
+    // Contrato enviado ao PostgREST: UPDATE pontual, nunca DELETE físico.
+    expect(mocks.escritas).toEqual([
+      { tabela: 'servico_catalogo', op: 'update', payload: { ativo: false } },
+    ])
+    expect(mocks.filtrosEscrita).toEqual([
+      { tabela: 'servico_catalogo', coluna: 'id', valor: removido.id },
+    ])
+  })
 })
 
 describe('configuracao da oficina no DataProvider', () => {
