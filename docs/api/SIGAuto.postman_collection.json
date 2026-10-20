@@ -1,0 +1,2675 @@
+{
+  "info": {
+    "name": "SIGAuto — Backend",
+    "_postman_id": "e9f660af-8a7f-41a2-9408-78c90c72ee70",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "11 endpoints reais. Leia docs/api/README.md. Exemplos fictícios. Efeitos reais bloqueados por padrão; use ambiente dedicado. CRUD comum passa diretamente pelo Supabase e não faz parte desta coleção."
+  },
+  "auth": {
+    "type": "noauth"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3001",
+      "type": "string"
+    },
+    {
+      "key": "habilitarEfeitos",
+      "value": "nao",
+      "type": "string"
+    },
+    {
+      "key": "emailGestor",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "senhaGestor",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tokenGestor",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "refreshToken",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "tokenNaoGestor",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "idUsuarioTeste",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "emailNovoUsuario",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "senhaNovoUsuario",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "emailRecuperacao",
+      "value": "",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "01 — Verificações sem credenciais",
+      "description": "Sem serviços externos: health e rejeições por falta de campos.",
+      "item": [
+        {
+          "name": "Health",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(200));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Status e timestamp ISO', () => pm.expect(resposta.status === 'ok' && typeof resposta.timestamp === 'string' && !Number.isNaN(Date.parse(resposta.timestamp))).to.equal(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/health",
+            "description": ""
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 200",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "auth": {
+                  "type": "noauth"
+                },
+                "url": "{{baseUrl}}/health",
+                "description": ""
+              },
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"status\": \"ok\",\n  \"timestamp\": \"2026-10-20T12:00:00.000Z\",\n  \"env\": \"development\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Login sem campos obrigatórios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(400));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(true));",
+                  "pm.test('Código de erro e mensagem', () => {",
+                  "  pm.expect(resposta.codigo).to.equal(\"CAMPOS_OBRIGATORIOS\");",
+                  "  pm.expect(typeof resposta.mensagem === 'string' && resposta.mensagem.length > 0).to.equal(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 400",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "noauth"
+                },
+                "url": "{{baseUrl}}/api/v1/auth/login",
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "400",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": true,\n  \"codigo\": \"CAMPOS_OBRIGATORIOS\",\n  \"mensagem\": \"Mensagem ilustrativa; o texto efetivo vem do backend.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Renovação sem refresh token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(400));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(true));",
+                  "pm.test('Código de erro e mensagem', () => {",
+                  "  pm.expect(resposta.codigo).to.equal(\"REFRESH_TOKEN_AUSENTE\");",
+                  "  pm.expect(typeof resposta.mensagem === 'string' && resposta.mensagem.length > 0).to.equal(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/refresh",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 400",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "noauth"
+                },
+                "url": "{{baseUrl}}/api/v1/auth/refresh",
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "400",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": true,\n  \"codigo\": \"REFRESH_TOKEN_AUSENTE\",\n  \"mensagem\": \"Mensagem ilustrativa; o texto efetivo vem do backend.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Recuperação sem e-mail",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(400));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(true));",
+                  "pm.test('Código de erro e mensagem', () => {",
+                  "  pm.expect(resposta.codigo).to.equal(\"EMAIL_OBRIGATORIO\");",
+                  "  pm.expect(typeof resposta.mensagem === 'string' && resposta.mensagem.length > 0).to.equal(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/forgot-password",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 400",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "noauth"
+                },
+                "url": "{{baseUrl}}/api/v1/auth/forgot-password",
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "400",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": true,\n  \"codigo\": \"EMAIL_OBRIGATORIO\",\n  \"mensagem\": \"Mensagem ilustrativa; o texto efetivo vem do backend.\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 — Sessão do gestor (efeitos reais)",
+      "description": "Login e renovação geram sessão. Exigem habilitarEfeitos=sim. Capturam tokens em variáveis da coleção.",
+      "item": [
+        {
+          "name": "Login do gestor — captura tokens",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.variables.get('habilitarEfeitos') !== 'sim') {",
+                  "  console.info('Ignorada: habilitarEfeitos deve ser sim em ambiente dedicado.');",
+                  "  pm.execution.skipRequest();",
+                  "}",
+                  "const obrigatorias = [\"emailGestor\",\"senhaGestor\"];",
+                  "if (obrigatorias.some(chave => !String(pm.variables.get(chave) || '').trim())) {",
+                  "  console.info('Ignorada: preencha as variáveis obrigatórias descritas na requisição.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(200));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(false));",
+                  "pm.test('Perfil gestor', () => pm.expect(resposta.dados?.usuario?.perfil === 'gestor' && typeof resposta.dados.usuario.id === 'string').to.equal(true));",
+                  "pm.test('Tokens presentes', () => pm.expect(typeof resposta.dados?.token === 'string' && resposta.dados.token.length > 0 && typeof resposta.dados.refresh_token === 'string' && resposta.dados.refresh_token.length > 0).to.equal(true));",
+                  "if (pm.response.code === 200 && resposta.erro === false && resposta.dados?.token && resposta.dados?.refresh_token) {",
+                  "  pm.collectionVariables.set('tokenGestor', resposta.dados.token);",
+                  "  pm.collectionVariables.set('refreshToken', resposta.dados.refresh_token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "description": "Use gestor ativo de teste. Captura tokenGestor e refreshToken, sem imprimi-los. Perfil diferente invalida o cenário.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailGestor}}\",\n  \"senha\": \"{{senhaGestor}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 200",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "noauth"
+                },
+                "url": "{{baseUrl}}/api/v1/auth/login",
+                "description": "Use gestor ativo de teste. Captura tokenGestor e refreshToken, sem imprimi-los. Perfil diferente invalida o cenário.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{emailGestor}}\",\n  \"senha\": \"{{senhaGestor}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": false,\n  \"dados\": {\n    \"token\": \"token-ficticio\",\n    \"refresh_token\": \"refresh-ficticio\",\n    \"usuario\": {\n      \"id\": \"00000000-0000-4000-8000-000000000001\",\n      \"nome\": \"Gestor de teste\",\n      \"email\": \"gestor@example.test\",\n      \"perfil\": \"gestor\"\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Renovar sessão — atualiza tokens",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.variables.get('habilitarEfeitos') !== 'sim') {",
+                  "  console.info('Ignorada: habilitarEfeitos deve ser sim em ambiente dedicado.');",
+                  "  pm.execution.skipRequest();",
+                  "}",
+                  "const obrigatorias = [\"refreshToken\"];",
+                  "if (obrigatorias.some(chave => !String(pm.variables.get(chave) || '').trim())) {",
+                  "  console.info('Ignorada: preencha as variáveis obrigatórias descritas na requisição.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(200));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(false));",
+                  "pm.test('Tokens presentes', () => pm.expect(typeof resposta.dados?.token === 'string' && resposta.dados.token.length > 0 && typeof resposta.dados.refresh_token === 'string' && resposta.dados.refresh_token.length > 0).to.equal(true));",
+                  "if (pm.response.code === 200 && resposta.erro === false && resposta.dados?.token && resposta.dados?.refresh_token) {",
+                  "  pm.collectionVariables.set('tokenGestor', resposta.dados.token);",
+                  "  pm.collectionVariables.set('refreshToken', resposta.dados.refresh_token);",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/refresh",
+            "description": "Execute após login. Pode rotacionar refresh token. Não sobreponha as variáveis da coleção com variáveis de ambiente de mesmo nome.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 200",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "noauth"
+                },
+                "url": "{{baseUrl}}/api/v1/auth/refresh",
+                "description": "Execute após login. Pode rotacionar refresh token. Não sobreponha as variáveis da coleção com variáveis de ambiente de mesmo nome.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": false,\n  \"dados\": {\n    \"token\": \"token-ficticio\",\n    \"refresh_token\": \"refresh-ficticio\"\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 — Leituras autenticadas",
+      "description": "Exigem tokenGestor válido. Não chamam Gemini.",
+      "item": [
+        {
+          "name": "Histórico do chatbot — página 1",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const obrigatorias = [\"tokenGestor\"];",
+                  "if (obrigatorias.some(chave => !String(pm.variables.get(chave) || '').trim())) {",
+                  "  console.info('Ignorada: preencha as variáveis obrigatórias descritas na requisição.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(200));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(false));",
+                  "pm.test('Dados paginados e metadados', () => pm.expect(Array.isArray(resposta.dados) && Number.isInteger(resposta.paginacao.total) && resposta.paginacao.total >= 0 && resposta.paginacao.pagina === 1 && resposta.paginacao.limite === 10 && resposta.dados.length <= 10 && resposta.paginacao.totalPaginas === Math.ceil(resposta.paginacao.total / resposta.paginacao.limite)).to.equal(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGestor}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/chatbot/historico?page=1&limit=10",
+            "description": "Somente mensagens do titular do JWT; ordem crescente por criado_em. page padrão 1, máximo 10000; limit padrão 50, máximo 200."
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 200",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenGestor}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": "{{baseUrl}}/api/v1/chatbot/historico?page=1&limit=10",
+                "description": "Somente mensagens do titular do JWT; ordem crescente por criado_em. page padrão 1, máximo 10000; limit padrão 50, máximo 200."
+              },
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": false,\n  \"dados\": [],\n  \"paginacao\": {\n    \"total\": 0,\n    \"pagina\": 1,\n    \"limite\": 10,\n    \"totalPaginas\": 0\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Histórico do chatbot — normalização",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const obrigatorias = [\"tokenGestor\"];",
+                  "if (obrigatorias.some(chave => !String(pm.variables.get(chave) || '').trim())) {",
+                  "  console.info('Ignorada: preencha as variáveis obrigatórias descritas na requisição.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(200));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(false));",
+                  "pm.test('Dados paginados e metadados', () => pm.expect(Array.isArray(resposta.dados) && Number.isInteger(resposta.paginacao.total) && resposta.paginacao.total >= 0 && resposta.paginacao.pagina === 1 && resposta.paginacao.limite === 200 && resposta.dados.length <= 200 && resposta.paginacao.totalPaginas === Math.ceil(resposta.paginacao.total / resposta.paginacao.limite)).to.equal(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGestor}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/chatbot/historico?page=abc&limit=99999",
+            "description": ""
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 200",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenGestor}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": "{{baseUrl}}/api/v1/chatbot/historico?page=abc&limit=99999",
+                "description": ""
+              },
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": false,\n  \"dados\": [],\n  \"paginacao\": {\n    \"total\": 0,\n    \"pagina\": 1,\n    \"limite\": 200,\n    \"totalPaginas\": 0\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Recomendações — página 1",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const obrigatorias = [\"tokenGestor\"];",
+                  "if (obrigatorias.some(chave => !String(pm.variables.get(chave) || '').trim())) {",
+                  "  console.info('Ignorada: preencha as variáveis obrigatórias descritas na requisição.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(200));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(false));",
+                  "pm.test('Dados paginados e metadados', () => pm.expect(Array.isArray(resposta.dados) && Number.isInteger(resposta.paginacao.total) && resposta.paginacao.total >= 0 && resposta.paginacao.pagina === 1 && resposta.paginacao.limite === 10 && resposta.dados.length <= 10 && resposta.paginacao.totalPaginas === Math.ceil(resposta.paginacao.total / resposta.paginacao.limite)).to.equal(true));",
+                  "pm.test('Projeção segura das análises', () => pm.expect(resposta.dados.every(item => !Object.hasOwn(item, 'id_usuario') && !Object.hasOwn(item.recomendacoes || {}, 'metricas_do_modelo'))).to.equal(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGestor}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/ia/recomendacoes?page=1&limit=10",
+            "description": "Gestor; análises da oficina, ordem decrescente por criado_em. page padrão 1, máximo 100000; limit padrão 10, máximo 50. Não expõe id_usuario nem metricas_do_modelo."
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 200",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenGestor}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": "{{baseUrl}}/api/v1/ia/recomendacoes?page=1&limit=10",
+                "description": "Gestor; análises da oficina, ordem decrescente por criado_em. page padrão 1, máximo 100000; limit padrão 10, máximo 50. Não expõe id_usuario nem metricas_do_modelo."
+              },
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": false,\n  \"dados\": [],\n  \"paginacao\": {\n    \"total\": 0,\n    \"pagina\": 1,\n    \"limite\": 10,\n    \"totalPaginas\": 0\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Recomendações — normalização",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const obrigatorias = [\"tokenGestor\"];",
+                  "if (obrigatorias.some(chave => !String(pm.variables.get(chave) || '').trim())) {",
+                  "  console.info('Ignorada: preencha as variáveis obrigatórias descritas na requisição.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(200));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(false));",
+                  "pm.test('Dados paginados e metadados', () => pm.expect(Array.isArray(resposta.dados) && Number.isInteger(resposta.paginacao.total) && resposta.paginacao.total >= 0 && resposta.paginacao.pagina === 1 && resposta.paginacao.limite === 50 && resposta.dados.length <= 50 && resposta.paginacao.totalPaginas === Math.ceil(resposta.paginacao.total / resposta.paginacao.limite)).to.equal(true));",
+                  "pm.test('Projeção segura das análises', () => pm.expect(resposta.dados.every(item => !Object.hasOwn(item, 'id_usuario') && !Object.hasOwn(item.recomendacoes || {}, 'metricas_do_modelo'))).to.equal(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGestor}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/ia/recomendacoes?page=0&limit=99999",
+            "description": ""
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 200",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenGestor}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": "{{baseUrl}}/api/v1/ia/recomendacoes?page=0&limit=99999",
+                "description": ""
+              },
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": false,\n  \"dados\": [],\n  \"paginacao\": {\n    \"total\": 0,\n    \"pagina\": 1,\n    \"limite\": 50,\n    \"totalPaginas\": 0\n  }\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "04 — Validação e controle de acesso",
+      "description": "Sem JWT: 401. JWT ativo não gestor: 403 nas operações exclusivas de gestor.",
+      "item": [
+        {
+          "name": "Sem token — POST /api/v1/auth/usuarios",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(401));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(true));",
+                  "pm.test('Código de erro e mensagem', () => {",
+                  "  pm.expect(resposta.codigo).to.equal(\"TOKEN_AUSENTE\");",
+                  "  pm.expect(typeof resposta.mensagem === 'string' && resposta.mensagem.length > 0).to.equal(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/usuarios",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 401",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "noauth"
+                },
+                "url": "{{baseUrl}}/api/v1/auth/usuarios",
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "401",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": true,\n  \"codigo\": \"TOKEN_AUSENTE\",\n  \"mensagem\": \"Mensagem ilustrativa; o texto efetivo vem do backend.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Sem token — PATCH /api/v1/auth/usuarios/00000000-0000-4000-8000-000000000001",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(401));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(true));",
+                  "pm.test('Código de erro e mensagem', () => {",
+                  "  pm.expect(resposta.codigo).to.equal(\"TOKEN_AUSENTE\");",
+                  "  pm.expect(typeof resposta.mensagem === 'string' && resposta.mensagem.length > 0).to.equal(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/usuarios/00000000-0000-4000-8000-000000000001",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 401",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "noauth"
+                },
+                "url": "{{baseUrl}}/api/v1/auth/usuarios/00000000-0000-4000-8000-000000000001",
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "401",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": true,\n  \"codigo\": \"TOKEN_AUSENTE\",\n  \"mensagem\": \"Mensagem ilustrativa; o texto efetivo vem do backend.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Sem token — POST /api/v1/chatbot/mensagem",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(401));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(true));",
+                  "pm.test('Código de erro e mensagem', () => {",
+                  "  pm.expect(resposta.codigo).to.equal(\"TOKEN_AUSENTE\");",
+                  "  pm.expect(typeof resposta.mensagem === 'string' && resposta.mensagem.length > 0).to.equal(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/v1/chatbot/mensagem",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 401",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "noauth"
+                },
+                "url": "{{baseUrl}}/api/v1/chatbot/mensagem",
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "401",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": true,\n  \"codigo\": \"TOKEN_AUSENTE\",\n  \"mensagem\": \"Mensagem ilustrativa; o texto efetivo vem do backend.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Sem token — GET /api/v1/chatbot/historico",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(401));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(true));",
+                  "pm.test('Código de erro e mensagem', () => {",
+                  "  pm.expect(resposta.codigo).to.equal(\"TOKEN_AUSENTE\");",
+                  "  pm.expect(typeof resposta.mensagem === 'string' && resposta.mensagem.length > 0).to.equal(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/v1/chatbot/historico",
+            "description": ""
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 401",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "auth": {
+                  "type": "noauth"
+                },
+                "url": "{{baseUrl}}/api/v1/chatbot/historico",
+                "description": ""
+              },
+              "status": "401",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": true,\n  \"codigo\": \"TOKEN_AUSENTE\",\n  \"mensagem\": \"Mensagem ilustrativa; o texto efetivo vem do backend.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Sem token — POST /api/v1/ia/analisar",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(401));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(true));",
+                  "pm.test('Código de erro e mensagem', () => {",
+                  "  pm.expect(resposta.codigo).to.equal(\"TOKEN_AUSENTE\");",
+                  "  pm.expect(typeof resposta.mensagem === 'string' && resposta.mensagem.length > 0).to.equal(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/v1/ia/analisar",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 401",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "noauth"
+                },
+                "url": "{{baseUrl}}/api/v1/ia/analisar",
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "401",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": true,\n  \"codigo\": \"TOKEN_AUSENTE\",\n  \"mensagem\": \"Mensagem ilustrativa; o texto efetivo vem do backend.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Sem token — GET /api/v1/ia/recomendacoes",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(401));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(true));",
+                  "pm.test('Código de erro e mensagem', () => {",
+                  "  pm.expect(resposta.codigo).to.equal(\"TOKEN_AUSENTE\");",
+                  "  pm.expect(typeof resposta.mensagem === 'string' && resposta.mensagem.length > 0).to.equal(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/v1/ia/recomendacoes",
+            "description": ""
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 401",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "auth": {
+                  "type": "noauth"
+                },
+                "url": "{{baseUrl}}/api/v1/ia/recomendacoes",
+                "description": ""
+              },
+              "status": "401",
+              "code": 401,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": true,\n  \"codigo\": \"TOKEN_AUSENTE\",\n  \"mensagem\": \"Mensagem ilustrativa; o texto efetivo vem do backend.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Sem perfil gestor — POST /api/v1/auth/usuarios",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const obrigatorias = [\"tokenNaoGestor\"];",
+                  "if (obrigatorias.some(chave => !String(pm.variables.get(chave) || '').trim())) {",
+                  "  console.info('Ignorada: preencha as variáveis obrigatórias descritas na requisição.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(403));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(true));",
+                  "pm.test('Código de erro e mensagem', () => {",
+                  "  pm.expect(resposta.codigo).to.equal(\"SEM_PERMISSAO\");",
+                  "  pm.expect(typeof resposta.mensagem === 'string' && resposta.mensagem.length > 0).to.equal(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenNaoGestor}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/auth/usuarios",
+            "description": "Preencha tokenNaoGestor com JWT válido de atendente ou mecanico ativo no mesmo ambiente. Token inválido/inativo gera 401, não satisfaz o teste.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 403",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenNaoGestor}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": "{{baseUrl}}/api/v1/auth/usuarios",
+                "description": "Preencha tokenNaoGestor com JWT válido de atendente ou mecanico ativo no mesmo ambiente. Token inválido/inativo gera 401, não satisfaz o teste.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "403",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": true,\n  \"codigo\": \"SEM_PERMISSAO\",\n  \"mensagem\": \"Mensagem ilustrativa; o texto efetivo vem do backend.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Sem perfil gestor — PATCH /api/v1/auth/usuarios/00000000-0000-4000-8000-000000000001",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const obrigatorias = [\"tokenNaoGestor\"];",
+                  "if (obrigatorias.some(chave => !String(pm.variables.get(chave) || '').trim())) {",
+                  "  console.info('Ignorada: preencha as variáveis obrigatórias descritas na requisição.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(403));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(true));",
+                  "pm.test('Código de erro e mensagem', () => {",
+                  "  pm.expect(resposta.codigo).to.equal(\"SEM_PERMISSAO\");",
+                  "  pm.expect(typeof resposta.mensagem === 'string' && resposta.mensagem.length > 0).to.equal(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenNaoGestor}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/auth/usuarios/00000000-0000-4000-8000-000000000001",
+            "description": "Preencha tokenNaoGestor com JWT válido de atendente ou mecanico ativo no mesmo ambiente. Token inválido/inativo gera 401, não satisfaz o teste.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 403",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenNaoGestor}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": "{{baseUrl}}/api/v1/auth/usuarios/00000000-0000-4000-8000-000000000001",
+                "description": "Preencha tokenNaoGestor com JWT válido de atendente ou mecanico ativo no mesmo ambiente. Token inválido/inativo gera 401, não satisfaz o teste.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "403",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": true,\n  \"codigo\": \"SEM_PERMISSAO\",\n  \"mensagem\": \"Mensagem ilustrativa; o texto efetivo vem do backend.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Sem perfil gestor — POST /api/v1/ia/analisar",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const obrigatorias = [\"tokenNaoGestor\"];",
+                  "if (obrigatorias.some(chave => !String(pm.variables.get(chave) || '').trim())) {",
+                  "  console.info('Ignorada: preencha as variáveis obrigatórias descritas na requisição.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(403));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(true));",
+                  "pm.test('Código de erro e mensagem', () => {",
+                  "  pm.expect(resposta.codigo).to.equal(\"SEM_PERMISSAO\");",
+                  "  pm.expect(typeof resposta.mensagem === 'string' && resposta.mensagem.length > 0).to.equal(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenNaoGestor}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/ia/analisar",
+            "description": "Preencha tokenNaoGestor com JWT válido de atendente ou mecanico ativo no mesmo ambiente. Token inválido/inativo gera 401, não satisfaz o teste.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 403",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenNaoGestor}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": "{{baseUrl}}/api/v1/ia/analisar",
+                "description": "Preencha tokenNaoGestor com JWT válido de atendente ou mecanico ativo no mesmo ambiente. Token inválido/inativo gera 401, não satisfaz o teste.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "403",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": true,\n  \"codigo\": \"SEM_PERMISSAO\",\n  \"mensagem\": \"Mensagem ilustrativa; o texto efetivo vem do backend.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Sem perfil gestor — GET /api/v1/ia/recomendacoes",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const obrigatorias = [\"tokenNaoGestor\"];",
+                  "if (obrigatorias.some(chave => !String(pm.variables.get(chave) || '').trim())) {",
+                  "  console.info('Ignorada: preencha as variáveis obrigatórias descritas na requisição.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(403));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(true));",
+                  "pm.test('Código de erro e mensagem', () => {",
+                  "  pm.expect(resposta.codigo).to.equal(\"SEM_PERMISSAO\");",
+                  "  pm.expect(typeof resposta.mensagem === 'string' && resposta.mensagem.length > 0).to.equal(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenNaoGestor}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/ia/recomendacoes",
+            "description": "Preencha tokenNaoGestor com JWT válido de atendente ou mecanico ativo no mesmo ambiente. Token inválido/inativo gera 401, não satisfaz o teste."
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 403",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenNaoGestor}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": "{{baseUrl}}/api/v1/ia/recomendacoes",
+                "description": "Preencha tokenNaoGestor com JWT válido de atendente ou mecanico ativo no mesmo ambiente. Token inválido/inativo gera 401, não satisfaz o teste."
+              },
+              "status": "403",
+              "code": 403,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": true,\n  \"codigo\": \"SEM_PERMISSAO\",\n  \"mensagem\": \"Mensagem ilustrativa; o texto efetivo vem do backend.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Mensagem vazia",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const obrigatorias = [\"tokenGestor\"];",
+                  "if (obrigatorias.some(chave => !String(pm.variables.get(chave) || '').trim())) {",
+                  "  console.info('Ignorada: preencha as variáveis obrigatórias descritas na requisição.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(400));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(true));",
+                  "pm.test('Código de erro e mensagem', () => {",
+                  "  pm.expect(resposta.codigo).to.equal(\"MENSAGEM_OBRIGATORIA\");",
+                  "  pm.expect(typeof resposta.mensagem === 'string' && resposta.mensagem.length > 0).to.equal(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGestor}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/chatbot/mensagem",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pergunta\": \"   \",\n  \"historico\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 400",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenGestor}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": "{{baseUrl}}/api/v1/chatbot/mensagem",
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"pergunta\": \"   \",\n  \"historico\": []\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "400",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": true,\n  \"codigo\": \"MENSAGEM_OBRIGATORIA\",\n  \"mensagem\": \"Mensagem ilustrativa; o texto efetivo vem do backend.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Cadastro com dados inválidos",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const obrigatorias = [\"tokenGestor\"];",
+                  "if (obrigatorias.some(chave => !String(pm.variables.get(chave) || '').trim())) {",
+                  "  console.info('Ignorada: preencha as variáveis obrigatórias descritas na requisição.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(400));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(true));",
+                  "pm.test('Código de erro e mensagem', () => {",
+                  "  pm.expect(resposta.codigo).to.equal(\"DADOS_USUARIO_INVALIDOS\");",
+                  "  pm.expect(typeof resposta.mensagem === 'string' && resposta.mensagem.length > 0).to.equal(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGestor}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/auth/usuarios",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"\",\n  \"email\": \"invalido\",\n  \"senha\": \"curta\",\n  \"perfil\": \"mecanico\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 400",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenGestor}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": "{{baseUrl}}/api/v1/auth/usuarios",
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nome\": \"\",\n  \"email\": \"invalido\",\n  \"senha\": \"curta\",\n  \"perfil\": \"mecanico\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "400",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": true,\n  \"codigo\": \"DADOS_USUARIO_INVALIDOS\",\n  \"mensagem\": \"Mensagem ilustrativa; o texto efetivo vem do backend.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Alteração com ID inválido",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const obrigatorias = [\"tokenGestor\"];",
+                  "if (obrigatorias.some(chave => !String(pm.variables.get(chave) || '').trim())) {",
+                  "  console.info('Ignorada: preencha as variáveis obrigatórias descritas na requisição.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(400));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(true));",
+                  "pm.test('Código de erro e mensagem', () => {",
+                  "  pm.expect(resposta.codigo).to.equal(\"DADOS_USUARIO_INVALIDOS\");",
+                  "  pm.expect(typeof resposta.mensagem === 'string' && resposta.mensagem.length > 0).to.equal(true);",
+                  "});"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGestor}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/auth/usuarios/id-invalido",
+            "description": "",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Teste\",\n  \"perfil\": \"mecanico\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 400",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenGestor}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": "{{baseUrl}}/api/v1/auth/usuarios/id-invalido",
+                "description": "",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nome\": \"Teste\",\n  \"perfil\": \"mecanico\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "400",
+              "code": 400,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": true,\n  \"codigo\": \"DADOS_USUARIO_INVALIDOS\",\n  \"mensagem\": \"Mensagem ilustrativa; o texto efetivo vem do backend.\"\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "05 — Operações com efeitos reais",
+      "description": "Executar individualmente, em ambiente dedicado e com habilitarEfeitos=sim. Logout por último.",
+      "item": [
+        {
+          "name": "Criar usuário de teste — captura ID",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.variables.get('habilitarEfeitos') !== 'sim') {",
+                  "  console.info('Ignorada: habilitarEfeitos deve ser sim em ambiente dedicado.');",
+                  "  pm.execution.skipRequest();",
+                  "}",
+                  "const obrigatorias = [\"emailNovoUsuario\",\"senhaNovoUsuario\",\"tokenGestor\"];",
+                  "if (obrigatorias.some(chave => !String(pm.variables.get(chave) || '').trim())) {",
+                  "  console.info('Ignorada: preencha as variáveis obrigatórias descritas na requisição.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(201));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(false));",
+                  "pm.test('Conta ativa e perfil solicitado', () => pm.expect(typeof resposta.dados?.usuario?.id === 'string' && resposta.dados.usuario.perfil === 'mecanico' && resposta.dados.usuario.ativo === true).to.equal(true));",
+                  "if (pm.response.code === 201 && resposta.erro === false && resposta.dados?.usuario?.id) pm.collectionVariables.set('idUsuarioTeste', resposta.dados.usuario.id);"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGestor}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/auth/usuarios",
+            "description": "Cria conta Auth confirmada, usuário, funcionário e auditoria. E-mail único; senha com pelo menos 8 caracteres. Duplicidade: 409 EMAIL_JA_CADASTRADO. Não repita sem redefinir o e-mail e revisar o ID.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Colaborador UAT\",\n  \"email\": \"{{emailNovoUsuario}}\",\n  \"senha\": \"{{senhaNovoUsuario}}\",\n  \"perfil\": \"mecanico\",\n  \"telefone\": \"\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 201",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenGestor}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": "{{baseUrl}}/api/v1/auth/usuarios",
+                "description": "Cria conta Auth confirmada, usuário, funcionário e auditoria. E-mail único; senha com pelo menos 8 caracteres. Duplicidade: 409 EMAIL_JA_CADASTRADO. Não repita sem redefinir o e-mail e revisar o ID.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nome\": \"Colaborador UAT\",\n  \"email\": \"{{emailNovoUsuario}}\",\n  \"senha\": \"{{senhaNovoUsuario}}\",\n  \"perfil\": \"mecanico\",\n  \"telefone\": \"\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "201",
+              "code": 201,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": false,\n  \"dados\": {\n    \"usuario\": {\n      \"id\": \"00000000-0000-4000-8000-000000000001\",\n      \"nome\": \"Colaborador UAT\",\n      \"email\": \"colaborador@example.test\",\n      \"perfil\": \"mecanico\",\n      \"telefone\": null,\n      \"ativo\": true\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Inativar usuário de teste",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.variables.get('habilitarEfeitos') !== 'sim') {",
+                  "  console.info('Ignorada: habilitarEfeitos deve ser sim em ambiente dedicado.');",
+                  "  pm.execution.skipRequest();",
+                  "}",
+                  "const obrigatorias = [\"idUsuarioTeste\",\"tokenGestor\"];",
+                  "if (obrigatorias.some(chave => !String(pm.variables.get(chave) || '').trim())) {",
+                  "  console.info('Ignorada: preencha as variáveis obrigatórias descritas na requisição.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(200));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(false));",
+                  "pm.test('Usuário inativado', () => pm.expect(typeof resposta.dados?.usuario?.id === 'string' && resposta.dados.usuario.ativo === false && resposta.dados.usuario.perfil === 'mecanico').to.equal(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGestor}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/auth/usuarios/{{idUsuarioTeste}}",
+            "description": "ID capturado no cadastro anterior; não use conta de trabalho. Altera usuário e funcionário. Nome e perfil obrigatórios mesmo em PATCH. Não atualiza e-mail/senha. Não há DELETE para limpeza.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"nome\": \"Colaborador UAT\",\n  \"perfil\": \"mecanico\",\n  \"telefone\": \"\",\n  \"ativo\": false\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 200",
+              "originalRequest": {
+                "method": "PATCH",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenGestor}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": "{{baseUrl}}/api/v1/auth/usuarios/{{idUsuarioTeste}}",
+                "description": "ID capturado no cadastro anterior; não use conta de trabalho. Altera usuário e funcionário. Nome e perfil obrigatórios mesmo em PATCH. Não atualiza e-mail/senha. Não há DELETE para limpeza.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"nome\": \"Colaborador UAT\",\n  \"perfil\": \"mecanico\",\n  \"telefone\": \"\",\n  \"ativo\": false\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": false,\n  \"dados\": {\n    \"usuario\": {\n      \"id\": \"00000000-0000-4000-8000-000000000001\",\n      \"nome\": \"Colaborador UAT\",\n      \"email\": \"colaborador@example.test\",\n      \"perfil\": \"mecanico\",\n      \"telefone\": null,\n      \"ativo\": false\n    }\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Solicitar recuperação de senha (RN30)",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.variables.get('habilitarEfeitos') !== 'sim') {",
+                  "  console.info('Ignorada: habilitarEfeitos deve ser sim em ambiente dedicado.');",
+                  "  pm.execution.skipRequest();",
+                  "}",
+                  "const obrigatorias = [\"emailRecuperacao\"];",
+                  "if (obrigatorias.some(chave => !String(pm.variables.get(chave) || '').trim())) {",
+                  "  console.info('Ignorada: preencha as variáveis obrigatórias descritas na requisição.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(200));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(false));",
+                  "pm.test('Mensagem não revela cadastro', () => pm.expect(resposta.mensagem === 'Se o email estiver cadastrado, você receberá as instruções de recuperação.').to.equal(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/forgot-password",
+            "description": "Pode enviar e-mail. Execute individualmente com endereço controlado cadastrado e outro não cadastrado; guarde ambos resultados. Ambos devem retornar mesmo envelope. Um cenário isolado não comprova os dois casos.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{emailRecuperacao}}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 200",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "noauth"
+                },
+                "url": "{{baseUrl}}/api/v1/auth/forgot-password",
+                "description": "Pode enviar e-mail. Execute individualmente com endereço controlado cadastrado e outro não cadastrado; guarde ambos resultados. Ambos devem retornar mesmo envelope. Um cenário isolado não comprova os dois casos.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"{{emailRecuperacao}}\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": false,\n  \"mensagem\": \"Se o email estiver cadastrado, você receberá as instruções de recuperação.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Enviar pergunta ao chatbot",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.variables.get('habilitarEfeitos') !== 'sim') {",
+                  "  console.info('Ignorada: habilitarEfeitos deve ser sim em ambiente dedicado.');",
+                  "  pm.execution.skipRequest();",
+                  "}",
+                  "const obrigatorias = [\"tokenGestor\"];",
+                  "if (obrigatorias.some(chave => !String(pm.variables.get(chave) || '').trim())) {",
+                  "  console.info('Ignorada: preencha as variáveis obrigatórias descritas na requisição.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(200));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(false));",
+                  "pm.test('Resposta textual', () => pm.expect(typeof resposta.dados?.resposta === 'string' && resposta.dados.resposta.trim().length > 0).to.equal(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGestor}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/chatbot/mensagem",
+            "description": "Chama Gemini, consome cota e tenta persistir conversa. historico aceita remetente usuario/chatbot e conteudo; [] inicia sessão sem conversas antigas. Falha de persistência pode ainda retornar 200; verificar histórico separadamente.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"pergunta\": \"Como consultar as ordens de serviço abertas no SIGAuto?\",\n  \"historico\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 200",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenGestor}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": "{{baseUrl}}/api/v1/chatbot/mensagem",
+                "description": "Chama Gemini, consome cota e tenta persistir conversa. historico aceita remetente usuario/chatbot e conteudo; [] inicia sessão sem conversas antigas. Falha de persistência pode ainda retornar 200; verificar histórico separadamente.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"pergunta\": \"Como consultar as ordens de serviço abertas no SIGAuto?\",\n  \"historico\": []\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": false,\n  \"dados\": {\n    \"resposta\": \"Resposta fictícia de exemplo.\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Gerar análise com IA",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.variables.get('habilitarEfeitos') !== 'sim') {",
+                  "  console.info('Ignorada: habilitarEfeitos deve ser sim em ambiente dedicado.');",
+                  "  pm.execution.skipRequest();",
+                  "}",
+                  "const obrigatorias = [\"tokenGestor\"];",
+                  "if (obrigatorias.some(chave => !String(pm.variables.get(chave) || '').trim())) {",
+                  "  console.info('Ignorada: preencha as variáveis obrigatórias descritas na requisição.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(200));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(false));",
+                  "pm.test('Contrato da análise', () => pm.expect(typeof resposta.dados?.resumo === 'string' && Array.isArray(resposta.dados.recomendacoes) && Array.isArray(resposta.dados.alertas) && typeof resposta.dados.metricas_destaque === 'object' && resposta.dados.metricas_destaque !== null && !Number.isNaN(Date.parse(resposta.dados.gerado_em)) && (resposta.dados.id_analise === null || typeof resposta.dados.id_analise === 'string') && !Object.hasOwn(resposta.dados, 'metricas_do_modelo')).to.equal(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGestor}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/ia/analisar",
+            "description": "Gestor; sem parâmetros de entrada. Consulta dados, chama Gemini e tenta salvar análise. Orçamento total de IA: 20 s. id_analise null indica ausência de persistência: registrar separadamente. Indisponibilidade não satisfaz o cenário de sucesso.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 200",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenGestor}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": "{{baseUrl}}/api/v1/ia/analisar",
+                "description": "Gestor; sem parâmetros de entrada. Consulta dados, chama Gemini e tenta salvar análise. Orçamento total de IA: 20 s. id_analise null indica ausência de persistência: registrar separadamente. Indisponibilidade não satisfaz o cenário de sucesso.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": false,\n  \"dados\": {\n    \"resumo\": \"\",\n    \"recomendacoes\": [],\n    \"alertas\": [],\n    \"metricas_destaque\": {},\n    \"id_analise\": null,\n    \"gerado_em\": \"2026-10-20T12:00:00.000Z\"\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout — executar por último",
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "if (pm.variables.get('habilitarEfeitos') !== 'sim') {",
+                  "  console.info('Ignorada: habilitarEfeitos deve ser sim em ambiente dedicado.');",
+                  "  pm.execution.skipRequest();",
+                  "}",
+                  "const obrigatorias = [\"tokenGestor\"];",
+                  "if (obrigatorias.some(chave => !String(pm.variables.get(chave) || '').trim())) {",
+                  "  console.info('Ignorada: preencha as variáveis obrigatórias descritas na requisição.');",
+                  "  pm.execution.skipRequest();",
+                  "}"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(200));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(false));",
+                  "pm.test('Mensagem de logout', () => pm.expect(resposta.mensagem === 'Logout realizado com sucesso.').to.equal(true));",
+                  "if (pm.response.code === 200 && resposta.erro === false) {",
+                  "  pm.collectionVariables.set('tokenGestor', '');",
+                  "  pm.collectionVariables.set('refreshToken', '');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{tokenGestor}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/api/v1/auth/logout",
+            "description": "Execute por último. Rota também responde 200 sem JWT; aqui envia token do gestor para tentar encerrar sessão. Limpa variáveis locais. 200 sozinho não comprova revogação imediata do access token emitido.",
+            "body": {
+              "mode": "raw",
+              "raw": "{}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 200",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "auth": {
+                  "type": "bearer",
+                  "bearer": [
+                    {
+                      "key": "token",
+                      "value": "{{tokenGestor}}",
+                      "type": "string"
+                    }
+                  ]
+                },
+                "url": "{{baseUrl}}/api/v1/auth/logout",
+                "description": "Execute por último. Rota também responde 200 sem JWT; aqui envia token do gestor para tentar encerrar sessão. Limpa variáveis locais. 200 sozinho não comprova revogação imediata do access token emitido.",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                }
+              },
+              "status": "200",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": false,\n  \"mensagem\": \"Logout realizado com sucesso.\"\n}"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

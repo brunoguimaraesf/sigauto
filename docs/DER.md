@@ -1,10 +1,13 @@
 # Modelo de dados (DER) — SIGAuto
 
-> **Fonte:** os scripts de `database/` (01 → 29), lidos como DDL. **Não** é uma
+> **Fonte:** os scripts de `database/` (01 → 31), lidos como DDL. **Não** é uma
 > transcrição do diagrama da especificação: quando os dois divergirem, **o schema
 > é a verdade**, e a divergência está registrada na última seção deste arquivo.
 > A migração 29 foi aplicada e reaplicada com sucesso no Supabase efêmero. Isso
 > valida o schema local; a aplicação em produção continua pendente de rollout.
+> A migração 30 restringe o histórico do chatbot; sua validação local é registrada
+> separadamente abaixo e não declara aplicação em produção.
+> A migração 31 estende a proteção de leitura ao histórico do Painel IA.
 >
 > Mexeu no schema? Acrescente uma nova migração numerada e **atualize este
 > arquivo no mesmo commit**.
@@ -365,6 +368,62 @@ O rollout precisa manter banco e frontend compatíveis:
 4. Publique frontend e backend do lote e valide salvar, finalizar, reabrir e cancelar O.S. com os três perfis.
 5. Concilie cada cancelada histórica antes de qualquer estorno. A migração não altera essas linhas automaticamente.
 
+## Migração 30: histórico do chatbot e mudança de perfil
+
+`mensagem_chatbot` mantém a estrutura da migração 01: `id UUID` PK com geração
+automática; `id_usuario UUID NOT NULL` FK para `usuario(id)`, sem `ON DELETE`
+explícito (ação padrão `NO ACTION`); `conteudo TEXT NOT NULL`;
+`remetente VARCHAR(20) NOT NULL` limitado a `usuario`/`chatbot`; e
+`criado_em TIMESTAMPTZ NOT NULL DEFAULT now()`. A relação continua sendo
+`usuario` 1:N `mensagem_chatbot`; índices em `id_usuario` e `criado_em` já existem.
+Não há coluna que identifique o perfil vigente na geração de uma mensagem.
+
+A policy antiga `pol_chatbot_self_select` permitia ao titular reler o próprio
+histórico mesmo depois de perder o perfil gestor. Como uma conversa antiga pode
+conter faturamento, filtrar somente o contexto de novas perguntas não basta para
+cumprir a restrição financeira da RN39. A migração 30 exige perfil gestor na leitura
+e acrescenta policy `AS RESTRICTIVE` de `SELECT`: uma policy permissiva futura não
+pode liberar a leitura a não gestores. A policy de gestor da 02 continua permitindo
+a gestores ler a tabela; a API aplica adicionalmente `id_usuario = req.user.id`,
+entregando somente o histórico do próprio gestor. O `service_role` continua
+ignorando RLS e depende das verificações explícitas do controller.
+
+`GET /api/v1/chatbot/historico` passa a retornar `403/HISTORICO_RESTRITO` para
+atendente/mecânico. Enviar perguntas e manter a conversa atual continua permitido
+nos assuntos autorizados. O fallback para mensagens persistidas só ocorre para
+gestor; troca de usuário/perfil reinicia o componente da conversa. A migração
+não apaga dados, não altera cardinalidades e não cria função `SECURITY DEFINER`.
+
+Rollout: aplique a 30 depois da 29 e publique o backend/frontend compatíveis;
+valide gestor, não gestores e uma conta rebaixada por API e por consulta direta
+com JWT. Não reaplique a 02 para restaurar o acesso antigo. **Produção não recebeu
+a migração nesta correção. Aplicação e reaplicação locais da 30 passaram; as quatro
+suítes SQL passaram na rodada que precedeu a migração 31.** A aplicação isolada da
+API deixa o caminho direto pelo Supabase aberto.
+
+## Migração 31: histórico gerencial do Painel IA
+
+A leitura direta de `recomendacao_ia` tinha um caminho equivalente: a policy
+permissiva `pol_recom_usuario_select`, da migração 02, autorizava `id_usuario =
+auth.uid()` ou vínculo com OS registrada pelo usuário. Assim, ocultar a tela e
+proteger as rotas com `requireRole('gestor')` não impedia autor/responsável pela OS
+de ler dados gerenciais pelo PostgREST, inclusive após rebaixamento de perfil.
+
+`31_historico_painel_ia_gestor.sql` adiciona `pol_recom_leitura_gestor`, policy
+`AS RESTRICTIVE FOR SELECT TO authenticated`, exigindo o perfil gestor atual.
+As policies permissivas antigas deixam de conceder leitura isoladamente; uma nova
+policy permissiva também fica sujeita ao gate. A migração não apaga análises, não
+altera atributos/cardinalidades nem cria função privilegiada. O histórico do painel
+continua gerencial, enquanto a API do chatbot continua limitada ao próprio titular.
+
+A 31 é um script separado porque a 30 já estava aplicada no banco local quando a
+exposição do painel foi encontrada. A CI aplica 30 e 31 e executa a suíte
+`database/tests/chatbot_financeiro_test.sql`, que cobre as duas tabelas. A aplicação
+e reaplicação locais da 31 passaram, assim como a nova execução das quatro suítes
+SQL com o teste estendido das duas tabelas; **produção não recebeu 30 nem 31**.
+O rollout deve incluir ambas, na ordem, e validar leitura por gestor, atendente,
+mecânico e ex-gestor diretamente pelo Supabase, além dos bloqueios HTTP.
+
 ## Remoção das colunas legadas
 
 As rotinas de compatibilidade foram retiradas do frontend antes dos `DROP COLUMN`:
@@ -385,7 +444,7 @@ A migração 20 antecipa a preservação do endereço textual para o frontend no
 | --- | --- | --- |
 | 1 | **RF09 / RN35:** `item_estoque` com custo unitário, preço de venda e margem calculada a partir dos dois | ✅ **Resolvido pela migração 15.** Até a 14 não existia coluna de custo, embora `ListaEstoque.jsx` já enviasse `custo` no payload e lesse `item.custo` — o custo nunca era persistido e o PostgREST rejeitava a coluna. A `15_custo_item_estoque.sql` adicionou `item_estoque.custo` **anulável**: `NULL` = não informado (o Quadro 28 marca o campo como Obrigatório = Não), `0` = custo zero. A margem segue derivada, calculada na tela, e é `—` nos três casos em que não dá para calcular: custo nulo, preço nulo, ou custo zero (divisão por zero). |
 | 4 | **RN38:** resposta local de contingência quando a IA do chatbot não responde | ⚠️ **Divergência deliberada, decidida pelo responsável do projeto.** O sistema **não tem mais fallback local**. O roteador de respostas fixas (`utils/chatbot.js`) foi removido; se as tentativas e os modelos falharem, o chatbot informa indisponibilidade, sem fabricar resposta local. A antiga divergência de RN42 foi resolvida: o Painel IA também informa indisponibilidade e não fabrica análise, recomendação ou número. |
-| 5 | **Quadro 13 / RN15:** descrição da OS com mínimo de 10 caracteres | ⚠️ **Só na aplicação.** Não existe `CHECK` de comprimento nos scripts 01–29; a validação vive na tela. Registrado para ninguém remover a validação do frontend supondo que o banco protege. |
+| 5 | **Quadro 13 / RN15:** descrição da OS com mínimo de 10 caracteres | ⚠️ **Só na aplicação.** Não existe `CHECK` de comprimento nos scripts 01–31; a validação vive na tela. Registrado para ninguém remover a validação do frontend supondo que o banco protege. |
 | 2 | **RF10 / Quadro 35:** histórico de movimentações com motivo e responsável | ✅ **Resolvido.** `movimentacao_estoque` armazena motivo, usuário, OS e origem; a tela de estoque lista os 100 movimentos mais recentes. A migração 22 torna o ledger append-only para usuários da aplicação. |
 | 3 | **Escopo excluído:** trilha de auditoria por operação | ✅ Coerente. `log_auditoria` existe e está completa, e o requisito diz que "a estrutura de dados foi mantida para versões futuras". Registrado aqui para ninguém concluir que a tabela está órfã por engano. |
 | 6 | **RN03:** o mecânico visualiza os dados do cliente da OS atribuída a ele | ✅ **Resolvido pela migração 20.** A policy agora liga `ordem_servico.id_mecanico` a `funcionario.id` e compara `funcionario.id_usuario` com `auth.uid()`. A matriz de RLS calcula e confere o conjunto exato de clientes visíveis ao mecânico. |
@@ -394,5 +453,6 @@ A migração 20 antecipa a preservação do endereço textual para o frontend no
 | 9 | **RF05 / Quadro de Visualizar PDF:** "se a nova guia for bloqueada, o sistema baixa o mesmo PDF" | ⚠️ **Divergência de especificação, aberta em 17/10/2026.** Não existe mais nova guia nem download involuntário: `window.open` saiu do caminho do documento, porque o bloqueio de pop-ups do site (ligado por padrão no Safari do iPhone) matava a guia e a tela baixava um arquivo que o usuário não pediu. O PDF abre num visualizador dentro da própria página, com Baixar PDF, Imprimir e Fechar. O texto do DERS ainda descreve o comportamento antigo em três pontos (`docs/REQUISITOS.md` linhas 1111, 1157 e 1184) e precisa ser corrigido no `.docx`, seguido de `python docs/importar-ders.py`. |
 | 10 | **RF07 / RN25:** relatório calculado "para o tipo e o período selecionados" | ⚠️ **Divergência de especificação, aberta em 17/10/2026.** A tela passou a ter um terceiro seletor, por funcionário, que vale para todos os tipos derivados de O.S. e para comissões. Não contradiz a RN25 — o CSV continua reproduzindo exatamente o relatório exibido —, mas a regra não menciona o filtro. Texto a ajustar no `.docx` e reimportar. |
 | 11 | **Schema local versus produção:** cancelamento transacional e hardenings A-05–A-10 | ⚠️ **Divergência de implantação, aberta em 18/10/2026.** A migração 29 cria `cancelar_ordem_servico`, guards, policies, índices e a allowlist global de `SECURITY DEFINER`; aplicação e reaplicação passaram no Supabase efêmero. O frontend local já chama o novo RPC. Produção só pode ser declarada coerente depois do rollout coordenado e dos três testes SQL no destino. Canceladas históricas ficam fora do backfill e exigem conciliação manual. |
+| 12 | **RF08 / RN29:** cinco falhas consecutivas bloqueiam novas tentativas por 15 minutos no navegador utilizado | ⚠️ **Limite de implementação, identificado em 20/10/2026.** `Login.jsx` mantém tentativas e prazo apenas em `useState`; recarregar/desmontar a tela perde o bloqueio. `Login.test.jsx` verifica quinta falha, ausência de chamadas durante o bloqueio e liberação aos 15 minutos enquanto o componente permanece montado, sem comprovar persistência no navegador. O limite de login do backend (5 requisições/10 minutos por IP) não cobre o login direto no Supabase usado pelo frontend. Nenhuma correção de produção foi incluída nesta entrega de testes; persistência e alcance da RN29 exigem decisão e validação próprias. |
 
 Lição da divergência 8: **não assuma que o número do script mais alto aplicado implica que os anteriores foram.** Antes de depender de um objeto de migração antiga, confira no catálogo (`to_regclass`, `pg_trigger`, `pg_policy`) em vez de confiar na numeração. A 27 e a 28 nasceram as duas de objetos que o schema versionado prometia e o banco não tinha.

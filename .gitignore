@@ -50,10 +50,19 @@ scripts/.watcher-estado.json
 scripts/.watcher.pid
 
 # Em docs/ ficam versionados o DERS oficial, seus artefatos gerados, o modelo
-# de dados e o plano de V&V. Os demais materiais continuam locais.
+# de dados, o plano de V&V e os instrumentos de validação. Os demais materiais continuam locais.
 docs/*
 !docs/DER.md
 !docs/VALIDACAO_VERIFICACAO.md
+!docs/ROTEIRO_UAT.md
+!docs/QUESTIONARIO_SUS.md
+!docs/TESTES_IA.md
+!docs/RESULTADOS_TESTES_IA.md
+!docs/api/
+docs/api/*
+!docs/api/README.md
+!docs/api/SIGAuto.postman_collection.json
+!docs/api/validar-colecao.cjs
 !docs/Desenvolvimento_DERS_BrunoGabrielGuimaraes.docx
 !docs/REQUISITOS.md
 !docs/importar-ders.py

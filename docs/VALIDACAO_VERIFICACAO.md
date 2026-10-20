@@ -13,18 +13,18 @@ TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
 
 | Ferramenta | Uso | Situação |
 |---|---|---|
-| **Vitest** | Testes unitários, de integração e de componente (frontend e backend) | **Implementado — 776 testes medidos** |
+| **Vitest** | Testes unitários, de integração e de componente (frontend e backend) | **Implementado — 908 testes aprovados em 20/10/2026, após a correção da IA** |
 | **React Testing Library** | Testes de componente React (renderização isolada) | **Implementado** |
 | **Supertest** | Testes de integração da API Express | **Implementado** |
 | **ESLint** | Análise estática de código | Configurado (`npm run lint`). No backend, com **plugin de segurança** (`backend/eslint.config.js`) e execução na integração contínua |
 | **Vite build** | Verificação de compilação/empacotamento | `npm run build` |
 | **QA assistido em navegador** | Inspeção de telas, console e fluxos | Realizado (evidências em prints) |
 | **Playwright** | Testes ponta a ponta (E2E) dos fluxos | **Implementado — 24 testes E2E em banco Supabase efêmero na CI** |
-| **Postman/Insomnia** | Testes da API REST (endpoints) | Planejado |
+| **Postman** | Testes da API REST (endpoints) | **Coleção v2.1 criada — 11/11 endpoints, 29 requisições; validada localmente, execução real pendente** ([coleção e instruções](api/README.md)) |
 
 ### 2.1 Testes automatizados (Vitest)
 
-- **Backend (394 testes, 20 arquivos)**:
+- **Backend (519 testes, 24 arquivos)**:
   - `validators.test.js` — CPF, CNPJ, placa, e-mail, senha.
   - `security.test.js` — hardening de cabeçalhos, CORS e limites de payload.
   - `comRetry.test.js` — retry da IA em erros transitórios 503/429 (com timers falsos).
@@ -56,16 +56,26 @@ TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
     falha fechada das consultas, sanitização de dados quantitativos e PII antes do Gemini
     e da persistência, precedência das métricas calculadas, paginação e histórico.
     `app.integration.test.js` confirma bloqueio gestor-only e o limite de requisições da IA.
-- **Frontend (382 testes, 35 arquivos)**:
+- **Frontend (389 testes, 36 arquivos)**:
   - Funções puras (`utils/*.test.js`) — placa, estoque (alerta/saldo/moeda/resumo),
     endereço/CEP, finanças da OS e status de OS.
-  - **Componente (React Testing Library)** — 16 suítes, entre elas `GlassPanel.test.jsx`,
+  - **Componente (React Testing Library)** — entre as suítes estão `GlassPanel.test.jsx`,
     `Servicos.test.jsx`, `Usuarios.test.jsx`, `Funcionarios.test.jsx`,
     `Chatbot.test.jsx` e `Chatbot.origem.test.jsx` (indisponibilidade da IA por bolha,
     status da sidebar e região viva para leitor de tela) e `PainelIA.test.jsx`
     (**15 testes**): blocos gerenciais completos, comparações sem base anterior, cobertura
     sem consumo, listas vazias, recomendações com evidências, indisponibilidade sem números
     e histórico sob demanda, somente leitura e isolado de falhas da análise atual.
+  - **Autenticação e inativação (RF08/RF13)** — adicionados em 20/10/2026:
+    - `pages/Login.test.jsx` — RN29: quatro falhas ainda permitem tentar; a quinta bloqueia
+      campos, botão e submit direto; nenhuma chamada adicional antes de 15 minutos; liberação
+      exatamente no limite, seguida de login bem-sucedido. RN30: confirmação idêntica para
+      sucesso, erro retornado e exceção da recuperação de senha, sem expor erro do provedor.
+    - `pages/Servicos.test.jsx` — RN46: só o serviço escolhido é encaminhado à inativação
+      após confirmar; cancelar a confirmação não solicita alteração.
+    - `hooks/useDatabase.test.jsx` — RN46: remoção envia `UPDATE ativo:false` filtrado pelo
+      ID, sem exclusão física; preserva outros serviços e os itens já associados à OS.
+      Trata-se de contrato com Supabase mockado, sem executar o banco real.
   - **Configuração da oficina e documento da O.S. (RF05)** — adicionados em 14/10/2026:
     - `hooks/useDatabase.test.jsx` — singleton da oficina (ausente = `null`, sem registro
       fabricado quando a consulta falha), normalização de CNPJ/CEP/UF, upsert que só altera o
@@ -102,7 +112,7 @@ TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
     abrindo a guia `blob:` real do documento).
   - `jornada.spec.js` — jornada integrada cliente→veículo→O.S.→itens→persistência→desconto→
     encerramento→PDF→logout, dados inválidos, falha de rede e restrições por perfil.
-  - A CI inicia um Supabase efêmero, aplica as migrações 01–29, reaplica a 29 para provar
+  - A CI inicia um Supabase efêmero, aplica as migrações 01–31, reaplica a 29 para provar
     idempotência, cria fixtures confirmadas e
     determinísticas e só então executa o navegador. Assim, ausência de dados não vira teste
     silenciosamente ignorado.
@@ -110,16 +120,26 @@ TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
   inclusive o conjunto exato de clientes do mecânico; `estoque_os_test.sql` verifica baixa,
   presença do trigger do ledger, idempotência e rollback integral por saldo insuficiente; e
   `hardening_29_test.sql` valida A-05–A-10, grants, views, índices e cancelamento transacional.
-  Os três rodam na CI contra o mesmo banco dedicado do E2E.
-- **Total: 776 testes unitários/integração/componente (382 frontend + 394 backend), todos aprovados**, medidos em 18/10/2026. O Playwright executou **24 E2E**, e as **3 suítes SQL** passaram localmente no Supabase efêmero.
+  `chatbot_financeiro_test.sql` valida os gates restritivos do histórico do chatbot
+  e das recomendações do painel, inclusive após perda do perfil gestor. As quatro
+  suítes rodam na CI contra o mesmo banco dedicado do E2E.
+- **Medição anterior à correção da IA: 783 testes unitários/integração/componente (389 frontend + 394 backend), todos aprovados**, medidos em 20/10/2026. São sete casos novos em relação à medição de 18/10/2026.
+  Os **24 E2E passaram em 20/10/2026**, em 1,3 minuto, com um worker Chromium e sem
+  repetição automática, contra o Supabase local em `127.0.0.1:54321`.
+  A primeira tentativa do dia foi interrompida por indisponibilidade do Docker/Supabase;
+  após iniciar os containers, a execução completa passou, sem casos ignorados.
+  Nessa rodada anterior à correção da IA, as **3 suítes SQL** não foram reexecutadas;
+  a evidência então disponível era de 18/10/2026. A nova execução SQL está separada
+  na seção 4.3.
 - **Como executar:** `npm test` (unitários, em `backend/` e `react-app/`) e
   `npm run test:e2e` (E2E em `react-app/`, requer o app rodando).
 
-### 2.2 Divergência verificada: contingência da IA (RN38 / RN42)
+### 2.2 Divergência verificada: contingência do chatbot (RN38)
 
-As RN38 e RN42 preveem **resposta de contingência** quando a IA não responde. O
-sistema **não a tem mais**, por decisão do responsável do projeto, e isso é
-verificado por teste em vez de ficar implícito:
+A RN38 prevê **resposta local de contingência** quando o chatbot não responde. O
+sistema **não a tem mais**, por decisão do responsável do projeto. A RN42 atual,
+conferida no DERS e nos requisitos gerados em 20/10/2026, já exige indisponibilidade
+sem fabricar análise, recomendação ou número; nesse ponto não há divergência:
 
 - O roteador de respostas fixas (`react-app/src/utils/chatbot.js`) e a análise
   local do `PainelIA.jsx` foram **removidos**. A análise local fabricava
@@ -129,25 +149,40 @@ verificado por teste em vez de ficar implícito:
   coberta por `comModeloAlternativo.test.js` e `modeloNasChamadas.test.js`.
 - Quando os dois modelos falham, a tela declara a indisponibilidade e
   **nenhum número é estimado**. Verificado por:
-  `PainelIA.test.jsx` → *"NAO exibe resumo, metrica nem barra de confianca quando
-  a IA falha"*, que falha se qualquer percentual voltar à tela.
+  `PainelIA.test.jsx` → *"avisa em região viva e não mostra números de análise após a falha"*.
 
 A divergência está registrada em [`DER.md`](DER.md), seção de divergências (#4).
+
+### 2.3 Coleção de testes da API
+
+Importe [SIGAuto.postman_collection.json](api/SIGAuto.postman_collection.json) no Postman
+e siga o [guia de preparação e execução](api/README.md). A coleção cobre os 11 pares
+método/rota existentes de health, autenticação, cadastro administrativo, chatbot e IA,
+com 29 requisições, sucessos e rejeições de autenticação, perfil e entrada.
+Credenciais e tokens são variáveis vazias; não são necessárias chaves administrativas no cliente.
+
+Validação local em 20/10/2026: `node docs/api/validar-colecao.cjs` verificou os endpoints
+contra as rotas locais, o JSON e a compilação de 48 scripts; executou 169 assertions
+sobre exemplos fictícios e contraprovas. O bloqueio padrão foi conferido nas oito
+operações com efeitos. Isso não constitui execução contra Supabase/Gemini ou aprovação
+da API no Postman. O relatório real do Runner permanece pendente; requisições ignoradas
+por ausência de variáveis ou pelo bloqueio de efeitos não contam como aprovadas.
 
 ## 3. Ferramentas de Validação
 
 | Ferramenta | Uso |
 |---|---|
 | **Matriz de rastreabilidade** | Liga cada requisito/caso de uso à funcionalidade e ao teste (seção 4) |
-| **Testes de aceitação (UAT)** | Critérios de aceite verificados por caso de uso |
-| **Questionário SUS** (System Usability Scale) | Avaliação de usabilidade com usuários/orientador |
+| **Testes de aceitação (UAT)** | [Roteiro UC01–UC15](ROTEIRO_UAT.md), massa de dados, resultados esperados, fichas de execução, incidentes e aceite — preparado, aplicação com orientador pendente |
+| **Validação específica da IA** | [Lista de testes do chatbot e Painel IA](TESTES_IA.md) e [resultados de 20/10/2026](RESULTADOS_TESTES_IA.md): precisão mensal corrigida, valores de referência e fluxo HTTP real conferidos. Suítes aprovadas e retestes com Gemini registrados separadamente das reprovações iniciais; sem afirmar aprovação integral dos 39 cenários. |
+| **Questionário SUS** (System Usability Scale) | [Instrumento em português](QUESTIONARIO_SUS.md), dez itens, escala e cálculo — preparado, coleta e análise pendentes |
 | **Validação em ambiente hospedado** | Orientador testa o sistema publicado (Vercel) |
 
 ## 4. Matriz de Rastreabilidade de Requisitos
 
 | UC | RF | Funcionalidade | Implementação | Status | Verificação/Validação |
 |---|---|---|---|---|---|
-| UC01 | RF08 | Autenticar usuário (login + perfil) | Login, AuthContext, authMiddleware, RLS | Implementado | Login por perfil + redirecionamento do mecânico + matriz de RLS |
+| UC01 | RF08 | Autenticar usuário (login + perfil) | Login, AuthContext, authMiddleware, RLS | Implementado | `Login.test.jsx` (RN29/RN30) + login por perfil + redirecionamento do mecânico + matriz de RLS + UAT-01 |
 | UC02 | RF01 | Manter clientes | Clientes.jsx | Implementado | Teste unitário + UAT |
 | UC03 | RF02 | Manter veículos (vínculo a cliente) | Veiculos.jsx + utils/placa | Implementado | Teste unitário (placa) + E2E |
 | UC04 | RF03 | Abrir ordem de serviço | OrdemServico/AbrirOS | Implementado | Teste E2E + aceitação |
@@ -158,7 +193,7 @@ A divergência está registrada em [`DER.md`](DER.md), seção de divergências 
 | UC07 | RF06 | Consultar histórico | Historico.jsx | Implementado | Teste funcional |
 | UC08 | RF07 | Emitir relatórios (exportação) | Relatorios.jsx (CSV/PDF/XLSX) | Implementado | `pages/Relatorios.test.jsx` — filtro por funcionário (inclusive homônimos), fechamento dos totais de comissão e validação de export |
 | UC09 | RF09 | Manter estoque (alertas) | Estoque/ListaEstoque + utils/estoque | Implementado | Teste unitário (alerta) |
-| UC10 | RF13 | Manter serviços | Servicos.jsx | Implementado | Teste unitário + UAT |
+| UC10 | RF13 | Manter serviços | Servicos.jsx + useDatabase | Implementado | `Servicos.test.jsx` + `useDatabase.test.jsx` (inativação RN46) + UAT-10 |
 | UC11 | RF10 | Movimentar estoque e consultar histórico | ListaEstoque + `movimentacao_estoque` + migração 22 | Implementado | Unitário de saldo + SQL de ledger, baixa e idempotência |
 | UC12 | RF11 | Responder via chatbot | `Chatbot.jsx` + `iaService.js` (Gemini) | Implementado | `Chatbot.test.jsx`, `Chatbot.origem.test.jsx`, `chatbotController.test.js` |
 | UC13 | RF12 | Gerar recomendações gerenciais da IA | `PainelIA.jsx`, componentes `components/ia/*`, `iaController`, `metricasPainelIA` e `recomendacoesExplicaveis` | Implementado | `metricasPainelIA.test.js`, `recomendacoesExplicaveis.test.js`, `iaController.test.js`, `PainelIA.test.jsx` (15 testes), `app.integration.test.js` e validação com orientador |
@@ -183,14 +218,98 @@ A divergência está registrada em [`DER.md`](DER.md), seção de divergências 
 | RN43 | O controller coleta somente campos mínimos, remove PII e linhas individuais antes do Gemini/persistência; números livres do modelo não são devolvidos à interface. | Sentinelas de CPF/CNPJ, placa, telefone, e-mail, endereço, motivo, IDs/nomes de funcionários e alegações quantitativas livres em `iaController.test.js` e `recomendacoesExplicaveis.test.js`. |
 | RN44 | Rotas de IA usam autenticação, `requireRole('gestor')` e `iaRateLimiter`; o histórico é paginado, sob demanda e somente leitura. | Integração confirma `401`, `403/SEM_PERMISSAO` para atendente/mecânico e `429/RATE_LIMIT_IA`; `PainelIA.test.jsx` cobre consulta e detalhe de histórico sem reexecução. |
 
+### 4.2 Lacunas solicitadas de cobertura de regras de negócio
+
+| Regra | Evidência automatizada adicionada | Alcance e pendências |
+|---|---|---|
+| RN29 | `pages/Login.test.jsx`, quinta falha e fronteira de 15 minutos com relógio controlado | Prova o bloqueio enquanto a tela permanece montada. O estado se perde ao recarregar/desmontar; limite registrado no DER (#12) e no UAT-01. |
+| RN30 | `pages/Login.test.jsx`, mesmos texto e fluxo para sucesso, erro e exceção da recuperação | Não enumera e-mails na interface; provedor mockado. O envio real é uma etapa separada da coleção/UAT. |
+| RN46 | `pages/Servicos.test.jsx` e `hooks/useDatabase.test.jsx`, confirmação e `UPDATE ativo:false` com preservação da OS | Cobre a inativação solicitada. Seleção apenas de ativos é implementada pela consulta `servico_catalogo.eq('ativo', true)`; não há teste novo de integração de inclusão de inativo via RPC. |
+
+Esses testes fecham as três lacunas solicitadas no código, mas **não fundamentam uma
+declaração de 100% de conformidade ou de cobertura integral das 50 RNs**. Contar uma regra
+referenciada por um teste não prova todas as suas cláusulas. A RN38 continua divergente,
+a RN29 tem o limite acima, e UAT/SUS e execução real da coleção ainda exigem evidências.
+O roteiro de UAT distingue resultados esperados dos efetivamente observados.
+
+Na revisão estática das suítes, também não foram localizadas asserções específicas
+para os critérios abaixo. A presença de validações no código ou de constraints no
+schema não substitui testes desses critérios; esta lista não é uma auditoria exaustiva
+de todas as cláusulas das 50 regras.
+
+| Regra | Critério ainda sem evidência automatizada específica localizada |
+|---|---|
+| RN04 | Datas automáticas após criação e alteração de registro. |
+| RN09 | Geração sequencial do número da OS e impossibilidade de editá-lo; as fixtures usam números fixos. |
+| RN15 / RN16 | Fronteira de 9/10 caracteres da queixa e status inicial Aberta. |
+| RN24 | Inclusão das datas limite na consulta do histórico. |
+| RN31 / RN36 | Recusa de código de estoque duplicado e domínio completo de unidades de medida. |
+| RN45 | Recusa de cadastro de serviço sem nome ou sem preço base. |
+| RN48 | Recusa de colisão no vínculo 1:1 entre funcionário e usuário. |
+
+### 4.3 Correção das consultas financeiras do chatbot
+
+RF11/RN39: `iaService.js` solicita interpretação estruturada ao Gemini, sem
+agregados financeiros no contexto livre e com as respostas anteriores do assistente
+substituídas por marcador. `consultaFinanceiraChatbot.js` valida métrica/período
+contra a pergunta e perguntas anteriores do usuário; o callback no controller
+autoriza gestor antes de consultar OS concluídas, pelo encerramento. A consulta
+paginada exige contagem exata consistente e IDs distintos. O backend calcula em
+centavos e formata a resposta, sem segunda chamada de redação ao modelo.
+
+A regra de leitura do histórico também muda: não gestores continuam usando a
+conversa da sessão, mas recebem `403/HISTORICO_RESTRITO` no histórico persistido.
+A migração 30 protege a leitura direta do chatbot pelo Supabase de contas
+rebaixadas; a 31 fecha a leitura de recomendações do painel por autoria/vínculo
+com OS. O frontend reinicia a conversa ao mudar usuário/perfil. RN37 continua sendo atendida
+pelo registro por usuário; ela não concede acesso a conteúdo financeiro após
+mudança de autorização.
+
+As novas verificações abrangem períodos/anos, continuação, fronteiras no fuso de
+São Paulo, precisão monetária, comparação sem base, paginação completa, argumentos
+adulterados, falha de banco e restrição do histórico. **30 e 31 foram aplicadas e
+reaplicadas localmente; quatro suítes SQL passaram com o teste estendido das duas
+tabelas. Produção não recebeu as migrações 30 e 31.**
+
+Reteste final: **519/519 backend** (24 arquivos, 1,64 s), **389/389 frontend**
+(36 arquivos, 20,42 s), **24/24 E2E** (1,2 min, um worker, sem retries). Lint do
+backend sem avisos; frontend sem erros, com três avisos preexistentes em
+Sidebar/Dashboard. Build aprovado e 63 arquivos do bundle inspecionados sem segredo.
+
+Com Gemini real, a rodada do chatbot teve **24 AP e uma RE em 25 operações, sem
+BL**. A falha de interpretação do qualificador de CHAT-08 foi corrigida e recebeu
+duas regressões unitárias; o caso passou em **três novas repetições**. O painel
+confirmou R$ 4.750,00, cinco conclusões e ticket R$ 950,00 na fixture. Em fluxo
+completo HTTP/Supabase local/Gemini, outubro/2026 resultou em R$ 749,00 e cinco OS,
+coincidindo com o oráculo independente do banco. Atendente e mecânico não obtiveram
+valores com perfil forjado e receberam 403 no histórico do chatbot.
+
+O [relatório](RESULTADOS_TESTES_IA.md) preserva a rodada inicial e a reprovação
+intermediária. As execuções não aprovam integralmente os 39 cenários nem substituem
+UAT. A divergência deliberada da RN38 permanece. Sem deploy e sem commit.
+
+A revisão final encerrou três achados de perda de qualificadores. Comparação de
+ticket/quantidade, filtro por cliente e recorte relativo até ontem agora pedem
+esclarecimento; não foram implementados novos filtros nem se aceita substituí-los
+por faturamento global. Seis regressões adicionais e uma verificação da data de
+referência local no prompt compõem a contagem final de 519 testes backend.
+
 ## 5. Como executar os testes
 
 ```bash
-# Backend
-cd backend && npm test
+# Na raiz do repositório: backend
+npm --prefix backend test
 
 # Frontend
-cd react-app && npm test
+npm --prefix react-app test
+
+# Coleção Postman: validação local, sem rede, na raiz do repositório
+node docs/api/validar-colecao.cjs
 ```
 
-Saída medida em 18/10/2026: **776 testes unitários/integração/componente aprovados** (394 backend + 382 frontend), lint aprovado nos dois projetos e build de produção aprovado. O Playwright executou **24 E2E** e as **3 suítes SQL** passaram nesta estação contra o Supabase efêmero. A mesma execução está incorporada à CI.
+Saída final medida em 20/10/2026 após a correção da IA: **908 testes unitários/integração/componente aprovados**
+(519 backend em 24 arquivos + 389 frontend em 36 arquivos) e **24/24 E2E aprovados**.
+O Playwright foi executado com `--workers=1 --retries=0 --reporter=line`, usando
+configuração local do Supabase em variáveis do processo e sem acessar produção.
+As quatro suítes SQL também passaram nessa rodada, com 30 e 31 aplicadas e
+reaplicadas localmente. Nenhum teste ou migração desta correção usou produção.
