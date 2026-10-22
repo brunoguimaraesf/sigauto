@@ -3,7 +3,7 @@
     "name": "SIGAuto — Backend",
     "_postman_id": "e9f660af-8a7f-41a2-9408-78c90c72ee70",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-    "description": "11 endpoints reais. Leia docs/api/README.md. Exemplos fictícios. Efeitos reais bloqueados por padrão; use ambiente dedicado. CRUD comum passa diretamente pelo Supabase e não faz parte desta coleção."
+    "description": "12 endpoints reais. Leia docs/api/README.md. Exemplos fictícios. Efeitos reais bloqueados por padrão; use ambiente dedicado. CRUD comum passa diretamente pelo Supabase e não faz parte desta coleção."
   },
   "auth": {
     "type": "noauth"
@@ -115,6 +115,78 @@
                 }
               ],
               "body": "{\n  \"status\": \"ok\",\n  \"timestamp\": \"2026-10-20T12:00:00.000Z\",\n  \"env\": \"development\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Estado do bloqueio — sem credenciais",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(200));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope de estado de bloqueio', () => pm.expect(resposta.erro === false && Object.hasOwn(resposta.dados, 'bloqueadoAte')).to.equal(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"e2e-status@exemplo.invalid\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "url": "{{baseUrl}}/api/v1/auth/login-status",
+            "description": "Consulta o bloqueio persistido sem revelar se uma conta existe."
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 200",
+              "originalRequest": {
+                "method": "POST",
+                "header": [
+                  {
+                    "key": "Content-Type",
+                    "value": "application/json"
+                  }
+                ],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"e2e-status@exemplo.invalid\"\n}",
+                  "options": {
+                    "raw": {
+                      "language": "json"
+                    }
+                  }
+                },
+                "url": "{{baseUrl}}/api/v1/auth/login-status"
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [
+                {
+                  "key": "Content-Type",
+                  "value": "application/json"
+                }
+              ],
+              "body": "{\n  \"erro\": false,\n  \"dados\": {\n    \"bloqueadoAte\": null\n  }\n}"
             }
           ]
         },

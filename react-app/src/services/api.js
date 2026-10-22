@@ -91,3 +91,8 @@ export const usuariosApi = {
   criar: (dados) => api.post('/auth/usuarios', dados),
   atualizar: (id, dados) => api.patch(`/auth/usuarios/${id}`, dados),
 }
+
+export const authApi = {
+  login: (email, senha) => api.post('/auth/login', { email, senha }),
+  statusLogin: (email) => api.post('/auth/login-status', { email }),
+}

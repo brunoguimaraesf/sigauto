@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { GlassPanel } from '../components/GlassPanel'
 import { useDatabase } from '../hooks/useDatabase'
@@ -82,7 +82,7 @@ export function Dashboard() {
     os => os.status === 'em_andamento' || os.status === 'aberta' || os.status === 'aguardando_peca',
   ).length
 
-  const enriquecer = (os) => {
+  const enriquecer = useCallback((os) => {
     const veiculo = veiculos.find(v => v.id === (os.id_veiculo || os.veiculo_id)) || {}
     const cliente = clientes.find(c => c.id === (veiculo.id_cliente || veiculo.cliente_id)) || {}
     const itens = os.servicos_itens || []
@@ -97,7 +97,7 @@ export function Dashboard() {
       servicoNome,
       valorExibido: Number(os.valor_total) || 0,
     }
-  }
+  }, [clientes, veiculos, servicos])
 
   // No mês corrente a lista mostra a semana, que é a informação operacional do
   // dia. Em mês passado, "esta semana" não existe dentro do recorte: a lista
@@ -122,7 +122,7 @@ export function Dashboard() {
       .sort((a, b) => new Date(b.data_abertura || b.criado_em) - new Date(a.data_abertura || a.criado_em))
       .slice(0, 6)
       .map(enriquecer)
-  }, [aberturasNoMes, ehMesCorrente, inicioDaSemana, veiculos, clientes, servicos])
+  }, [aberturasNoMes, ehMesCorrente, inicioDaSemana, enriquecer])
 
   const tituloEntradas = ehMesCorrente ? 'Entradas desta Semana' : `Entradas de ${MESES[mes]}`
   const rotuloPeriodo = `${MESES[mes]} de ${ano}`

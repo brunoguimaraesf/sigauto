@@ -26,11 +26,14 @@ async function entrarComo(page, email, urlEsperada) {
   await page.goto('/login')
   await page.getByRole('button', { name: new RegExp(email.replace('.', '\\.')) }).click()
   await page.getByRole('button', { name: 'Entrar no Sistema' }).click()
-  await expect(page).toHaveURL(urlEsperada, { timeout: 15000 })
+  const destino = urlEsperada instanceof RegExp
+    ? urlEsperada
+    : new URL(urlEsperada, page.url()).href
+  await expect(page).toHaveURL(destino, { timeout: 15000 })
 }
 
 async function entrarComoGestor(page) {
-  await entrarComo(page, 'gestor@sigauto.com', 'http://localhost:5173/')
+  await entrarComo(page, 'gestor@sigauto.com', '/')
 }
 
 test.describe('jornada completa do atendimento', () => {
@@ -241,7 +244,7 @@ test.describe('restricoes de acesso por perfil (RN26)', () => {
   })
 
   test('atendente nao alcanca Usuarios, mas alcanca Clientes', async ({ page }) => {
-    await entrarComo(page, 'atendente@sigauto.com', 'http://localhost:5173/')
+    await entrarComo(page, 'atendente@sigauto.com', '/')
 
     await page.goto('/clientes')
     await expect(page.getByRole('heading', { name: 'Base de Clientes' })).toBeVisible({ timeout: 15000 })

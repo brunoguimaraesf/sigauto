@@ -1,6 +1,6 @@
 # Modelo de dados (DER) — SIGAuto
 
-> **Fonte:** os scripts de `database/` (01 → 31), lidos como DDL. **Não** é uma
+> **Fonte:** os scripts de `database/` (01 → 33), lidos como DDL. **Não** é uma
 > transcrição do diagrama da especificação: quando os dois divergirem, **o schema
 > é a verdade**, e a divergência está registrada na última seção deste arquivo.
 > A migração 29 foi aplicada e reaplicada com sucesso no Supabase efêmero. Isso
@@ -8,6 +8,11 @@
 > A migração 30 restringe o histórico do chatbot; sua validação local é registrada
 > separadamente abaixo e não declara aplicação em produção.
 > A migração 31 estende a proteção de leitura ao histórico do Painel IA.
+> A migração 32 cria o armazenamento persistente e a RPC restrita para o limite
+> de tentativas do fluxo de login do backend. A chave anon ainda permite acesso
+> direto ao grant de senha do Supabase Auth, fora desse limite da aplicação.
+> A migração 33 registra transições de status observadas e calcula a duração de
+> cada etapa desde sua primeira observação; não estima estados históricos.
 >
 > Mexeu no schema? Acrescente uma nova migração numerada e **atualize este
 > arquivo no mesmo commit**.
@@ -37,6 +42,7 @@ erDiagram
     usuario      |o--o{  recomendacao_ia      : destinatario
     ordem_servico |o--o{ recomendacao_ia      : analisada
     usuario      |o--o{  log_auditoria        : agiu
+    ordem_servico ||--o{ historico_status_os  : transiciona
 
     configuracao_oficina {
         smallint id PK "singleton, valor fixo 1"
@@ -163,6 +169,14 @@ erDiagram
         text observacoes_finais
         varchar forma_pagamento
     }
+    historico_status_os {
+        bigint id PK
+        uuid id_os FK "NOT NULL, sem cascade"
+        enum status_anterior "status_os, NULL somente na criacao"
+        enum status_novo "status_os, NOT NULL"
+        timestamptz ocorrido_em "clock_timestamp"
+        uuid id_autor "auth.uid, pode ser NULL em operacao de sistema"
+    }
     servico_catalogo {
         uuid id PK
         varchar nome
@@ -239,6 +253,20 @@ erDiagram
 | `tipo_pessoa` | `fisica`, `juridica` |
 
 ## Views
+
+`login_tentativa` guarda apenas HMAC-SHA256 do e-mail normalizado, contador,
+prazo de bloqueio e instante da última atividade. A RPC `registrar_tentativa_login`
+é acessível somente ao backend com `service_role`; não guarda e-mail em claro e
+remove hashes inativos após 30 dias. O bloqueio é aplicado no fluxo Express. Como
+a anon key e o endpoint Supabase Auth são públicos, chamadas diretas ao grant de
+senha não passam por este contador.
+
+`duracao_etapa_os` expõe uma linha por transição observada, usando `LEAD` para
+calcular o fim e a duração da etapa; a etapa atual mede até o instante da consulta.
+Os eventos começam na migração 33 e não existe backfill de estados anteriores.
+RLS da tabela de histórico permite leitura somente quando a OS relacionada é
+visível ao usuário; a tabela não aceita DML direto dos papéis `anon` e
+`authenticated`.
 
 `item_estoque_publico` = `item_estoque` **sem a coluna `custo`** (id, codigo, nome, descricao, unidade, quantidade, qtd_minima, preco_unit, ativo, criado_em, atualizado_em).
 
@@ -453,6 +481,9 @@ A migração 20 antecipa a preservação do endereço textual para o frontend no
 | 9 | **RF05 / Quadro de Visualizar PDF:** "se a nova guia for bloqueada, o sistema baixa o mesmo PDF" | ⚠️ **Divergência de especificação, aberta em 17/10/2026.** Não existe mais nova guia nem download involuntário: `window.open` saiu do caminho do documento, porque o bloqueio de pop-ups do site (ligado por padrão no Safari do iPhone) matava a guia e a tela baixava um arquivo que o usuário não pediu. O PDF abre num visualizador dentro da própria página, com Baixar PDF, Imprimir e Fechar. O texto do DERS ainda descreve o comportamento antigo em três pontos (`docs/REQUISITOS.md` linhas 1111, 1157 e 1184) e precisa ser corrigido no `.docx`, seguido de `python docs/importar-ders.py`. |
 | 10 | **RF07 / RN25:** relatório calculado "para o tipo e o período selecionados" | ⚠️ **Divergência de especificação, aberta em 17/10/2026.** A tela passou a ter um terceiro seletor, por funcionário, que vale para todos os tipos derivados de O.S. e para comissões. Não contradiz a RN25 — o CSV continua reproduzindo exatamente o relatório exibido —, mas a regra não menciona o filtro. Texto a ajustar no `.docx` e reimportar. |
 | 11 | **Schema local versus produção:** cancelamento transacional e hardenings A-05–A-10 | ⚠️ **Divergência de implantação, aberta em 18/10/2026.** A migração 29 cria `cancelar_ordem_servico`, guards, policies, índices e a allowlist global de `SECURITY DEFINER`; aplicação e reaplicação passaram no Supabase efêmero. O frontend local já chama o novo RPC. Produção só pode ser declarada coerente depois do rollout coordenado e dos três testes SQL no destino. Canceladas históricas ficam fora do backfill e exigem conciliação manual. |
-| 12 | **RF08 / RN29:** cinco falhas consecutivas bloqueiam novas tentativas por 15 minutos no navegador utilizado | ⚠️ **Limite de implementação, identificado em 20/10/2026.** `Login.jsx` mantém tentativas e prazo apenas em `useState`; recarregar/desmontar a tela perde o bloqueio. `Login.test.jsx` verifica quinta falha, ausência de chamadas durante o bloqueio e liberação aos 15 minutos enquanto o componente permanece montado, sem comprovar persistência no navegador. O limite de login do backend (5 requisições/10 minutos por IP) não cobre o login direto no Supabase usado pelo frontend. Nenhuma correção de produção foi incluída nesta entrega de testes; persistência e alcance da RN29 exigem decisão e validação próprias. |
+| 12 | **RF08 / RN29:** cinco falhas consecutivas bloqueiam novas tentativas por 15 minutos no navegador utilizado | ✅ O fluxo oficial agora autentica pelo backend e persiste o limite em `login_tentativa`; a UI consulta o prazo no servidor após recarga. A migração 32 não impede chamadas diretas ao grant de senha do Supabase Auth, pois a chave anon e o endpoint são públicos. A aplicação do script no ambiente de destino e os controles nativos do provedor ainda precisam ser verificados. |
+| 13 | **Duração por etapa da OS:** o DERS vigente diz que não se deve inferir tempo por status sem histórico | ⚠️ A migração 33 registra transições observadas e a view `duracao_etapa_os` calcula o tempo por etapa. Não há backfill, então dados anteriores à migração permanecem sem duração. O DERS fonte `.docx` precisa ser atualizado e reimportado antes de declarar conformidade com a nova regra. |
+| 13 | **RF08 / RN29:** bloqueio após cinco falhas por 15 minutos | ✅ O fluxo de login da aplicação consulta e atualiza `login_tentativa` por RPC do backend, com chave HMAC do e-mail e estado persistente após recarga. Limite: chamadas diretas ao grant de senha do Supabase Auth não passam pelo Express, pois a URL e a chave anon são públicas. A implantação da migração 32 e a confirmação dos controles nativos do provedor ainda são necessárias; não se afirma bloqueio contra chamadas externas à aplicação. |
+| 14 | **Histórico operacional por status da OS:** medir duração de cada etapa | ⚠️ O DERS vigente declara que o sistema não deve inferir duração por etapa porque não há histórico de transições. A solicitação de instrumentação foi implementada na migração 33 com `historico_status_os` e `duracao_etapa_os`; durações anteriores à aplicação não são reconstruídas. Atualizar o documento fonte `.docx` e reimportar os requisitos antes de declarar conformidade acadêmica. |
 
 Lição da divergência 8: **não assuma que o número do script mais alto aplicado implica que os anteriores foram.** Antes de depender de um objeto de migração antiga, confira no catálogo (`to_regclass`, `pg_trigger`, `pg_policy`) em vez de confiar na numeração. A 27 e a 28 nasceram as duas de objetos que o schema versionado prometia e o banco não tinha.

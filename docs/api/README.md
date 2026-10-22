@@ -1,8 +1,8 @@
 # Coleção da API do SIGAuto
 
-Importe [SIGAuto.postman_collection.json](SIGAuto.postman_collection.json) no **Postman**, no formato Collection v2.1. A coleção contém **29 requisições para os 11 pares método/rota** do Express: sucesso, rejeições por autenticação/perfil, validação de entrada e paginação. Os exemplos de resposta são fictícios; não representam execução contra um servidor.
+Importe [SIGAuto.postman_collection.json](SIGAuto.postman_collection.json) no **Postman**, no formato Collection v2.1. A coleção contém **30 requisições para os 12 pares método/rota** do Express: sucesso, rejeições por autenticação/perfil, validação de entrada e paginação. Os exemplos de resposta são fictícios; não representam execução contra um servidor.
 
-O frontend autentica diretamente no Supabase e acessa os cadastros comuns com a chave `anon` e RLS. Esta coleção exercita as rotas do backend Express, inclusive seu login próprio; não cria rotas de clientes, veículos, OS ou estoque. Não precisa de `service_role` nem da chave Gemini no Postman: essas credenciais ficam exclusivamente no backend.
+O frontend envia credenciais de login ao backend e estabelece a sessão do Supabase com os tokens retornados; os cadastros comuns continuam usando a chave `anon` e RLS. Esta coleção exercita as rotas do backend Express; não cria rotas de clientes, veículos, OS ou estoque. Não precisa de `service_role` nem da chave Gemini no Postman: essas credenciais ficam exclusivamente no backend.
 
 ## Preparação
 
@@ -35,7 +35,7 @@ Execute a pasta **05 individualmente**, habilitando `habilitarEfeitos=sim` somen
 - Chatbot consome cota Gemini e tenta persistir a conversa. Análise consome cota e tenta persistir recomendações. Compare com as leituras depois da execução. `200` do chatbot pode ocorrer mesmo com falha de persistência; `id_analise: null` também exige registro de falha de persistência da análise. Falha externa da IA deve aparecer como falha do cenário de sucesso, sem aceitar indisponibilidade como resultado aprovado.
 - Logout deve ser o último. Ele limpa os tokens locais; seu `200` isolado não comprova revogação imediata de um access token já emitido. Não há endpoint de exclusão de conta nesta API: a limpeza das contas fictícias deve ocorrer no ambiente dedicado, fora da coleção.
 
-Os scripts anteriores à requisição usam `pm.execution.skipRequest()` quando faltam variáveis ou quando efeitos estão desabilitados. Use versão do Postman que ofereça essa API. **Requisição ignorada não é teste aprovado.** Para uma rodada completa, registre as 29 requisições executadas e as verificações aprovadas/falhas, sem contar ignoradas como cobertura. Não execute a coleção inteira com efeitos habilitados sem antes revisar os dados de cada operação.
+Os scripts anteriores à requisição usam `pm.execution.skipRequest()` quando faltam variáveis ou quando efeitos estão desabilitados. Use versão do Postman que ofereça essa API. **Requisição ignorada não é teste aprovado.** Para uma rodada completa, registre as 30 requisições executadas e as verificações aprovadas/falhas, sem contar ignoradas como cobertura. Não execute a coleção inteira com efeitos habilitados sem antes revisar os dados de cada operação.
 
 Guarde como evidência: data, versão/commit, ambiente, perfil usado, requisição, código recebido, resultado das assertions e observações de persistência. Exporte o relatório do Runner sem credenciais, tokens, cookies, e-mails pessoais nem conteúdo real da oficina. Esta entrega cria os cenários; a aplicação real e o relatório da rodada ficam a cargo da execução em ambiente dedicado.
 
@@ -67,4 +67,4 @@ Na raiz do repositório:
 node docs/api/validar-colecao.cjs
 ```
 
-O validador usa apenas módulos nativos do Node: lê o JSON, verifica sua estrutura básica e os 11 endpoints contra as rotas locais, compila todos os scripts e executa assertions sobre os exemplos fictícios. Também confirma que HTTP/envelopes incorretos falham e que operações com efeitos são ignoradas com o bloqueio padrão. Ele não faz requisições, não valida disponibilidade do Supabase/Gemini e não substitui uma execução do Runner nem a validação completa pelo JSON Schema oficial.
+O validador usa apenas módulos nativos do Node: lê o JSON, verifica sua estrutura básica e os 12 endpoints contra as rotas locais, compila todos os scripts e executa assertions sobre os exemplos fictícios. Também confirma que HTTP/envelopes incorretos falham e que operações com efeitos são ignoradas com o bloqueio padrão. Ele não faz requisições, não valida disponibilidade do Supabase/Gemini e não substitui uma execução do Runner nem a validação completa pelo JSON Schema oficial.

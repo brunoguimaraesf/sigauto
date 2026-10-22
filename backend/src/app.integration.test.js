@@ -1,14 +1,29 @@
-import { describe, it, expect, vi } from 'vitest'
+import { beforeEach, describe, it, expect, vi } from 'vitest'
 import request from 'supertest'
+
+const mocks = vi.hoisted(() => ({
+  signInWithPassword: vi.fn(),
+  refreshSession: vi.fn(),
+  resetPasswordForEmail: vi.fn(),
+  criarClienteAutenticacao: vi.fn(),
+  rpc: vi.fn(),
+  registrarAuditoria: vi.fn(),
+}))
 
 // Mocka o cliente Supabase para não tocar em rede/banco real.
 vi.mock('./services/supabaseClient.js', () => {
+  mocks.criarClienteAutenticacao.mockReturnValue({ auth: {
+    signInWithPassword: mocks.signInWithPassword,
+    refreshSession: mocks.refreshSession,
+    resetPasswordForEmail: mocks.resetPasswordForEmail,
+  } })
   const perfisPorToken = new Map([
     ['token-atendente', 'atendente'],
     ['token-mecanico', 'mecanico'],
   ])
 
   return {
+    criarClienteAutenticacao: mocks.criarClienteAutenticacao,
     supabase: {
       auth: {
         getUser: vi.fn(async (token) => {
@@ -18,6 +33,7 @@ vi.mock('./services/supabaseClient.js', () => {
             : { data: { user: null }, error: new Error('invalid') }
         }),
       },
+      rpc: mocks.rpc,
       from: () => ({
         select: () => ({
           eq: (_coluna, id) => ({
@@ -35,7 +51,18 @@ vi.mock('./services/supabaseClient.js', () => {
   }
 })
 
+vi.mock('./utils/auditLogger.js', () => ({ registrarAuditoria: mocks.registrarAuditoria }))
+
 const { default: app } = await import('./app.js')
+
+beforeEach(() => {
+  mocks.criarClienteAutenticacao.mockClear()
+  mocks.signInWithPassword.mockReset()
+  mocks.refreshSession.mockReset()
+  mocks.resetPasswordForEmail.mockReset()
+  mocks.rpc.mockReset().mockResolvedValue({ data: [{ permitido: true, reserva_confirmada: true, tentativas: 0, bloqueado_ate: null }], error: null })
+  mocks.registrarAuditoria.mockResolvedValue(undefined)
+})
 
 describe('API — health e roteamento', () => {
   it('GET /health responde 200 com status ok', async () => {
@@ -52,6 +79,27 @@ describe('API — health e roteamento', () => {
 })
 
 describe('API — autenticação', () => {
+  it('faz login usando cliente público isolado e reserva no singleton privilegiado', async () => {
+    mocks.signInWithPassword.mockResolvedValue({ data: {}, error: { message: 'Invalid login credentials', status: 400 } })
+    const res = await request(app).post('/api/v1/auth/login').send({ email: 'ana@teste.local', senha: 'incorreta' })
+    expect(res.status).toBe(401)
+    expect(mocks.criarClienteAutenticacao).toHaveBeenCalledOnce()
+    expect(mocks.signInWithPassword).toHaveBeenCalledOnce()
+    expect(mocks.rpc).toHaveBeenCalledTimes(2)
+  })
+
+  it('usa cliente isolado em refresh e reset, sem método de login no singleton privilegiado', async () => {
+    mocks.refreshSession.mockResolvedValue({ data: { session: { access_token: 'novo', refresh_token: 'refresh-novo' } }, error: null })
+    mocks.resetPasswordForEmail.mockResolvedValue({ data: {}, error: null })
+    const refreshRes = await request(app).post('/api/v1/auth/refresh').send({ refresh_token: 'refresh-antigo' })
+    const resetRes = await request(app).post('/api/v1/auth/forgot-password').send({ email: 'ana@teste.local' })
+    expect(refreshRes.status).toBe(200)
+    expect(resetRes.status).toBe(200)
+    expect(mocks.refreshSession).toHaveBeenCalledOnce()
+    expect(mocks.resetPasswordForEmail).toHaveBeenCalledOnce()
+    expect(mocks.criarClienteAutenticacao).toHaveBeenCalledTimes(2)
+  })
+
   it('rota protegida sem token responde 401 TOKEN_AUSENTE', async () => {
     const res = await request(app).get('/api/v1/chatbot/historico')
     expect(res.status).toBe(401)

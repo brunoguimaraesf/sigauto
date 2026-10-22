@@ -1,6 +1,7 @@
 /* eslint-disable react-refresh/only-export-components */
 import { createContext, useContext, useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
+import { authApi } from '../services/api'
 import { DEMO_LOGIN_HABILITADO } from '../demoLogin'
 
 // Exportado para quem precisa do perfil sem exigir o provider (telas testadas
@@ -121,23 +122,21 @@ export function AuthProvider({ children }) {
       return { user: fakeUser }
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({ email, password: senha })
-    if (error) {
-      // Supabase configurado mas login falhou — lança o erro real
-      // (não cai em demo, que criaria sessão falsa sem JWT e deixaria o banco vazio)
-      throw new Error(
-        error.message === 'Email not confirmed'
-          ? 'E-mail não confirmado. Verifique a caixa de entrada ou peça ao gestor para confirmar o cadastro no Supabase.'
-          : error.message === 'Invalid login credentials'
-          ? 'E-mail ou senha incorretos.'
-          : error.message
-      )
-    }
-    if (data.user) {
-      setUser(data.user)
-      await carregarPerfil(data.user.id)
-    }
+    const resposta = await authApi.login(email, senha)
+    const { data, error } = await supabase.auth.setSession({
+      access_token: resposta.dados.token,
+      refresh_token: resposta.dados.refresh_token,
+    })
+    if (error || !data?.session?.user) throw error || new Error('Não foi possível iniciar a sessão.')
+    setUser(data.session.user)
+    await carregarPerfil(data.session.user.id)
     return data
+  }
+
+  const statusLogin = async (email) => {
+    if (!isSupabaseReal()) return null
+    const resposta = await authApi.statusLogin(email)
+    return resposta.dados?.bloqueadoAte || null
   }
 
   const logout = async () => {
@@ -151,7 +150,7 @@ export function AuthProvider({ children }) {
   const isAuthenticated = !!user
 
   return (
-    <AuthContext.Provider value={{ user, perfil, isAuthenticated, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, perfil, isAuthenticated, loading, login, statusLogin, logout }}>
       {children}
     </AuthContext.Provider>
   )

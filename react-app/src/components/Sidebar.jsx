@@ -13,10 +13,12 @@ const PERFIL_COLORS = {
   mecanico: { color: '#5FD08A', label: 'Mecanico' },
 }
 
+const semAcao = () => {}
+
 // `aberta` e `onFechar` so tem efeito abaixo de 768px, onde o CSS transforma a
 // sidebar em gaveta sobreposta. Em telas largas ela e coluna fixa e a classe de
 // aberto nao muda nada.
-export function Sidebar({ aberta = false, onFechar = () => {} }) {
+export function Sidebar({ aberta = false, onFechar = semAcao }) {
   const { user, perfil, isAuthenticated, logout } = useAuth()
   const navigate = useNavigate()
   const { pathname } = useLocation()
@@ -42,7 +44,7 @@ export function Sidebar({ aberta = false, onFechar = () => {} }) {
 
   // Trocar de tela fecha a gaveta: no mobile o link navega por baixo do overlay
   // e, sem isto, a tela nova nasceria coberta.
-  useEffect(() => { onFechar() }, [pathname])
+  useEffect(() => { onFechar() }, [pathname, onFechar])
 
   // Esc fecha a gaveta. Registrado so quando ela esta aberta.
   useEffect(() => {
@@ -50,7 +52,7 @@ export function Sidebar({ aberta = false, onFechar = () => {} }) {
     const onTecla = (e) => { if (e.key === 'Escape') onFechar() }
     document.addEventListener('keydown', onTecla)
     return () => document.removeEventListener('keydown', onTecla)
-  }, [aberta])
+  }, [aberta, onFechar])
 
   const handleLogout = async () => {
     await logout()

@@ -5,11 +5,12 @@ import { Login } from './Login'
 
 const mocks = vi.hoisted(() => ({
   login: vi.fn(),
+  statusLogin: vi.fn(),
   navegar: vi.fn(),
   recuperarSenha: vi.fn(),
 }))
 
-vi.mock('../context/AuthContext', () => ({ useAuth: () => ({ login: mocks.login }) }))
+vi.mock('../context/AuthContext', () => ({ useAuth: () => ({ login: mocks.login, statusLogin: mocks.statusLogin }) }))
 vi.mock('react-router-dom', () => ({ useNavigate: () => mocks.navegar }))
 vi.mock('../supabaseClient', () => ({
   supabase: { auth: { resetPasswordForEmail: mocks.recuperarSenha } },
@@ -18,6 +19,7 @@ vi.mock('../demoLogin', () => ({ DEMO_LOGIN_HABILITADO: false }))
 
 beforeEach(() => {
   vi.resetAllMocks()
+  mocks.statusLogin.mockResolvedValue(null)
 })
 
 afterEach(() => {
@@ -35,43 +37,47 @@ const falharLogin = async (formulario) => {
 }
 
 describe('RF08 — autenticação e recuperação de senha', () => {
-  it('RN29: bloqueia na quinta falha, impede novas chamadas antes de 15 minutos e libera na fronteira', async () => {
+  it('RN29/RNF-SE04: exibe o bloqueio devolvido pelo servidor e restaura o estado após recarregar', async () => {
     vi.useFakeTimers()
     vi.setSystemTime(new Date('2026-10-20T12:00:00Z'))
-    mocks.login.mockRejectedValue(new Error('E-mail ou senha incorretos.'))
-    const { container } = render(<Login />)
+    const bloqueadoAte = new Date(Date.now() + 15 * 60 * 1000).toISOString()
+    mocks.login.mockRejectedValue(Object.assign(new Error('Muitas tentativas incorretas.'), {
+      status: 429,
+      data: { codigo: 'LOGIN_BLOQUEADO', dados: { bloqueadoAte } },
+    }))
+    const { container, unmount } = render(<Login />)
     const formulario = preencherLogin(container)
     const entrar = screen.getByRole('button', { name: 'Entrar no Sistema' })
 
-    for (let tentativa = 1; tentativa <= 4; tentativa += 1) {
-      await falharLogin(formulario)
-      expect(mocks.login).toHaveBeenCalledTimes(tentativa)
-      expect(entrar).toBeEnabled()
-      expect(screen.getByText('E-mail ou senha incorretos.')).toBeInTheDocument()
-    }
-
     await falharLogin(formulario)
-    expect(mocks.login).toHaveBeenCalledTimes(5)
+    expect(mocks.login).toHaveBeenCalledOnce()
     expect(screen.getByText('Muitas tentativas incorretas. Acesso bloqueado por 15 minutos.')).toBeInTheDocument()
     expect(entrar).toBeDisabled()
     expect(screen.getByPlaceholderText('seu@email.com')).toBeDisabled()
     expect(container.querySelector('input[type="password"]')).toBeDisabled()
 
-    // Disparar o submit também exercita a guarda, além do botão desabilitado.
-    await falharLogin(formulario)
+    // Um novo componente representa o reload: o estado vem do servidor ao consultar o e-mail.
+    mocks.statusLogin.mockResolvedValueOnce(bloqueadoAte)
+    unmount()
+    render(<Login />)
+    fireEvent.change(screen.getByPlaceholderText('seu@email.com'), { target: { value: 'usuario@exemplo.com' } })
+    await act(async () => {
+      fireEvent.blur(screen.getByPlaceholderText('seu@email.com'))
+      await Promise.resolve()
+    })
+    expect(screen.getByText('Muitas tentativas incorretas. Acesso bloqueado por 15 minutos.')).toBeInTheDocument()
+    const formularioReload = screen.getByRole('button', { name: 'Entrar no Sistema' }).closest('form')
+    await falharLogin(formularioReload)
+    expect(mocks.login).toHaveBeenCalledOnce()
+    expect(mocks.statusLogin).toHaveBeenCalledWith('usuario@exemplo.com')
+
     await act(async () => { await vi.advanceTimersByTimeAsync(15 * 60 * 1000 - 1) })
-    await falharLogin(formulario)
-    expect(mocks.login).toHaveBeenCalledTimes(5)
-    expect(entrar).toBeDisabled()
+    await falharLogin(formularioReload)
+    expect(mocks.login).toHaveBeenCalledOnce()
     expect(screen.getByText('Acesso bloqueado. Tente novamente em 1 minuto(s).')).toBeInTheDocument()
 
     await act(async () => { await vi.advanceTimersByTimeAsync(1) })
-    expect(entrar).toBeEnabled()
-    mocks.login.mockResolvedValueOnce(undefined)
-    await act(async () => { fireEvent.submit(formulario) })
-    expect(mocks.login).toHaveBeenCalledTimes(6)
-    expect(mocks.login).toHaveBeenLastCalledWith('usuario@exemplo.com', 'senha-incorreta')
-    expect(mocks.navegar).toHaveBeenCalledWith('/')
+    expect(screen.getByRole('button', { name: 'Entrar no Sistema' })).toBeEnabled()
   })
 
   it.each([

@@ -13,18 +13,18 @@ TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
 
 | Ferramenta | Uso | Situação |
 |---|---|---|
-| **Vitest** | Testes unitários, de integração e de componente (frontend e backend) | **Implementado — 908 testes aprovados em 20/10/2026, após a correção da IA** |
+| **Vitest** | Testes unitários, de integração e de componente (frontend e backend) | **Implementado — 918 testes aprovados em 22/10/2026** |
 | **React Testing Library** | Testes de componente React (renderização isolada) | **Implementado** |
 | **Supertest** | Testes de integração da API Express | **Implementado** |
-| **ESLint** | Análise estática de código | Configurado (`npm run lint`). No backend, com **plugin de segurança** (`backend/eslint.config.js`) e execução na integração contínua |
+| **ESLint** | Análise estática de código | Configurado (`npm run lint`). No backend, com **plugin de segurança** (`backend/eslint.config.js`) e execução na integração contínua. Em 22/10/2026, frontend e backend sem avisos |
 | **Vite build** | Verificação de compilação/empacotamento | `npm run build` |
 | **QA assistido em navegador** | Inspeção de telas, console e fluxos | Realizado (evidências em prints) |
 | **Playwright** | Testes ponta a ponta (E2E) dos fluxos | **Implementado — 24 testes E2E em banco Supabase efêmero na CI** |
-| **Postman** | Testes da API REST (endpoints) | **Coleção v2.1 criada — 11/11 endpoints, 29 requisições; validada localmente, execução real pendente** ([coleção e instruções](api/README.md)) |
+| **Postman** | Testes da API REST (endpoints) | **Coleção v2.1 criada — 12/12 endpoints, 30 requisições; validada localmente, execução real pendente** ([coleção e instruções](api/README.md)) |
 
 ### 2.1 Testes automatizados (Vitest)
 
-- **Backend (519 testes, 24 arquivos)**:
+- **Backend (529 testes, 24 arquivos)**:
   - `validators.test.js` — CPF, CNPJ, placa, e-mail, senha.
   - `security.test.js` — hardening de cabeçalhos, CORS e limites de payload.
   - `comRetry.test.js` — retry da IA em erros transitórios 503/429 (com timers falsos).
@@ -112,7 +112,7 @@ TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
     abrindo a guia `blob:` real do documento).
   - `jornada.spec.js` — jornada integrada cliente→veículo→O.S.→itens→persistência→desconto→
     encerramento→PDF→logout, dados inválidos, falha de rede e restrições por perfil.
-  - A CI inicia um Supabase efêmero, aplica as migrações 01–31, reaplica a 29 para provar
+  - A CI inicia um Supabase efêmero, aplica as migrações 01–33, reaplica a 29 para provar
     idempotência, cria fixtures confirmadas e
     determinísticas e só então executa o navegador. Assim, ausência de dados não vira teste
     silenciosamente ignorado.
@@ -156,9 +156,9 @@ A divergência está registrada em [`DER.md`](DER.md), seção de divergências 
 ### 2.3 Coleção de testes da API
 
 Importe [SIGAuto.postman_collection.json](api/SIGAuto.postman_collection.json) no Postman
-e siga o [guia de preparação e execução](api/README.md). A coleção cobre os 11 pares
+e siga o [guia de preparação e execução](api/README.md). A coleção cobre os 12 pares
 método/rota existentes de health, autenticação, cadastro administrativo, chatbot e IA,
-com 29 requisições, sucessos e rejeições de autenticação, perfil e entrada.
+com 30 requisições, sucessos e rejeições de autenticação, perfil e entrada.
 Credenciais e tokens são variáveis vazias; não são necessárias chaves administrativas no cliente.
 
 Validação local em 20/10/2026: `node docs/api/validar-colecao.cjs` verificou os endpoints
@@ -222,9 +222,32 @@ por ausência de variáveis ou pelo bloqueio de efeitos não contam como aprovad
 
 | Regra | Evidência automatizada adicionada | Alcance e pendências |
 |---|---|---|
-| RN29 | `pages/Login.test.jsx`, quinta falha e fronteira de 15 minutos com relógio controlado | Prova o bloqueio enquanto a tela permanece montada. O estado se perde ao recarregar/desmontar; limite registrado no DER (#12) e no UAT-01. |
+| RN29 | `pages/Login.test.jsx`, quinta falha e fronteira de 15 minutos com relógio controlado; `authController.test.js` valida reserva, falha, sucesso e armazenamento indisponível; `database/tests/login_bloqueio_test.sql` valida persistência/RPC e privilégios | Estado consultado pelo backend após recarga; limite da aplicação persiste no banco e tentativas concorrentes são reservadas atomicamente. Chamadas diretas ao grant de senha do Supabase Auth permanecem fora do Express; isso exige controle nativo do provedor/gateway. Migração 32 ainda precisa de rollout no ambiente destino. |
 | RN30 | `pages/Login.test.jsx`, mesmos texto e fluxo para sucesso, erro e exceção da recuperação | Não enumera e-mails na interface; provedor mockado. O envio real é uma etapa separada da coleção/UAT. |
 | RN46 | `pages/Servicos.test.jsx` e `hooks/useDatabase.test.jsx`, confirmação e `UPDATE ativo:false` com preservação da OS | Cobre a inativação solicitada. Seleção apenas de ativos é implementada pela consulta `servico_catalogo.eq('ativo', true)`; não há teste novo de integração de inclusão de inativo via RPC. |
+
+### 4.3 Histórico de status e desempenho
+
+A migração 33 grava status inicial e cada transição posterior em `historico_status_os`;
+`duracao_etapa_os` calcula a duração observada entre eventos, com etapa atual aberta até
+o instante da consulta. `database/tests/historico_status_os_test.sql` cobre updates, RPCs
+de conclusão/cancelamento, autoria, RLS, append-only e duração. O histórico começa na
+implantação; tempos anteriores não são estimados. O DERS ainda contém a regra antiga que
+proibia inferir duração sem histórico e precisa ser atualizado na fonte `.docx`.
+
+O protocolo de desempenho para RNF-DS01–DS05 está em
+[`RELATORIO_DESEMPENHO.md`](RELATORIO_DESEMPENHO.md). Ele separa medições quantitativas
+de DS01/DS02, concorrência DS03 e verificações manuais DS04/DS05. Uma execução local
+documentada está registrada no relatório; DS04 e DS05 permanecem sem evidência.
+
+Na rodada de 22/10/2026, passaram **389/389 testes frontend** (36 arquivos),
+**529/529 backend** (24 arquivos), **24/24 E2E** em Chromium e as **seis suítes SQL**
+após reaplicar as migrações 29–33 no Supabase efêmero. O E2E usou portas locais
+isoladas e um teto de rate limit elevado somente para permitir várias sessões da mesma
+origem; o padrão da API permanece em cinco requisições por IP. O lint de frontend e
+backend passou sem avisos. O build passou, mas ainda emite um aviso do plugin PostCSS
+sobre a opção `from`; portanto, não se declara ausência de todos os avisos do build.
+`xlsx` foi removido por não ser usado.
 
 Esses testes fecham as três lacunas solicitadas no código, mas **não fundamentam uma
 declaração de 100% de conformidade ou de cobertura integral das 50 RNs**. Contar uma regra
@@ -307,9 +330,8 @@ npm --prefix react-app test
 node docs/api/validar-colecao.cjs
 ```
 
-Saída final medida em 20/10/2026 após a correção da IA: **908 testes unitários/integração/componente aprovados**
-(519 backend em 24 arquivos + 389 frontend em 36 arquivos) e **24/24 E2E aprovados**.
-O Playwright foi executado com `--workers=1 --retries=0 --reporter=line`, usando
-configuração local do Supabase em variáveis do processo e sem acessar produção.
-As quatro suítes SQL também passaram nessa rodada, com 30 e 31 aplicadas e
-reaplicadas localmente. Nenhum teste ou migração desta correção usou produção.
+Saída final medida em 22/10/2026: **918 testes unitários/integração/componente aprovados**
+(529 backend em 24 arquivos + 389 frontend em 36 arquivos), **24/24 E2E aprovados**
+e **seis suítes SQL aprovadas** após reaplicar as migrações 29–33 no Supabase efêmero.
+O Playwright foi executado com um worker Chromium, configuração local isolada e sem
+acessar produção. Nenhum teste ou migração desta rodada usou produção.

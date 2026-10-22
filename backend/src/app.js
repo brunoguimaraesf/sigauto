@@ -36,7 +36,9 @@ app.use(express.urlencoded({ extended: true }))
 // Rate limiter específico para login
 const loginRateLimiter = rateLimit({
   windowMs: 10 * 60 * 1000, // 10 minutos
-  max: 5,
+  // O padrao limita tentativas por IP em producao. Suites E2E em CI iniciam
+  // varias sessoes com a mesma origem e configuram um teto maior isoladamente.
+  max: Math.max(1, Number.parseInt(process.env.LOGIN_RATE_LIMIT_MAX, 10) || 5),
   standardHeaders: true,
   legacyHeaders: false,
   message: {

@@ -87,10 +87,29 @@ jobs:
           eval "$(supabase status -o env)"
           echo "VITE_SUPABASE_URL=${API_URL}" >> "$GITHUB_ENV"
           echo "VITE_SUPABASE_ANON_KEY=${ANON_KEY}" >> "$GITHUB_ENV"
+          echo "SUPABASE_URL=${API_URL}" >> "$GITHUB_ENV"
+          echo "SUPABASE_ANON_KEY=${ANON_KEY}" >> "$GITHUB_ENV"
           echo "SUPABASE_SERVICE_ROLE_KEY=${SERVICE_ROLE_KEY}" >> "$GITHUB_ENV"
           echo "DATABASE_URL=${DB_URL}" >> "$GITHUB_ENV"
       - run: npm ci
         working-directory: react-app
+      - run: npm ci
+        working-directory: backend
+      - name: Iniciar API para autenticacao E2E
+        shell: bash
+        run: |
+          nohup npm start > "$RUNNER_TEMP/sigauto-backend.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/sigauto-backend.pid"
+          for tentativa in {1..30}; do
+            if curl --fail --silent http://localhost:3001/health >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat "$RUNNER_TEMP/sigauto-backend.log"
+          exit 1
+        working-directory: backend
+        env:
+          FRONTEND_URL: http://localhost:5173
+          LOGIN_RATE_LIMIT_MAX: 100
       - name: Criar fixtures deterministicas
         run: node e2e/setup-database.mjs
         working-directory: react-app
@@ -100,13 +119,19 @@ jobs:
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/29_hardening_os_usuario_estoque.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/30_historico_chatbot_gestor.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/31_historico_painel_ia_gestor.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/32_login_bloqueio_persistente.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/33_historico_status_os.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/rls_matrix_test.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/estoque_os_test.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/hardening_29_test.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/chatbot_financeiro_test.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/login_bloqueio_test.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/historico_status_os_test.sql
       - run: npx playwright install --with-deps chromium
         working-directory: react-app
       - run: npm run test:e2e -- --workers=1
         working-directory: react-app
         env:
           CI: true
+          VITE_API_URL: http://localhost:3001/api/v1
+          FRONTEND_URL: http://localhost:5173
