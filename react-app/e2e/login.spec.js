@@ -7,7 +7,7 @@ test('gestor faz login e vê o Dashboard com dados', async ({ page }) => {
   await page.getByRole('button', { name: /gestor@sigauto\.com/ }).click()
   await page.getByRole('button', { name: 'Entrar no Sistema' }).click()
 
-  await expect(page).toHaveURL('http://localhost:5173/')
+  await expect(page).toHaveURL(/\/$/)
   await expect(page.getByRole('heading', { name: 'Visão Geral' })).toBeVisible()
   await expect(page.getByText('Veículos Cadastrados')).toBeVisible({ timeout: 15000 })
 })

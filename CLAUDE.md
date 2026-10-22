@@ -12,7 +12,7 @@ SIGAuto — Sistema Inteligente de Gestão de Oficinas Automotivas. TFC UniRV 20
 
 - `react-app/` — Frontend React 19 + Vite (o cliente principal).
 - `backend/` — API Express (ESM), **só o que não pode rodar no navegador**: `authRoutes`, `chatbotRoutes` e `iaRoutes` (health incluso), porque dependem da chave do Gemini e da `service_role`. O cadastro administrativo de conta (`POST /auth/usuarios`) pertence aqui porque usa `auth.admin`; os demais cadastros passam direto pelo Supabase sob RLS. Não crie rota CRUD comum aqui.
-- `database/` — Scripts SQL numerados, aplicados **em ordem** no Supabase (**01 → 31**).
+- `database/` — Scripts SQL numerados, aplicados **em ordem** no Supabase (**01 → 33**).
 - `docs/` — a especificação e o modelo de dados. Leia antes de implementar: ver **Documentação** abaixo.
 
 ## Documentação
@@ -79,6 +79,8 @@ Migrações que o README não cobre:
 - **`29_hardening_os_usuario_estoque.sql`** — fecha os achados A-05–A-10: limita colunas editáveis da OS por perfil, exige RPC transacional para cancelar com estorno idempotente, impede auto-reativação de usuário, filtra autoria/comissões no RPC de OS, reserva ajuste absoluto de estoque ao gestor e instala uma allowlist global para funções `SECURITY DEFINER`. O frontend que chama `cancelar_ordem_servico` deve ser publicado em rollout coordenado logo após a migração; canceladas históricas exigem conciliação manual.
 - **`30_historico_chatbot_gestor.sql`** — restringe `SELECT` de `mensagem_chatbot` a gestor e adiciona policy restritiva para impedir que outra policy permissiva reabra o histórico a uma conta rebaixada. Não apaga mensagens nem adiciona coluna/função privilegiada. Publique junto do backend que recusa o histórico persistido para não gestores e do frontend que reinicia a conversa ao mudar usuário/perfil. Aplicação em produção permanece pendente; API sozinha não fecha acesso direto pelo Supabase.
 - **`31_historico_painel_ia_gestor.sql`** — fecha a mesma exposição na leitura direta de `recomendacao_ia`: a policy legada permitia ler por autoria ou vínculo com OS, mesmo após perder o perfil gestor. Adiciona gate restritivo de `SELECT` para gestor, sem apagar análises ou alterar a estrutura. É separada da 30 porque a 30 já havia sido aplicada no banco local quando esse caminho foi identificado. A CI aplica ambas; produção permanece pendente.
+- **`32_login_bloqueio_persistente.sql`** — persiste tentativas de login por HMAC do e-mail normalizado, sem guardar o endereço em claro. A RPC atômica é exclusiva do `service_role`; hashes sem atividade são removidos após 30 dias. O backend aplica cinco falhas em 15 minutos no fluxo de login da aplicação. A chave anon é pública e o endpoint de senha do Supabase Auth continua acessível diretamente; esse lockout não substitui os controles nativos do provedor nem bloqueia chamadas externas ao Express. Migração ainda precisa ser aplicada no ambiente de destino.
+- **`33_historico_status_os.sql`** — registra transições reais de status de OS por trigger, inclusive autoria autenticada quando disponível; a view `duracao_etapa_os` calcula o tempo entre transições observadas. Não há backfill de durações anteriores à migração. Histórico é append-only para os papéis da aplicação e sua visibilidade acompanha a da OS. Migração ainda precisa ser aplicada no ambiente de destino.
 
 ## Remoção dos legados concluída
 
@@ -92,7 +94,7 @@ estruturado. Não reintroduza fallbacks para essas colunas removidas.
 - **Design system imutável:** tema escuro + laranja (`--neon-orange: #E8590C`), fonte Manrope, em `react-app/src/index.css`. Não altere cores/tipografia/layout global sem pedido explícito.
 - **Idioma:** código, UI e mensagens de commit em **português**.
 - **Commits:** não commite a cada alteração; agrupe em commits significativos e **só quando pedido**. **Sem marca de IA** (nada de "Co-Authored-By" ou "Generated with"). Trabalhe em branch, nunca direto na `main`.
-- **Migrações de banco:** nunca reescreva scripts já aplicados; adicione um novo arquivo numerado (**o próximo é o `32`**). Migração deve ser transacional e idempotente, com backfill e pós-condição antes de qualquer `DROP`. Mexeu no schema? Atualize o [`docs/DER.md`](docs/DER.md) **no mesmo commit**.
+- **Migrações de banco:** nunca reescreva scripts já aplicados; adicione um novo arquivo numerado (**o próximo é o `34`**). Migração deve ser transacional e idempotente, com backfill e pós-condição antes de qualquer `DROP`. Mexeu no schema? Atualize o [`docs/DER.md`](docs/DER.md) **no mesmo commit**.
 - **Segredos:** a `SUPABASE_SERVICE_ROLE_KEY` e a `GEMINI_API_KEY` só existem no backend. O frontend usa exclusivamente a chave `anon` + RLS. Nunca mova uma dessas chaves para o `react-app/`.
 
 ## Testes
@@ -107,7 +109,7 @@ Rode antes de considerar uma mudança concluída. Ambiente: Windows (PowerShell 
 
 Linha de base medida em 18/10/2026: **382 testes de frontend** (35 arquivos), **394 de backend** (20 arquivos), **24 E2E** e **3 suítes SQL** aprovados. A CI executa E2E e os testes SQL contra Supabase efêmero. Caiu o número? Alguma suíte parou de ser coletada.
 
-Medição posterior em 20/10/2026, após as correções da IA: **389 testes de frontend** (36 arquivos), **519 de backend** (24 arquivos), **24 E2E** e **4 suítes SQL** aprovados. As migrações 30 e 31 foram aplicadas e reaplicadas no Supabase local; produção não recebeu essas migrações. Os retestes com Gemini real e seus limites estão em [`docs/RESULTADOS_TESTES_IA.md`](docs/RESULTADOS_TESTES_IA.md); não equivalem à aprovação integral dos 39 cenários.
+Medição posterior em 22/10/2026: **389 testes de frontend** (36 arquivos), **529 de backend** (24 arquivos), **24 E2E** e **6 suítes SQL** aprovados; migrações 29–33 reaplicadas no Supabase efêmero. Lint de frontend e backend sem avisos. O build passou, mas conserva um aviso do plugin PostCSS sobre a opção `from`. A migração 32 registra tentativas no servidor; chamadas diretas ao grant de senha do Supabase Auth ainda podem contornar o controller. As migrações 32 e 33 precisam de rollout no ambiente destino; o DERS também precisa refletir o histórico de status.
 
 ## Deploy
 

@@ -4,7 +4,7 @@ async function login(page) {
   await page.goto('/login')
   await page.getByRole('button', { name: /gestor@sigauto\.com/ }).click()
   await page.getByRole('button', { name: 'Entrar no Sistema' }).click()
-  await expect(page).toHaveURL('http://localhost:5173/')
+  await expect(page).toHaveURL(/\/$/)
 }
 
 test.beforeEach(async ({ page }) => {

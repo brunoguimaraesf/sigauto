@@ -35,6 +35,15 @@ Thumbs.db
 # Ferramentas de agente (bundle de terceiros)
 .agent/.shared/
 
+# Contexto e estado local dos agentes de IA
+.agent/
+.agents/
+.claude/
+.codex/
+.coordenacao/
+.maestri/
+CONTEXTO.md
+
 # Cache da ferramenta impeccable
 .impeccable/
 
@@ -52,12 +61,15 @@ scripts/.watcher.pid
 # Em docs/ ficam versionados o DERS oficial, seus artefatos gerados, o modelo
 # de dados, o plano de V&V e os instrumentos de validação. Os demais materiais continuam locais.
 docs/*
+docs/**/*.mod
+docs/img/
 !docs/DER.md
 !docs/VALIDACAO_VERIFICACAO.md
 !docs/ROTEIRO_UAT.md
 !docs/QUESTIONARIO_SUS.md
 !docs/TESTES_IA.md
 !docs/RESULTADOS_TESTES_IA.md
+!docs/RELATORIO_DESEMPENHO.md
 !docs/api/
 docs/api/*
 !docs/api/README.md
@@ -66,10 +78,8 @@ docs/api/*
 !docs/Desenvolvimento_DERS_BrunoGabrielGuimaraes.docx
 !docs/REQUISITOS.md
 !docs/importar-ders.py
-!docs/img/
-!docs/img/**
 
 # Supabase efemero local: copias geradas das migracoes e estado do CLI.
-# Reproduzidas por script (ver CONTEXTO.md); o schema versionado e database/.
+# Reproduzidas a partir dos scripts em database/; o schema versionado fica em database/.
 supabase/migrations/
 supabase/.temp/

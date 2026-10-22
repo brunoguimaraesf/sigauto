@@ -1,9 +1,44 @@
-import { supabase } from '../services/supabaseClient.js'
+import { createHmac, randomUUID } from 'node:crypto'
+import { criarClienteAutenticacao, supabase } from '../services/supabaseClient.js'
 import { registrarAuditoria } from '../utils/auditLogger.js'
 import { logger } from '../utils/logger.js'
 
 const PERFIS_VALIDOS = new Set(['gestor', 'atendente', 'mecanico'])
 const EMAIL_VALIDO = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+const LIMITE_TENTATIVAS_LOGIN = 5
+const DURACAO_BLOQUEIO_SEGUNDOS = 15 * 60
+
+function chaveTentativaLogin(email) {
+  const segredo = process.env.SUPABASE_SERVICE_ROLE_KEY
+  if (!segredo) throw new Error('SUPABASE_SERVICE_ROLE_KEY ausente para o controle de login.')
+  return createHmac('sha256', segredo).update(String(email).trim().toLowerCase()).digest('hex')
+}
+
+async function atualizarBloqueioLogin(email, operacao, reserva = null) {
+  const chave = chaveTentativaLogin(email)
+  const { data, error } = await supabase.rpc('registrar_tentativa_login', {
+    p_chave: chave,
+    p_operacao: operacao,
+    p_limite: LIMITE_TENTATIVAS_LOGIN,
+    p_duracao_segundos: DURACAO_BLOQUEIO_SEGUNDOS,
+    p_reserva: reserva
+  })
+  if (error || !data) throw error || new Error('Resposta vazia do controle de login.')
+  return Array.isArray(data) ? data[0] : data
+}
+
+export async function statusLogin(req, res, next) {
+  try {
+    const email = String(req.body?.email || '')
+    if (!EMAIL_VALIDO.test(email.trim())) {
+      return res.status(200).json({ erro: false, dados: { bloqueadoAte: null } })
+    }
+    const estado = await atualizarBloqueioLogin(email, 'consultar')
+    return res.status(200).json({ erro: false, dados: { bloqueadoAte: estado.bloqueado_ate || null } })
+  } catch (err) {
+    next(err)
+  }
+}
 
 // Operacao administrativa de autenticacao. Fica no backend porque depende de
 // auth.admin/service_role; nao e uma rota CRUD generica sobre a tabela usuario.
@@ -145,10 +180,13 @@ export async function atualizarUsuario(req, res, next) {
 }
 
 export async function login(req, res, next) {
+  let reserva = null
+  let reservaAberta = false
   try {
-    const { email, senha } = req.body
+    const email = String(req.body?.email || '').trim().toLowerCase()
+    const senha = req.body?.senha
 
-    if (!email || !senha) {
+    if (!EMAIL_VALIDO.test(email) || typeof senha !== 'string' || !senha) {
       return res.status(400).json({
         erro: true,
         codigo: 'CAMPOS_OBRIGATORIOS',
@@ -156,12 +194,55 @@ export async function login(req, res, next) {
       })
     }
 
-    const { data, error } = await supabase.auth.signInWithPassword({
-      email,
-      password: senha
-    })
+    reserva = randomUUID()
+    const estado = await atualizarBloqueioLogin(email, 'reservar', reserva)
+    if (!estado.permitido || (estado.bloqueado_ate && new Date(estado.bloqueado_ate).getTime() > Date.now() && !estado.reserva_confirmada)) {
+      return res.status(429).json({
+        erro: true,
+        codigo: 'LOGIN_BLOQUEADO',
+        mensagem: 'Muitas tentativas incorretas. Tente novamente após o término do bloqueio.',
+        dados: { bloqueadoAte: estado.bloqueado_ate }
+      })
+    }
+    reservaAberta = true
+
+    let data
+    let error
+    try {
+      ({ data, error } = await criarClienteAutenticacao().auth.signInWithPassword({ email, password: senha }))
+    } catch (erroProvedor) {
+      await atualizarBloqueioLogin(email, 'liberar', reserva)
+      reservaAberta = false
+      throw Object.assign(new Error('Não foi possível validar as credenciais agora. Tente novamente.'), { status: 503, cause: erroProvedor })
+    }
 
     if (error || !data.session) {
+      const ehFalhaCredencial = /invalid login credentials|email not confirmed|invalid credentials/i.test(error?.message || '')
+        || [400, 401].includes(error?.status)
+      const bloqueio = await atualizarBloqueioLogin(email, ehFalhaCredencial ? 'falha' : 'liberar', reserva)
+      reservaAberta = false
+      if (!bloqueio.reserva_confirmada && ehFalhaCredencial) {
+        if (bloqueio.bloqueado_ate && new Date(bloqueio.bloqueado_ate).getTime() > Date.now()) {
+          return res.status(429).json({
+            erro: true,
+            codigo: 'LOGIN_BLOQUEADO',
+            mensagem: 'Muitas tentativas incorretas. Tente novamente após o término do bloqueio.',
+            dados: { bloqueadoAte: bloqueio.bloqueado_ate }
+          })
+        }
+        throw Object.assign(new Error('A tentativa de autenticação expirou. Tente novamente.'), { status: 503 })
+      }
+      if (!ehFalhaCredencial) {
+        throw Object.assign(new Error('Não foi possível validar as credenciais agora. Tente novamente.'), { status: 503 })
+      }
+      if (bloqueio.bloqueado_ate && new Date(bloqueio.bloqueado_ate).getTime() > Date.now()) {
+        return res.status(429).json({
+          erro: true,
+          codigo: 'LOGIN_BLOQUEADO',
+          mensagem: 'Muitas tentativas incorretas. Tente novamente após o término do bloqueio.',
+          dados: { bloqueadoAte: bloqueio.bloqueado_ate }
+        })
+      }
       return res.status(401).json({
         erro: true,
         codigo: 'CREDENCIAIS_INVALIDAS',
@@ -176,11 +257,19 @@ export async function login(req, res, next) {
       .single()
 
     if (!usuario || !usuario.ativo) {
+      await atualizarBloqueioLogin(email, 'liberar', reserva)
+      reservaAberta = false
       return res.status(401).json({
         erro: true,
-        codigo: 'USUARIO_INATIVO',
-        mensagem: 'Usuário inativo ou não encontrado.'
+        codigo: 'CREDENCIAIS_INVALIDAS',
+        mensagem: 'Email ou senha incorretos.'
       })
+    }
+
+    const finalizacao = await atualizarBloqueioLogin(email, 'sucesso', reserva)
+    reservaAberta = false
+    if (!finalizacao.reserva_confirmada) {
+      throw Object.assign(new Error('A tentativa de autenticação expirou. Tente novamente.'), { status: 503 })
     }
 
     await registrarAuditoria(supabase, {
@@ -209,6 +298,13 @@ export async function login(req, res, next) {
       }
     })
   } catch (err) {
+    if (reservaAberta && reserva) {
+      try {
+        await atualizarBloqueioLogin(String(req.body?.email || ''), 'liberar', reserva)
+      } catch (erroLiberacao) {
+        logger.error(`Falha ao liberar reserva de tentativa de login: ${erroLiberacao.message}`)
+      }
+    }
     next(err)
   }
 }
@@ -245,7 +341,7 @@ export async function refresh(req, res, next) {
       })
     }
 
-    const { data, error } = await supabase.auth.refreshSession({ refresh_token })
+    const { data, error } = await criarClienteAutenticacao().auth.refreshSession({ refresh_token })
 
     if (error || !data.session) {
       return res.status(401).json({
@@ -279,7 +375,7 @@ export async function forgotPassword(req, res, next) {
       })
     }
 
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    const { error } = await criarClienteAutenticacao().auth.resetPasswordForEmail(email, {
       redirectTo: `${process.env.FRONTEND_URL}/reset-password`
     })
 

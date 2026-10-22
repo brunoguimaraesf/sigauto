@@ -7,7 +7,7 @@ import { supabase } from '../supabaseClient'
 import css from './Login.module.css'
 
 export function Login() {
-  const { login } = useAuth()
+  const { login, statusLogin } = useAuth()
   const navigate = useNavigate()
 
   const [email, setEmail] = useState('')
@@ -15,7 +15,6 @@ export function Login() {
   const [mostrarSenha, setMostrarSenha] = useState(false)
   const [loading, setLoading] = useState(false)
   const [erro, setErro] = useState('')
-  const [tentativas, setTentativas] = useState(0)
   const [bloqueadoAte, setBloqueadoAte] = useState(null)
 
   const [modalEsqueci, setModalEsqueci] = useState(false)
@@ -34,7 +33,7 @@ export function Login() {
   const handleSubmit = async (e) => {
     e.preventDefault()
 
-    if (estaBloqueado) {
+    if (bloqueadoAte && bloqueadoAte.getTime() > Date.now()) {
       const restante = Math.max(1, Math.ceil((bloqueadoAte.getTime() - new Date().getTime()) / 60000))
       setErro(`Acesso bloqueado. Tente novamente em ${restante} minuto(s).`)
       return
@@ -47,17 +46,29 @@ export function Login() {
       await login(email, senha)
       navigate('/')
     } catch (err) {
-      const novasTentativas = tentativas + 1
-      setTentativas(novasTentativas)
-      setErro(err?.message || 'E-mail ou senha incorretos.')
-      if (novasTentativas >= 5) {
-        const lockUntil = new Date()
-        lockUntil.setMinutes(lockUntil.getMinutes() + 15)
-        setBloqueadoAte(lockUntil)
+      const ate = err?.data?.dados?.bloqueadoAte
+      if (ate) {
+        setBloqueadoAte(new Date(ate))
         setErro('Muitas tentativas incorretas. Acesso bloqueado por 15 minutos.')
+      } else if (err?.status === 429) {
+        setErro(err?.message || 'Muitas tentativas incorretas. Aguarde antes de tentar novamente.')
+      } else {
+        setErro(err?.message || 'E-mail ou senha incorretos.')
       }
     } finally {
       setLoading(false)
+    }
+  }
+
+  const consultarBloqueio = async () => {
+    if (!statusLogin || !email.trim()) return
+    try {
+      const ate = await statusLogin(email)
+      const data = ate ? new Date(ate) : null
+      setBloqueadoAte(data && data.getTime() > Date.now() ? data : null)
+      if (data && data.getTime() > Date.now()) setErro('Muitas tentativas incorretas. Acesso bloqueado por 15 minutos.')
+    } catch {
+      // A tela não mantém estado de segurança local; o endpoint de login valida o bloqueio.
     }
   }
 
@@ -113,6 +124,7 @@ export function Login() {
                 placeholder="seu@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
+                onBlur={consultarBloqueio}
                 required
                 disabled={loading || estaBloqueado}
               />

@@ -104,7 +104,7 @@ for (const item of requisicoes) {
   }
 }
 assert.deepEqual([...cobertos].sort(), [...esperados].sort())
-assert.equal(requisicoes.length, 29)
+assert.equal(requisicoes.length, 30)
 assert.equal(bloqueadas, 8)
 console.log(`JSON válido; ${cobertos.size}/${esperados.size} endpoints; ${requisicoes.length} requisições; ${scripts} scripts compilados.`)
 console.log(`${verificacoes} assertions executadas sobre exemplos e casos inválidos; ${bloqueadas} operações com efeitos bloqueadas por padrão.`)
