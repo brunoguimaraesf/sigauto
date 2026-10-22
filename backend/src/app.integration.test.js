@@ -56,6 +56,9 @@ vi.mock('./utils/auditLogger.js', () => ({ registrarAuditoria: mocks.registrarAu
 const { default: app } = await import('./app.js')
 
 beforeEach(() => {
+  // O controlador deriva a chave HMAC do segredo service_role. O cliente
+  // Supabase e o RPC são mockados, então use uma chave sintética nos testes.
+  process.env.SUPABASE_SERVICE_ROLE_KEY = 'service-role-test-key'
   mocks.criarClienteAutenticacao.mockClear()
   mocks.signInWithPassword.mockReset()
   mocks.refreshSession.mockReset()
