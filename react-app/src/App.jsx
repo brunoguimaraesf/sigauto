@@ -13,6 +13,7 @@ import css from './App.module.css'
 // imediato; bibliotecas pesadas de relatorio/PDF so baixam quando necessarias.
 const pagina = (importar, nome) => lazy(() => importar().then(modulo => ({ default: modulo[nome] })))
 const Login = pagina(() => import('./pages/Login'), 'Login')
+const ResetPassword = pagina(() => import('./pages/ResetPassword'), 'ResetPassword')
 const Dashboard = pagina(() => import('./pages/Dashboard'), 'Dashboard')
 const Veiculos = pagina(() => import('./pages/Veiculos'), 'Veiculos')
 const Clientes = pagina(() => import('./pages/Clientes'), 'Clientes')
@@ -127,6 +128,7 @@ function App() {
       <AuthProvider>
           <Routes>
             <Route path="/login" element={<Suspense fallback={<CarregandoTela />}><Login /></Suspense>} />
+            <Route path="/reset-password" element={<Suspense fallback={<CarregandoTela />}><ResetPassword /></Suspense>} />
             <Route path="/*" element={<AppLayout />} />
           </Routes>
       </AuthProvider>
