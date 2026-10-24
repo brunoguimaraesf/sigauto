@@ -245,4 +245,30 @@ describe('salvar e imprimir', () => {
     expect(print).toHaveBeenCalled()
     expect(registro.docs).toHaveLength(1)
   })
+
+  it('imprimir baixa o PDF quando o navegador bloqueia o iframe de origem cruzada (celular)', async () => {
+    const win = {
+      document,
+      URL: { createObjectURL: vi.fn(() => 'blob:os-42'), revokeObjectURL: vi.fn() },
+      setTimeout: vi.fn(),
+    }
+    const cliques = []
+    const criar = document.createElement.bind(document)
+    const espiao = vi.spyOn(document, 'createElement').mockImplementation((tag) => {
+      const el = criar(tag)
+      if (tag === 'a') el.click = () => cliques.push({ href: el.href, download: el.download })
+      return el
+    })
+    const promessa = imprimirDocumentoOS(dados(), win)
+    const iframe = document.querySelector('iframe[data-os-impressao]')
+    const bloqueio = () => { throw new DOMException('Blocked a frame with origin', 'SecurityError') }
+    Object.defineProperty(iframe, 'contentWindow', {
+      value: { addEventListener: bloqueio, focus: bloqueio, print: bloqueio },
+    })
+    iframe.dispatchEvent(new Event('load'))
+
+    await expect(promessa).resolves.toBe('baixado')
+    espiao.mockRestore()
+    expect(cliques).toEqual([{ href: 'blob:os-42', download: 'OS-42-2026-10-14.pdf' }])
+  })
 })

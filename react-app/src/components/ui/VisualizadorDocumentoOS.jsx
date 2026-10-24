@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Download, Printer, X } from 'lucide-react'
 import css from './VisualizadorDocumentoOS.module.css'
 
@@ -31,7 +32,11 @@ export function VisualizadorDocumentoOS({ url, nomeArquivo, onFechar, onImprimir
     return () => window.removeEventListener('keydown', aoTeclar)
   }, [onFechar])
 
-  return (
+  // Portal no body: o cabecalho da O.S. usa `.stagger-1` (animation com fill
+  // `both`), que deixa um `transform` no elemento e o torna o bloco de contencao
+  // do `position: fixed`. Sem o portal o overlay encolhia ate a faixa do
+  // cabecalho e o PDF aparecia como uma barra fina.
+  return createPortal(
     <div className="modal-overlay" onClick={onFechar}>
       <div
         className={`modal-content ${css.modal}`}
@@ -80,6 +85,7 @@ export function VisualizadorDocumentoOS({ url, nomeArquivo, onFechar, onImprimir
           </button>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   )
 }

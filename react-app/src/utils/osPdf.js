@@ -432,9 +432,21 @@ export function criarUrlDocumentoOS(dados, windowImpl = window) {
   }
 }
 
+function baixarUrl(documento, url, nomeArquivo) {
+  const a = documento.createElement('a')
+  a.href = url
+  a.download = nomeArquivo
+  a.style.display = 'none'
+  documento.body.appendChild(a)
+  a.click()
+  a.remove()
+}
+
 // Imprime o MESMO PDF do download, num iframe oculto (sem popup). A URL
 // temporaria e revogada depois da impressao, com uma rede de seguranca por
 // tempo, pois nem todo navegador dispara `afterprint` dentro do iframe.
+// Resolve 'impresso' ou, quando o navegador nao deixa o site abrir o dialogo
+// (celular), 'baixado' — o PDF vai para o aparelho em vez de falhar.
 export function imprimirDocumentoOS(dados, windowImpl = window) {
   const doc = criarDocumentoOS(dados)
   const url = windowImpl.URL.createObjectURL(doc.output('blob'))
@@ -468,13 +480,24 @@ export function imprimirDocumentoOS(dados, windowImpl = window) {
     iframe.addEventListener('load', () => {
       try {
         const alvo = iframe.contentWindow
-        alvo.addEventListener?.('afterprint', limpar, { once: true })
+        // No Chrome do celular o PDF do iframe abre no visualizador nativo, de
+        // outra origem: tocar na janela dele lanca SecurityError. O `afterprint`
+        // e so conforto (ha o temporizador), entao a falha aqui nao pode abortar.
+        try { alvo.addEventListener?.('afterprint', limpar, { once: true }) } catch { /* origem cruzada */ }
         alvo.focus()
         alvo.print()
-        resolve()
-      } catch (error) {
-        limpar()
-        reject(error)
+        resolve('impresso')
+      } catch {
+        // Sem acesso ao dialogo de impressao (celular): entrega o PDF para o
+        // aparelho abrir e imprimir pelo aplicativo de documentos.
+        try {
+          baixarUrl(documento, url, nomeArquivoOS(dados.os, dados.emitidoEm))
+          resolve('baixado')
+        } catch (error) {
+          reject(error)
+        } finally {
+          windowImpl.setTimeout(limpar, 10000)
+        }
       }
     }, { once: true })
     iframe.setAttribute('src', url)
