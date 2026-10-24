@@ -17,6 +17,7 @@ export function AcoesDocumentoOS({ os, cliente, veiculo, extra = {}, compacto = 
   const { oficina, carregandoOficina, erroOficina, funcionarios, baixarLogoOficina } = useDatabase()
   const [ocupado, setOcupado] = useState(null) // 'visualizar' | 'imprimir' | null
   const [erro, setErro] = useState('')
+  const [aviso, setAviso] = useState('')
   const [documento, setDocumento] = useState(null) // { url, nomeArquivo, revogar, dados }
 
   // Desmontar a tela com o visualizador aberto (navegacao, encerramento da OS)
@@ -26,6 +27,12 @@ export function AcoesDocumentoOS({ os, cliente, veiculo, extra = {}, compacto = 
   const fecharVisualizador = () => {
     documento?.revogar?.()
     setDocumento(null)
+  }
+
+  const avisarSeBaixado = (resultado) => {
+    if (resultado === 'baixado') {
+      setAviso('Este aparelho não abre a impressão direto. O PDF foi baixado: abra-o e imprima pelo aplicativo de documentos.')
+    }
   }
 
   const montarDados = async () => {
@@ -44,6 +51,7 @@ export function AcoesDocumentoOS({ os, cliente, veiculo, extra = {}, compacto = 
 
   const executar = async (acao) => {
     setErro('')
+    setAviso('')
     if (!oficina) {
       setErro(erroOficina
         ? `Os dados da oficina não puderam ser carregados (${erroOficina}). Tente novamente mais tarde.`
@@ -56,7 +64,7 @@ export function AcoesDocumentoOS({ os, cliente, veiculo, extra = {}, compacto = 
       if (acao === 'visualizar') {
         fecharVisualizador()
         setDocumento({ ...criarUrlDocumentoOS(dados), dados })
-      } else await imprimirDocumentoOS(dados)
+      } else avisarSeBaixado(await imprimirDocumentoOS(dados))
     } catch (err) {
       setErro(`Não foi possível gerar o documento: ${err?.message || 'erro desconhecido.'}`)
     } finally {
@@ -68,9 +76,10 @@ export function AcoesDocumentoOS({ os, cliente, veiculo, extra = {}, compacto = 
   // baixar a logomarca outra vez.
   const imprimirDoVisualizador = async () => {
     setErro('')
+    setAviso('')
     setOcupado('imprimir')
     try {
-      await imprimirDocumentoOS(documento.dados)
+      avisarSeBaixado(await imprimirDocumentoOS(documento.dados))
     } catch (err) {
       setErro(`Não foi possível imprimir o documento: ${err?.message || 'erro desconhecido.'}`)
     } finally {
@@ -94,6 +103,11 @@ export function AcoesDocumentoOS({ os, cliente, veiculo, extra = {}, compacto = 
       {erro && (
         <span role="alert" className={css.erro}>
           {erro}
+        </span>
+      )}
+      {aviso && (
+        <span role="status" className={css.erro}>
+          {aviso}
         </span>
       )}
       {documento && (

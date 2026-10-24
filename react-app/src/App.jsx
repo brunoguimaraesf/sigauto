@@ -1,4 +1,4 @@
-import { lazy, Suspense, useState } from 'react'
+import { lazy, Suspense, useCallback, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
 import { useAuth } from './context/AuthContext'
@@ -51,15 +51,19 @@ function AppLayout() {
   // A gaveta de navegacao do mobile. O estado vive aqui porque o botao que abre
   // esta no Header e a gaveta e a Sidebar, irmaos no layout.
   const [menuAberto, setMenuAberto] = useState(false)
+  // Identidade estavel: a Sidebar fecha a gaveta num efeito que depende de
+  // `onFechar`. Com uma funcao nova a cada render, abrir o menu re-renderizava o
+  // layout, o efeito disparava e a gaveta fechava no mesmo instante.
+  const fecharMenu = useCallback(() => setMenuAberto(false), [])
 
   return (
     <DataProvider>
     <div className="app-container">
-      <Sidebar aberta={menuAberto} onFechar={() => setMenuAberto(false)} />
+      <Sidebar aberta={menuAberto} onFechar={fecharMenu} />
       {menuAberto && (
         <div
           className="sidebar-overlay"
-          onClick={() => setMenuAberto(false)}
+          onClick={fecharMenu}
           aria-hidden="true"
         />
       )}
