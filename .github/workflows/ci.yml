@@ -122,17 +122,20 @@ jobs:
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/32_login_bloqueio_persistente.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/33_historico_status_os.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/34_regras_negocio_servidor.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/35_bloqueio_login_auth_hook.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/rls_matrix_test.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/estoque_os_test.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/hardening_29_test.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/chatbot_financeiro_test.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/login_bloqueio_test.sql
+          psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/login_direto_auth_hook_test.sql
           psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/historico_status_os_test.sql
           # Suites que queimam valores de sequencia: so rodam com a trava de
           # banco descartavel ligada.
           PGOPTIONS='-c sigauto.ambiente_teste=on' psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/regras_negocio_test.sql
           PGOPTIONS='-c sigauto.ambiente_teste=on' psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f database/tests/regras_negocio_servidor_test.sql
           PSQL="psql $DATABASE_URL" SIGAUTO_BANCO_DESCARTAVEL=1 bash database/tests/concorrencia_os_estoque.sh
+          node database/tests/login_direto_auth_hook.mjs
       - run: npx playwright install --with-deps chromium
         working-directory: react-app
       - run: npm run test:e2e -- --workers=1

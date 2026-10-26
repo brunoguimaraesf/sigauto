@@ -21,7 +21,7 @@ foram corrigidos na árvore local. Nada foi commitado. A aplicação da 34 em pr
 | Revisão de segurança da 34 | **Três achados corrigidos localmente:** RN46 também em escrita direta de `os_servico`, com regravação segura dos pares anteriores pelo RPC; criação sem queixa recusada e `status` do cliente descartado; RN15/RN16 antes de `nextval`, com DML e sequência revogados de `anon`. Pós-condições cobrem trigger, `SECURITY INVOKER`, `search_path`, grants e sequência | `database/34_...`, `database/tests/regras_negocio_servidor_test.sql` |
 | QA-09 | **Corrigido:** faturamento pela data de encerramento; linhas = OS da receita | `Relatorios.jsx`, `Relatorios.periodo.test.jsx` |
 | QA-10 | **Corrigido:** tela calcula como o banco (centésimos inteiros, soma por categoria arredondada); desconto e comissão idem | `osFinance.js`, `EncerrarOS.jsx`, `osFinance.arredondamento.test.js` |
-| QA-11 | **Mitigação implementada, ativação externa pendente.** Plano Free → sem hook de senha. CAPTCHA Turnstile no login e na recuperação (`VITE_TURNSTILE_SITE_KEY`), token repassado ao Supabase Auth, recusa de CAPTCHA não conta como falha | `Captcha.jsx`, `Login.jsx`, `authController.js` + testes |
+| QA-11 | **Fechado no local/self-hosted; produção Free ainda depende de CAPTCHA.** A migração 35 e `supabase/config.toml` ativam o Password Verification Hook: cinco falhas bloqueiam também o grant direto por 15 minutos. O backend propaga o `429` sem contar outra falha | `database/35_...`, `login_direto_auth_hook_test.sql/.mjs`, `authController.js` |
 | QA-12 | **Corrigido:** `body-parser@2.4.0`; `npm audit --omit=dev` backend em 0 | `backend/package-lock.json` |
 | QA-05 (tela) | Nome só com espaços e preço inválido recusados antes do banco | `Servicos.jsx`, `Servicos.rn45.test.jsx` |
 | Laudo de segurança | Os 5 ajustes aplicados: SQLSTATE esperado em cada recusa, trava `sigauto.ambiente_teste=on`, `IS DISTINCT FROM`, preço omitido na RN45, casos base64 por posição + espaço | testes SQL e `verifica-bundle.segredos.test.js` |
@@ -48,10 +48,15 @@ que diziam "pendente" estavam desatualizados); funções `criar_`/`salvar_ordem_
 idênticas às do efêmero; nenhuma queixa curta, nome em branco ou preço negativo, ou seja, a 34
 aplicaria sem violar dado existente. Plano da organização: **Free**.
 
-Passos externos para fechar QA-11: criar um site no Cloudflare Turnstile (gratuito); configurar
+Passos externos para fechar QA-11 no projeto hospedado Free: criar um site no Cloudflare Turnstile (gratuito); configurar
 `VITE_TURNSTILE_SITE_KEY` no projeto Vercel do frontend e publicar frontend e backend; **depois**
 ligar Authentication → Attack Protection → CAPTCHA (Turnstile, com a chave secreta) no painel do
 Supabase. Invertida, a ordem trava todos os logins.
+
+No Supabase efêmero/self-hosted, a migração 35 e o Password Verification Hook já fecharam a
+contraprova: quatro senhas incorretas retornaram `400`, a quinta e a senha correta durante o bloqueio
+retornaram `429`, e o login voltou a `200` após a expiração simulada. O hook hospedado exige plano
+Teams/Enterprise; por isso essa evidência local não substitui a ativação do CAPTCHA no plano Free.
 
 ## 1. Relatórios históricos versus estado real
 

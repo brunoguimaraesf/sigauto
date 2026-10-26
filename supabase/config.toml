@@ -53,6 +53,10 @@ max_frequency = "1s"
 otp_length = 6
 otp_expiry = 3600
 
+[auth.hook.password_verification_attempt]
+enabled = true
+uri = "pg-functions://postgres/public/hook_password_verification_attempt"
+
 [analytics]
 enabled = false
 port = 54327

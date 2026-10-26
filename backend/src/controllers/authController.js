@@ -235,6 +235,16 @@ export async function login(req, res, next) {
       })
     }
 
+    if (error?.status === 429) {
+      await atualizarBloqueioLogin(email, 'liberar', reserva)
+      reservaAberta = false
+      return res.status(429).json({
+        erro: true,
+        codigo: 'LOGIN_BLOQUEADO',
+        mensagem: 'Muitas tentativas incorretas. Aguarde antes de tentar novamente.'
+      })
+    }
+
     if (error || !data.session) {
       const ehFalhaCredencial = /invalid login credentials|email not confirmed|invalid credentials/i.test(error?.message || '')
         || [400, 401].includes(error?.status)

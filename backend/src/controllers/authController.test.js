@@ -114,6 +114,25 @@ describe('bloqueio persistente de login (RN29/RNF-SE04)', () => {
     expect(next).toHaveBeenCalledWith(expect.objectContaining({ status: 503 }))
   })
 
+  it('propaga o bloqueio do hook nativo sem contar nova falha', async () => {
+    mocks.signInWithPassword.mockResolvedValue({
+      data: {},
+      error: { message: 'Muitas tentativas incorretas.', status: 429 },
+    })
+    mocks.rpc.mockResolvedValueOnce({ data: [{ permitido: true, reserva_confirmada: true, tentativas: 0, bloqueado_ate: null }], error: null })
+      .mockResolvedValueOnce({ data: [{ permitido: true, reserva_confirmada: true, tentativas: 0, bloqueado_ate: null }], error: null })
+    const res = resposta()
+    const next = vi.fn()
+
+    await login(requisicao({ email: 'ana@exemplo.com', senha: 'senha' }), res, next)
+
+    expect(mocks.rpc).toHaveBeenNthCalledWith(1, 'registrar_tentativa_login', expect.objectContaining({ p_operacao: 'reservar' }))
+    expect(mocks.rpc).toHaveBeenNthCalledWith(2, 'registrar_tentativa_login', expect.objectContaining({ p_operacao: 'liberar' }))
+    expect(res.status).toHaveBeenCalledWith(429)
+    expect(res.json).toHaveBeenCalledWith(expect.objectContaining({ codigo: 'LOGIN_BLOQUEADO' }))
+    expect(next).not.toHaveBeenCalled()
+  })
+
   it('persiste estado consultável por e-mail e apaga tentativas somente após login válido', async () => {
     const resStatus = resposta()
     const bloqueadoAte = new Date(Date.now() + 60_000).toISOString()
