@@ -61,7 +61,7 @@ DS04 não é inferido das chamadas repetidas que o harness faz de propósito par
 
 | Sessão | Registros presentes na carga cliente/veículo/OS | Chamadas extras ao navegar (sem retry/ação explícita) | Resultado DS04 | Evidência |
 |---|---:|---:|---|---|
-| 1 | 200 clientes / 200 veículos / 6 OS visíveis | Pendente | Não avaliado | Massa de dados conhecida; chamadas de rede iniciais e extras não medidas |
+| 1 | 1 GET por tabela na carga inicial; volume não recontado nesta rodada | 0 cliente / 0 veículo / 0 OS em 7 navegações | **Aprovado localmente**; uma recarga completa iniciou nova sessão com 1 GET por tabela | [Relatório e captura](evidencias/RESULTADO_DS04_DS05_2026-10-26.md) |
 
 ## Verificação separada de RNF-DS05
 
@@ -85,7 +85,7 @@ Procedimento manual reproduzível no Chrome/Edge, em ambiente isolado:
 
 | Execução | Ambiente / simulação | Latência observada | Indicador durante a espera | Resultado DS05 |
 |---|---|---:|---|---|
-| Pendente | Pendente | Pendente | Pendente | Não avaliado |
+| 26/10/2026 | Build de produção; resposta sintética atrasada em 4.200 ms, sem Gemini | 5.072 ms | `Analisando...` e `Processando Análise` visíveis aos 3.200 ms; ausentes após a resposta | **Aprovado localmente** |
 
 ## Registro formal dos resultados
 
@@ -110,4 +110,4 @@ Execução: **22/10/2026 13:38 BRT** (JSON UTC: `2026-10-22T16:38:30.152Z`); HEA
 | Ordens de serviço | +261,9% | p95 permaneceu em 174,77 ms; apenas 6 OS disponíveis |
 | Gravação | -9,0% | p95 de 58,25 ms; variação compatível com ruído de uma rodada local |
 
-**Conclusão:** DS01 e DS02 atenderam aos limites numéricos nesta execução local; DS03 suportou 20 sessões sem erros e com p95 abaixo de 200 ms, embora a especificação não defina um teto quantitativo para degradação perceptível. A amostra de OS é pequena. Isto não comprova ambiente de produção. DS04 segue pendente de contagem de chamadas em navegador e DS05 de verificação do indicador com IA simulada.
+**Conclusão:** DS01 e DS02 atenderam aos limites numéricos nesta execução local; DS03 suportou 20 sessões sem erros e com p95 abaixo de 200 ms, embora a especificação não defina um teto quantitativo para degradação perceptível. A amostra de OS é pequena. Em 26/10/2026, DS04 foi aprovado com uma carga inicial por tabela e nenhuma consulta extra durante sete navegações SPA; DS05 foi aprovado com os dois indicadores visíveis após 3,2 s de espera controlada e removidos após a resposta. Estes resultados caracterizam somente o ambiente local e não comprovam produção.

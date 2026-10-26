@@ -71,6 +71,8 @@ docs/img/
 !docs/TESTES_IA.md
 !docs/RESULTADOS_TESTES_IA.md
 !docs/RELATORIO_DESEMPENHO.md
+!docs/evidencias/
+!docs/evidencias/**
 !docs/api/
 docs/api/*
 !docs/api/README.md

@@ -283,7 +283,7 @@ coerentes, um estorno; C4 dois cancelamentos → um estorno. **15/15 verificaç�
 | Correção de QA-01..06 | **Executada no efêmero** | migração 34 aplicada duas vezes e regressões aprovadas; produção fora do escopo |
 | Correção de QA-10 | **Executada** | regra do banco adotada e coberta por regressão em centavos |
 | Acessibilidade automatizada (axe/Lighthouse) | **Não executado** | nenhuma ferramenta instalada; adicioná-la seria dependência nova. Os E2E e testes de componente cobrem rótulos e regiões vivas pontuais, não conformidade WCAG |
-| Desempenho DS04/DS05 | **Não executado** | sem novo protocolo nesta rodada; ver `RELATORIO_DESEMPENHO.md` |
+| Desempenho DS04/DS05 | **Executado localmente em 26/10/2026** | DS04: 1 GET inicial por tabela e zero consultas extras em sete navegações; DS05: indicadores visíveis após 3,2 s de espera sintética e removidos após a resposta; ver `docs/evidencias/RESULTADO_DS04_DS05_2026-10-26.md` |
 | Coleção Postman contra API real | **Executada localmente em 26/10/2026** | backend isolado + Supabase efêmero; 30/30 requisições e 91/91 assertions, mais contraprova RN30 3/3 |
 | Falhas de Supabase/API/Gemini | **Não ampliado** | cobertura existente avaliada como suficiente: E2E de falha de rede, `comRetry`, `comModeloAlternativo`, `contingenciaBordas`, indisponibilidade no `PainelIA`/`Chatbot`, falha de persistência e de consulta financeira no backend |
 | `regras_negocio_servidor_test.sql` | **Aprovado** | substituiu a sonda de lacunas e integra a CI com a migração 34 |

@@ -240,8 +240,11 @@ proibia inferir duração sem histórico e precisa ser atualizado na fonte `.doc
 
 O protocolo de desempenho para RNF-DS01–DS05 está em
 [`RELATORIO_DESEMPENHO.md`](RELATORIO_DESEMPENHO.md). Ele separa medições quantitativas
-de DS01/DS02, concorrência DS03 e verificações manuais DS04/DS05. Uma execução local
-documentada está registrada no relatório; DS04 e DS05 permanecem sem evidência.
+de DS01/DS02, concorrência DS03 e verificações em navegador de DS04/DS05. Em
+26/10/2026, DS04 foi aprovado sem consultas adicionais às três tabelas principais em
+sete navegações SPA, e DS05 manteve os indicadores de carregamento visíveis após
+3,2 s de espera controlada. O [relatório de evidências](evidencias/RESULTADO_DS04_DS05_2026-10-26.md)
+registra o método e os resultados locais; nenhuma chamada foi enviada ao Gemini.
 
 Na rodada de 22/10/2026, passaram **389/389 testes frontend** (36 arquivos),
 **529/529 backend** (24 arquivos), **24/24 E2E** em Chromium e as **seis suítes SQL**
