@@ -33,6 +33,16 @@ export const PADROES_PROIBIDOS = [
   /CANARIO_DEMO_LOGIN/,
   // Se a substituicao do `define` falhar, o identificador sobrevive cru.
   /__DEMO_LOGIN__/,
+  // Segredos que so existem no backend (CLAUDE.md, "Segredos"). Uma variavel
+  // VITE_ mal nomeada os poria no bundle; as senhas acima nao pegariam isso.
+  // JWT com "role":"service_role": o payload e base64url, entao a palavra muda
+  // conforme o alinhamento; cada fragmento cobre uma das tres fases.
+  /c2VydmljZV9yb2xl|ZXJ2aWNlX3JvbGU|NlcnZpY2Vfcm9sZ/,
+  // Chave secreta no formato novo do Supabase. O prefixo sozinho aparece no
+  // proprio guard do supabaseClient, por isso exige o corpo da chave.
+  /sb_secret_[A-Za-z0-9_-]{20,}/,
+  // Chave de API do Google (Gemini).
+  /AIza[0-9A-Za-z_-]{35}/,
 ]
 
 // Inspeciona TUDO, menos o que e binario por natureza. Lista de inclusao era

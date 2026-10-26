@@ -93,6 +93,6 @@ export const usuariosApi = {
 }
 
 export const authApi = {
-  login: (email, senha) => api.post('/auth/login', { email, senha }),
+  login: (email, senha, captchaToken) => api.post('/auth/login', captchaToken ? { email, senha, captchaToken } : { email, senha }),
   statusLogin: (email) => api.post('/auth/login-status', { email }),
 }
