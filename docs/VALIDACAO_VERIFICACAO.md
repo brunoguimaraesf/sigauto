@@ -20,7 +20,7 @@ TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
 | **Vite build** | Verificação de compilação/empacotamento | `npm run build` |
 | **QA assistido em navegador** | Inspeção de telas, console e fluxos | Realizado (evidências em prints) |
 | **Playwright** | Testes ponta a ponta (E2E) dos fluxos | **Implementado — 24 testes E2E em banco Supabase efêmero na CI** |
-| **Postman** | Testes da API REST (endpoints) | **Coleção v2.1 criada — 12/12 endpoints, 30 requisições; validada localmente, execução real pendente** ([coleção e instruções](api/README.md)) |
+| **Postman** | Testes da API REST (endpoints) | **Coleção v2.1 executada localmente — 12/12 endpoints, 30/30 requisições e 91/91 assertions; contraprova RN30 3/3** ([resultado sanitizado](api/RESULTADO_POSTMAN_LOCAL_2026-10-26.md)) |
 
 ### 2.1 Testes automatizados (Vitest)
 
@@ -161,12 +161,15 @@ método/rota existentes de health, autenticação, cadastro administrativo, chat
 com 30 requisições, sucessos e rejeições de autenticação, perfil e entrada.
 Credenciais e tokens são variáveis vazias; não são necessárias chaves administrativas no cliente.
 
-Validação local em 20/10/2026: `node docs/api/validar-colecao.cjs` verificou os endpoints
-contra as rotas locais, o JSON e a compilação de 48 scripts; executou 169 assertions
+Validação local atualizada em 26/10/2026: `node docs/api/validar-colecao.cjs` verificou os endpoints
+contra as rotas locais, o JSON e a compilação de 49 scripts; executou 172 assertions
 sobre exemplos fictícios e contraprovas. O bloqueio padrão foi conferido nas oito
-operações com efeitos. Isso não constitui execução contra Supabase/Gemini ou aprovação
-da API no Postman. O relatório real do Runner permanece pendente; requisições ignoradas
-por ausência de variáveis ou pelo bloqueio de efeitos não contam como aprovadas.
+operações com efeitos. Essa validação estática não substitui uma execução real.
+Em 26/10/2026, o Postman CLI executou a coleção contra backend e Supabase locais:
+**30/30 requisições e 91/91 assertions**, sem itens ignorados; a contraprova RN30 com
+e-mail inexistente passou **3/3 assertions**. O
+[relatório sanitizado](api/RESULTADO_POSTMAN_LOCAL_2026-10-26.md) registra ambiente,
+tempos, limpeza e limites da evidência.
 
 ## 3. Ferramentas de Validação
 
@@ -224,7 +227,7 @@ por ausência de variáveis ou pelo bloqueio de efeitos não contam como aprovad
 |---|---|---|
 | RN29 | `pages/Login.test.jsx`, quinta falha e fronteira de 15 minutos com relógio controlado; `authController.test.js` valida reserva, falha, sucesso e armazenamento indisponível; `database/tests/login_bloqueio_test.sql` valida persistência/RPC e privilégios | Estado consultado pelo backend após recarga; limite da aplicação persiste no banco e tentativas concorrentes são reservadas atomicamente. Chamadas diretas ao grant de senha do Supabase Auth permanecem fora do Express; isso exige controle nativo do provedor/gateway. Migração 32 ainda precisa de rollout no ambiente destino. |
 | RN30 | `pages/Login.test.jsx`, mesmos texto e fluxo para sucesso, erro e exceção da recuperação | Não enumera e-mails na interface; provedor mockado. O envio real é uma etapa separada da coleção/UAT. |
-| RN46 | `pages/Servicos.test.jsx` e `hooks/useDatabase.test.jsx`, confirmação e `UPDATE ativo:false` com preservação da OS | Cobre a inativação solicitada. Seleção apenas de ativos é implementada pela consulta `servico_catalogo.eq('ativo', true)`; não há teste novo de integração de inclusão de inativo via RPC. |
+| RN46 | `pages/Servicos.test.jsx`, `hooks/useDatabase.test.jsx` e `database/tests/regras_negocio_servidor_test.sql`: confirmação, `UPDATE ativo:false`, recusa de inclusão direta e regravação segura pelo RPC | A seleção da tela consulta somente serviços ativos; a migração 34 também impede contorno via PostgREST/RPC sem bloquear um serviço que já pertencia à OS antes de ser inativado. |
 
 ### 4.3 Histórico de status e desempenho
 
@@ -249,10 +252,16 @@ backend passou sem avisos. O build passou, mas ainda emite um aviso do plugin Po
 sobre a opção `from`; portanto, não se declara ausência de todos os avisos do build.
 `xlsx` foi removido por não ser usado.
 
+Na rodada complementar de 25/10/2026, após a migração 34, passaram **460/460 testes
+frontend** (46 arquivos), **537/537 backend** (27 arquivos), **72/72 E2E** nos três
+navegadores, **8/8 suítes SQL** e **15/15 verificações de concorrência**. A migração 34
+foi aplicada duas vezes no Supabase efêmero, confirmando a idempotência. Lint dos dois
+projetos e build também passaram; nenhum teste dessa rodada acessou produção.
+
 Esses testes fecham as três lacunas solicitadas no código, mas **não fundamentam uma
 declaração de 100% de conformidade ou de cobertura integral das 50 RNs**. Contar uma regra
 referenciada por um teste não prova todas as suas cláusulas. A RN38 continua divergente,
-a RN29 tem o limite acima, e UAT/SUS e execução real da coleção ainda exigem evidências.
+a RN29 tem o limite acima, e UAT/SUS ainda exigem evidências.
 O roteiro de UAT distingue resultados esperados dos efetivamente observados.
 
 Na revisão estática das suítes, também não foram localizadas asserções específicas
@@ -262,12 +271,7 @@ de todas as cláusulas das 50 regras.
 
 | Regra | Critério ainda sem evidência automatizada específica localizada |
 |---|---|
-| RN04 | Datas automáticas após criação e alteração de registro. |
-| RN09 | Geração sequencial do número da OS e impossibilidade de editá-lo; as fixtures usam números fixos. |
-| RN15 / RN16 | Fronteira de 9/10 caracteres da queixa e status inicial Aberta. |
-| RN24 | Inclusão das datas limite na consulta do histórico. |
 | RN31 / RN36 | Recusa de código de estoque duplicado e domínio completo de unidades de medida. |
-| RN45 | Recusa de cadastro de serviço sem nome ou sem preço base. |
 | RN48 | Recusa de colisão no vínculo 1:1 entre funcionário e usuário. |
 
 ### 4.3 Correção das consultas financeiras do chatbot
@@ -330,8 +334,12 @@ npm --prefix react-app test
 node docs/api/validar-colecao.cjs
 ```
 
-Saída final medida em 22/10/2026: **918 testes unitários/integração/componente aprovados**
+Saída medida em 22/10/2026: **918 testes unitários/integração/componente aprovados**
 (529 backend em 24 arquivos + 389 frontend em 36 arquivos), **24/24 E2E aprovados**
 e **seis suítes SQL aprovadas** após reaplicar as migrações 29–33 no Supabase efêmero.
 O Playwright foi executado com um worker Chromium, configuração local isolada e sem
 acessar produção. Nenhum teste ou migração desta rodada usou produção.
+
+Saída mais recente, medida em 25/10/2026: **997 testes de frontend/backend aprovados**
+(460 frontend + 537 backend), **72/72 E2E**, **8/8 suítes SQL** e **15/15 verificações
+de concorrência**. A execução usou servidores isolados e Supabase efêmero local.

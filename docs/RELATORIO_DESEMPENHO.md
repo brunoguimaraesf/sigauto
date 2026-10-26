@@ -39,10 +39,25 @@ O cenário mede um UPDATE simples de telefone de cliente para cada sessão, não
 
 DS04 não é inferido das chamadas repetidas que o harness faz de propósito para formar amostras. Verifique separadamente com o navegador apontado ao mesmo ambiente e uma conta de ensaio:
 
-1. Abra DevTools → Network, limpe o log e autentique; filtre requisições PostgREST (`/rest/v1/`). Registre o número de chamadas de `cliente`, `veiculo` e `ordem_servico` durante a carga inicial.
-2. Navegue por Dashboard, Clientes, Veículos, Ordens de Serviço e retorne às telas sem recarregar a página nem acionar busca/filtros que consultem o servidor. Registre chamadas adicionais para essas tabelas.
-3. Faça uma recarga completa e repita a contagem como uma nova sessão. Exclua da contagem autenticação, Storage, consultas de outras tabelas, chamadas explicitamente iniciadas por ações do usuário e tentativas repetidas de rede identificáveis como retry.
-4. Anexe export HAR sem cabeçalhos/cookies/tokens ou registre apenas método, caminho, horário e status. Não inclua payloads com dados pessoais.
+1. Gere e sirva o build de produção (`npm run build` e
+   `npm run preview -- --host 127.0.0.1 --port 4173`) com as variáveis apontando para
+   o Supabase e backend isolados. Não use `npm run dev`: em desenvolvimento o
+   `React.StrictMode` pode repetir efeitos e falsear a contagem inicial.
+2. Abra DevTools → Network, marque `Disable cache`, deixe `Preserve log` desligado,
+   limpe o log e autentique. Filtre `/rest/v1/` e registre as chamadas de `cliente`,
+   `veiculo` e `ordem_servico` durante a carga inicial.
+3. Sem recarregar, navegue por Dashboard, Clientes, Veículos, Ordens de Serviço e
+   Histórico, volte às telas e registre quantas chamadas adicionais ocorreram para
+   essas três tabelas. Não execute criação, edição, exclusão, busca remota ou o botão
+   de recarga explícita.
+4. O critério de aprovação desta arquitetura é **zero chamada adicional** dessas
+   tabelas durante a navegação; os dados devem vir do `DataProvider`. Retry de rede
+   comprovado não conta como nova consulta funcional, mas deve ser anotado.
+5. Faça uma recarga completa e repita a contagem como uma segunda sessão. A nova
+   carga inicial é esperada e deve ser registrada separadamente.
+6. Use capturas da lista de requisições ou uma tabela com método, caminho, horário e
+   status. HAR contém cabeçalhos e payloads: só o anexe depois de remover autorização,
+   cookies, chaves, parâmetros e dados pessoais.
 
 | Sessão | Registros presentes na carga cliente/veículo/OS | Chamadas extras ao navegar (sem retry/ação explícita) | Resultado DS04 | Evidência |
 |---|---:|---:|---|---|
@@ -51,6 +66,22 @@ DS04 não é inferido das chamadas repetidas que o harness faz de propósito par
 ## Verificação separada de RNF-DS05
 
 Não faz parte do ensaio de carga. Para não consumir chamadas Gemini reais, o script não invoca chatbot nem PainelIA. Verifique o indicador visual com serviço de IA simulado ou ambiente de teste instrumentado: manter a requisição pendente por mais de 3 s, confirmar que o indicador aparece antes da resposta e registrar a latência e evidência visual. Qualquer medição com Gemini real deve ser identificada em separado, com quantidade de chamadas, modelo e horário, e não misturada ao benchmark de banco.
+
+Procedimento manual reproduzível no Chrome/Edge, em ambiente isolado:
+
+1. Abra o build de produção e autentique como gestor. Em DevTools → Network →
+   Throttling, crie um perfil `DS05-4s` com **4000 ms de latência** e largura de banda
+   alta, para isolar a espera sem transformar o teste em limite de download.
+2. Ative o perfil, limpe o log, abra o Painel IA e filtre
+   `/api/v1/ia/analisar`. Inicie gravação de tela ou prepare capturas com relógio visível.
+3. Clique em `Analisar Dados`. Depois de três segundos, registre que o botão mostra
+   `Analisando...` e que o painel mostra `Processando Análise`, antes da resposta.
+4. Ao terminar, abra `Timing` da requisição e registre duração superior a 3000 ms,
+   horário, ambiente e resultado. O critério DS05 é aprovado quando o indicador fica
+   visível durante a espera e desaparece após sucesso ou erro, sem segundo envio.
+5. Desative o throttling. Se a chamada usou Gemini real, registre uma chamada, modelo,
+   data/hora e ambiente; se usou backend simulado, identifique claramente a simulação.
+   Não publique chave, token, prompt com dados reais ou resposta contendo PII.
 
 | Execução | Ambiente / simulação | Latência observada | Indicador durante a espera | Resultado DS05 |
 |---|---|---:|---|---|

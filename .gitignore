@@ -65,6 +65,7 @@ docs/**/*.mod
 docs/img/
 !docs/DER.md
 !docs/VALIDACAO_VERIFICACAO.md
+!docs/AUDITORIA_QA_COMPLEMENTAR.md
 !docs/ROTEIRO_UAT.md
 !docs/QUESTIONARIO_SUS.md
 !docs/TESTES_IA.md
@@ -75,6 +76,7 @@ docs/api/*
 !docs/api/README.md
 !docs/api/SIGAuto.postman_collection.json
 !docs/api/validar-colecao.cjs
+!docs/api/RESULTADO_POSTMAN_LOCAL_2026-10-26.md
 !docs/Desenvolvimento_DERS_BrunoGabrielGuimaraes.docx
 !docs/REQUISITOS.md
 !docs/importar-ders.py

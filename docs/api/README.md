@@ -1,5 +1,9 @@
 # Coleção da API do SIGAuto
 
+> Execução local mais recente: [30/30 requisições e 91/91 assertions aprovadas em
+> 26/10/2026](RESULTADO_POSTMAN_LOCAL_2026-10-26.md), mais a contraprova RN30 com
+> e-mail inexistente (3/3 assertions).
+
 Importe [SIGAuto.postman_collection.json](SIGAuto.postman_collection.json) no **Postman**, no formato Collection v2.1. A coleção contém **30 requisições para os 12 pares método/rota** do Express: sucesso, rejeições por autenticação/perfil, validação de entrada e paginação. Os exemplos de resposta são fictícios; não representam execução contra um servidor.
 
 O frontend envia credenciais de login ao backend e estabelece a sessão do Supabase com os tokens retornados; os cadastros comuns continuam usando a chave `anon` e RLS. Esta coleção exercita as rotas do backend Express; não cria rotas de clientes, veículos, OS ou estoque. Não precisa de `service_role` nem da chave Gemini no Postman: essas credenciais ficam exclusivamente no backend.
@@ -23,6 +27,34 @@ O frontend envia credenciais de login ao backend e estabelece a sessão do Supab
 | `emailRecuperacao` | Endereço controlado para o envio de recuperação |
 
 ## Execução e evidências
+
+### Checklist da rodada completa
+
+1. Confirme que o Supabase e o backend são de teste e que `GET {{baseUrl}}/health`
+   não aponta para produção. Rode `node docs/api/validar-colecao.cjs` na raiz.
+2. Importe a coleção, duplique-a com o nome `Execução AAAA-MM-DD` e preencha somente
+   as variáveis da cópia. Não salve tokens ou senhas no arquivo versionado.
+3. Com `habilitarEfeitos=nao`, execute a pasta **01** e confirme cinco requisições
+   executadas, sem itens ignorados e com todas as assertions aprovadas.
+4. Preencha `emailGestor` e `senhaGestor`, mude temporariamente
+   `habilitarEfeitos=sim` e execute a pasta **02**. Confirme que `tokenGestor` e
+   `refreshToken` foram capturados; depois volte imediatamente para `nao`.
+5. Obtenha `tokenNaoGestor` fazendo um login separado com uma conta ativa de
+   atendente ou mecânico do mesmo ambiente. Execute as pastas **03** e **04**.
+6. Configure o Runner com **1 iteração**, intervalo de **6500 ms** e timeout de
+   **30000 ms**. Se ocorrer `429`, aguarde a janela do rate limit e reinicie a
+   rodada; não conte essa execução como aprovada.
+7. Em ambiente descartável, preencha e-mail/senha fictícios inéditos, revise todas
+   as variáveis e execute cada requisição da pasta **05 individualmente**, com
+   `habilitarEfeitos=sim`. Execute `Logout` por último.
+8. Para RN30, rode `Solicitar recuperação de senha` duas vezes: uma com conta
+   controlada existente e outra inexistente. Os dois envelopes devem ser neutros e
+   equivalentes, sem revelar cadastro.
+9. Registre **30 requisições executadas**, sem `skipped`, e exporte o resumo do
+   Runner. Antes de anexá-lo ao TCC, remova tokens, cookies, senhas, e-mails pessoais,
+   payloads reais e cabeçalhos de autorização.
+10. Volte `habilitarEfeitos` para `nao`, limpe as variáveis sensíveis da cópia local
+    e remova as contas fictícias somente pelo ambiente administrativo de teste.
 
 Comece pela pasta **01**, que verifica health e rejeições sem credenciais. Para verificar leituras e permissões, obtenha os JWTs das contas de teste. A pasta **02** realiza login/renovação do gestor com `habilitarEfeitos=sim`, capturando tokens. Volte para `nao` ao terminar essa preparação. Execute então **03** e **04**.
 
