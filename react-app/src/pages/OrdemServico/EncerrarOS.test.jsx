@@ -324,14 +324,15 @@ describe('Encerrar O.S. — chamada do RPC finalizarOrdemServico', () => {
     renderAt('o1')
 
     fireEvent.change(campoDesconto(), { target: { value: '10' } })
-    // 3 x 33,33 = 99,99 ; 10% = 9,999 ; final arredondado para exibicao = 89,99
+    // 3 x 33,33 = 99,99 ; 10% = round(9,999, 2) = 10,00 ; final = 89,99
     expect(valorFinalExibido()).toMatch(/89,99/)
 
     fireEvent.change(selectPagamento(), { target: { value: 'pix' } })
     fireEvent.click(screen.getByRole('button', { name: /^Finalizar O\.S\.$/i }))
     fireEvent.click(screen.getByRole('button', { name: /Confirmar finalização/i }))
     await waitFor(() => expect(finalizar).toHaveBeenCalledTimes(1))
-    // O frontend envia o float sem arredondar; o RPC faz round(...,2).
-    expect(finalizar.mock.calls[0][1].desconto_valor).toBeCloseTo(9.999, 3)
+    // QA-10: a tela calcula como o RPC, round(subtotal * pct / 100, 2), e envia
+    // o mesmo valor que o banco gravara.
+    expect(finalizar.mock.calls[0][1].desconto_valor).toBe(10)
   })
 })

@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { GlassPanel } from '../components/GlassPanel'
 import { Search, X, FileText } from 'lucide-react'
 import { useDatabase } from '../hooks/useDatabase'
+import { dentroDoPeriodo } from '../utils/periodo'
 import css from './Historico.module.css'
 
 export function Historico() {
@@ -41,10 +42,9 @@ export function Historico() {
     const termo = busca.toLowerCase()
     const matchBusca = !busca || os.clienteNome.toLowerCase().includes(termo) || os.placa.toLowerCase().includes(termo) || String(os.numero_os || '').includes(termo)
     const matchStatus = filtroStatus === 'Todos' || os.status === filtroStatus
-    const dt = new Date(os.data_abertura || os.criado_em)
-    const matchInicio = !dataInicio || dt >= new Date(dataInicio)
-    const matchFim = !dataFim || dt <= new Date(dataFim + 'T23:59:59')
-    return matchBusca && matchStatus && matchInicio && matchFim
+    // RN24: limites inclusivos no dia civil local (ver utils/periodo).
+    const matchPeriodo = dentroDoPeriodo(os.data_abertura || os.criado_em, dataInicio, dataFim)
+    return matchBusca && matchStatus && matchPeriodo
   }).sort((a, b) => new Date(b.data_abertura || b.criado_em) - new Date(a.data_abertura || a.criado_em))
 
   return (
