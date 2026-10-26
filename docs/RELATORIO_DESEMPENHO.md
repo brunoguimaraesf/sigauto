@@ -18,7 +18,7 @@ Os limites de 2 s e 3 s vêm do texto da especificação. Para a análise compar
 
 Arquivo: [`react-app/scripts/medir-desempenho.mjs`](../react-app/scripts/medir-desempenho.mjs).
 
-O script semeia 200 clientes e 200 veículos, autentica 1 ou 20 sessões virtuais com uma conta de gestor, mede as mesmas consultas de listagem executadas pelo `DataProvider` (incluindo as OS já presentes no ambiente) e atualiza clientes de fixture sob a chave anon/RLS. Não cria nem apaga OS: a migração 33 preserva as transições num ledger append-only. São 30 rodadas por sessão; a carga 1 produz 30 amostras por operação e a carga 20 produz 600. Cada saída traz p50, p95, máximo, número de erros e até três mensagens distintas. Registre no resultado o número de OS já existentes; se a massa for pequena, a latência dessa consulta não representa uma tabela carregada.
+O script semeia 200 clientes e 200 veículos, autentica sessões virtuais com uma conta de gestor, mede as mesmas consultas de listagem executadas pelo `DataProvider` (incluindo as OS já presentes no ambiente) e atualiza clientes de fixture sob a chave anon/RLS. Não cria nem apaga OS: a migração 33 preserva as transições num ledger append-only. Os níveis são configuráveis e, por padrão, progridem por 1, 5, 10, 20 e 50 sessões; repetições, rampa, duração e limites de parada também podem ser definidos por variáveis de ambiente. Cada saída traz p50, p95, p99, máximo, RPS, erros, respostas 429, timeouts, recuperação e amostras pontuais do container PostgreSQL. Registre no resultado o número de OS já existentes; se a massa for pequena, a latência dessa consulta não representa uma tabela carregada.
 
 Para executar contra o Supabase local, inicie o stack local e configure as variáveis na sessão PowerShell. Use conta gestor sintética/local e nunca imprima os valores das chaves:
 
@@ -88,6 +88,11 @@ Procedimento manual reproduzível no Chrome/Edge, em ambiente isolado:
 | 26/10/2026 | Build de produção; resposta sintética atrasada em 4.200 ms, sem Gemini | 5.072 ms | `Analisando...` e `Processando Análise` visíveis aos 3.200 ms; ausentes após a resposta | **Aprovado localmente** |
 
 ## Registro formal dos resultados
+
+A auditoria progressiva adicional de 26/10/2026, com níveis de 1 a 50 sessões e
+1.720 requisições medidas sem erros, 429 ou timeout, está registrada em
+[`RELATORIO_AUDITORIA_SEGURANCA_PERFORMANCE.md`](RELATORIO_AUDITORIA_SEGURANCA_PERFORMANCE.md).
+Ela complementa, sem substituir, a rodada formal abaixo.
 
 Execução: **22/10/2026 13:38 BRT** (JSON UTC: `2026-10-22T16:38:30.152Z`); HEAD `1b42bac` com alterações locais não commitadas; Windows, Node `v24.19.0`; Supabase local efêmero Docker; perfil gestor sintético; 200 clientes e 200 veículos sintéticos, **6 OS existentes**. Trinta rodadas em concorrência 1 e 600 amostras por operação em concorrência 20. O teste não altera OS nem chama o Gemini. RTT, CPU/RAM do host e navegador não foram coletados; as métricas são tempo de ida e volta do PostgREST sobre loopback. Não extrapolar estes números para produção.
 

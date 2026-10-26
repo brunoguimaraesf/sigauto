@@ -13,18 +13,18 @@ TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
 
 | Ferramenta | Uso | Situação |
 |---|---|---|
-| **Vitest** | Testes unitários, de integração e de componente (frontend e backend) | **Implementado — 918 testes aprovados em 22/10/2026** |
+| **Vitest** | Testes unitários, de integração e de componente (frontend e backend) | **Implementado — 1.004 testes aprovados em 26/10/2026** |
 | **React Testing Library** | Testes de componente React (renderização isolada) | **Implementado** |
 | **Supertest** | Testes de integração da API Express | **Implementado** |
 | **ESLint** | Análise estática de código | Configurado (`npm run lint`). No backend, com **plugin de segurança** (`backend/eslint.config.js`) e execução na integração contínua. Em 22/10/2026, frontend e backend sem avisos |
 | **Vite build** | Verificação de compilação/empacotamento | `npm run build` |
 | **QA assistido em navegador** | Inspeção de telas, console e fluxos | Realizado (evidências em prints) |
 | **Playwright** | Testes ponta a ponta (E2E) dos fluxos | **Implementado — 24 testes E2E em banco Supabase efêmero na CI** |
-| **Postman** | Testes da API REST (endpoints) | **Coleção v2.1 executada localmente — 12/12 endpoints, 30/30 requisições e 91/91 assertions; contraprova RN30 3/3** ([resultado sanitizado](api/RESULTADO_POSTMAN_LOCAL_2026-10-26.md)) |
+| **Postman** | Testes da API REST (endpoints) | **Coleção v2.1 — 12/12 endpoints e 33 requisições; execução funcional 30/30 e 91/91 assertions, contraprova RN30 3/3, pasta de segurança 3/3 e 16/16** ([resultado funcional](api/RESULTADO_POSTMAN_LOCAL_2026-10-26.md); [auditoria](RELATORIO_AUDITORIA_SEGURANCA_PERFORMANCE.md)) |
 
 ### 2.1 Testes automatizados (Vitest)
 
-- **Backend (529 testes, 24 arquivos)**:
+- **Backend (544 testes, 29 arquivos)**:
   - `validators.test.js` — CPF, CNPJ, placa, e-mail, senha.
   - `security.test.js` — hardening de cabeçalhos, CORS e limites de payload.
   - `comRetry.test.js` — retry da IA em erros transitórios 503/429 (com timers falsos).
@@ -56,7 +56,7 @@ TFC UniRV 2026 · Bruno Gabriel Guimarães Fernandes
     falha fechada das consultas, sanitização de dados quantitativos e PII antes do Gemini
     e da persistência, precedência das métricas calculadas, paginação e histórico.
     `app.integration.test.js` confirma bloqueio gestor-only e o limite de requisições da IA.
-- **Frontend (389 testes, 36 arquivos)**:
+- **Frontend (460 testes, 46 arquivos)**:
   - Funções puras (`utils/*.test.js`) — placa, estoque (alerta/saldo/moeda/resumo),
     endereço/CEP, finanças da OS e status de OS.
   - **Componente (React Testing Library)** — entre as suítes estão `GlassPanel.test.jsx`,
@@ -158,18 +158,22 @@ A divergência está registrada em [`DER.md`](DER.md), seção de divergências 
 Importe [SIGAuto.postman_collection.json](api/SIGAuto.postman_collection.json) no Postman
 e siga o [guia de preparação e execução](api/README.md). A coleção cobre os 12 pares
 método/rota existentes de health, autenticação, cadastro administrativo, chatbot e IA,
-com 30 requisições, sucessos e rejeições de autenticação, perfil e entrada.
+com 33 requisições, sucessos, rejeições de autenticação, perfil e entrada, além de
+casos adversariais de injeção em login e paginação.
 Credenciais e tokens são variáveis vazias; não são necessárias chaves administrativas no cliente.
 
 Validação local atualizada em 26/10/2026: `node docs/api/validar-colecao.cjs` verificou os endpoints
-contra as rotas locais, o JSON e a compilação de 49 scripts; executou 172 assertions
+contra as rotas locais, o JSON e a compilação de 52 scripts; executou 211 assertions
 sobre exemplos fictícios e contraprovas. O bloqueio padrão foi conferido nas oito
 operações com efeitos. Essa validação estática não substitui uma execução real.
 Em 26/10/2026, o Postman CLI executou a coleção contra backend e Supabase locais:
 **30/30 requisições e 91/91 assertions**, sem itens ignorados; a contraprova RN30 com
 e-mail inexistente passou **3/3 assertions**. O
 [relatório sanitizado](api/RESULTADO_POSTMAN_LOCAL_2026-10-26.md) registra ambiente,
-tempos, limpeza e limites da evidência.
+tempos, limpeza e limites da evidência. A pasta adicional de segurança também foi
+executada isoladamente no ambiente local: **3/3 requisições e 16/16 assertions**, sem
+chamada ao Gemini; os resultados constam no
+[relatório da auditoria](RELATORIO_AUDITORIA_SEGURANCA_PERFORMANCE.md).
 
 ## 3. Ferramentas de Validação
 
@@ -261,6 +265,12 @@ navegadores, **8/8 suítes SQL** e **15/15 verificações de concorrência**. A 
 foi aplicada duas vezes no Supabase efêmero, confirmando a idempotência. Lint dos dois
 projetos e build também passaram; nenhum teste dessa rodada acessou produção.
 
+Na rodada de segurança de 26/10/2026, após a migração 35 e o hook local do Supabase
+Auth, passaram **460/460 frontend** (46 arquivos), **544/544 backend** (29 arquivos),
+**72/72 E2E**, **9/9 suítes SQL** e **15/15 verificações de concorrência**. A chamada
+direta ao grant de senha também foi bloqueada após cinco falhas e recuperou após a
+expiração simulada. Lint, build e os ensaios controlados de recursos passaram.
+
 Esses testes fecham as três lacunas solicitadas no código, mas **não fundamentam uma
 declaração de 100% de conformidade ou de cobertura integral das 50 RNs**. Contar uma regra
 referenciada por um teste não prova todas as suas cláusulas. A RN38 continua divergente,
@@ -346,3 +356,7 @@ acessar produção. Nenhum teste ou migração desta rodada usou produção.
 Saída mais recente, medida em 25/10/2026: **997 testes de frontend/backend aprovados**
 (460 frontend + 537 backend), **72/72 E2E**, **8/8 suítes SQL** e **15/15 verificações
 de concorrência**. A execução usou servidores isolados e Supabase efêmero local.
+
+Atualização de 26/10/2026: **1.004 testes de frontend/backend aprovados**
+(460 frontend + 544 backend), **72/72 E2E**, **9/9 suítes SQL** e **15/15 verificações
+de concorrência**, além da contraprova HTTP real do hook de autenticação.

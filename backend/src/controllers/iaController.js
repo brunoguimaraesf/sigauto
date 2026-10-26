@@ -1,5 +1,5 @@
 import { supabase } from '../services/supabaseClient.js'
-import { gerarRecomendacoesIA } from '../services/iaService.js'
+import { gerarRecomendacoesIA, iaSimuladaAtiva } from '../services/iaService.js'
 import { calcularMetricasPainelIA } from '../services/metricasPainelIA.js'
 import { validarRecomendacoes } from '../services/recomendacoesExplicaveis.js'
 
@@ -114,16 +114,18 @@ export async function analisar(req, res, next) {
       ...metricas,
     }
 
-    const { data: salvo, error: errSalvar } = await supabase
-      .from('recomendacao_ia')
-      .insert({
-        id_usuario: req.user.id,
-        dados_analisados: dadosHistorico,
-        recomendacoes,
-        criado_em: referencia.toISOString(),
-      })
-      .select()
-      .single()
+    const { data: salvo, error: errSalvar } = iaSimuladaAtiva()
+      ? { data: null, error: null }
+      : await supabase
+        .from('recomendacao_ia')
+        .insert({
+          id_usuario: req.user.id,
+          dados_analisados: dadosHistorico,
+          recomendacoes,
+          criado_em: referencia.toISOString(),
+        })
+        .select()
+        .single()
 
     if (errSalvar) {
       console.error('[IA] Erro ao salvar recomendação:', errSalvar.message)

@@ -83,6 +83,7 @@ const METRICAS_DO_MODELO = {
 }
 
 vi.mock('../services/iaService.js', () => ({
+  iaSimuladaAtiva: vi.fn(() => false),
   gerarRecomendacoesIA: vi.fn(async () => ({
     resumo: 'resumo do modelo',
     recomendacoes: [],
