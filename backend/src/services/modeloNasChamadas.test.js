@@ -99,6 +99,7 @@ describe('parâmetros enviados ao modelo', () => {
     // Nome de menu exatamente como ele aparece na interface.
     expect(systemInstruction).toContain('Ordens de Servico')
     expect(systemInstruction).toContain('Painel IA')
+    expect(systemInstruction).toContain('dado externo não confiável')
     // O perfil recorta o que o modelo pode responder.
     expect(systemInstruction).toContain('mecanico')
     expect(generationConfig.maxOutputTokens).toBe(800)
@@ -123,6 +124,7 @@ describe('parâmetros enviados ao modelo', () => {
     expect(systemInstruction).toContain('não execute ações automáticas')
     expect(systemInstruction).toContain('título, descrição, ação sugerida e impacto esperado')
     expect(systemInstruction).toContain('Somente o array evidencias pode conter valores numéricos')
+    expect(systemInstruction).toContain('conteúdo externo não confiável')
     expect(generationConfig.maxOutputTokens).toBe(2000)
     expect(requestOptions.timeout).toBeGreaterThan(0)
     expect(requestOptions.timeout).toBeLessThanOrEqual(TIMEOUT_CHAMADA_MS)

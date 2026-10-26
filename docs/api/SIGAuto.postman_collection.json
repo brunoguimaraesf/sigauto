@@ -2742,6 +2742,144 @@
           ]
         }
       ]
+    },
+    {
+      "name": "06 - Seguranca: entradas adversariais",
+      "description": "Casos não destrutivos contra endpoints existentes. Execute somente em ambiente local ou homologação autorizada.",
+      "item": [
+        {
+          "name": "Login — condição booleana permanece dado literal",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejeição controlada, sem erro interno', () => pm.expect([400, 401, 429].includes(pm.response.code)).to.equal(true));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope de erro', () => pm.expect(resposta.erro).to.equal(true));",
+                  "pm.test('Código de rejeição controlado', () => pm.expect(['CAMPOS_OBRIGATORIOS', 'CREDENCIAIS_INVALIDAS', 'LOGIN_BLOQUEADO', 'MUITAS_TENTATIVAS'].includes(resposta.codigo)).to.equal(true));",
+                  "pm.test('Não autenticou o payload', () => pm.expect(resposta.dados?.token).to.equal(undefined));",
+                  "pm.test('Não expõe detalhes internos', () => pm.expect(resposta.detalhes).to.equal(undefined));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": "{{baseUrl}}/api/v1/auth/login",
+            "description": "Usa email sintético com metacaracteres. Pode consumir uma tentativa do bloqueio local; não repita contra conta real.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"audit'OR'1'='1'--@example.invalid\",\n  \"senha\": \"Senha1234\"\n}",
+              "options": { "raw": { "language": "json" } }
+            }
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 401",
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "url": "{{baseUrl}}/api/v1/auth/login",
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"audit'OR'1'='1'--@example.invalid\",\n  \"senha\": \"Senha1234\"\n}",
+                  "options": { "raw": { "language": "json" } }
+                }
+              },
+              "status": "Unauthorized",
+              "code": 401,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"erro\": true,\n  \"codigo\": \"CREDENCIAIS_INVALIDAS\",\n  \"mensagem\": \"Email ou senha incorretos.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Histórico chatbot — paginação adversarial usa padrões seguros",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(200));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(false));",
+                  "pm.test('Página normalizada', () => pm.expect(resposta.paginacao.pagina).to.equal(1));",
+                  "pm.test('Limite normalizado', () => pm.expect(resposta.paginacao.limite).to.equal(50));",
+                  "pm.test('Total de páginas consistente', () => pm.expect(resposta.paginacao.totalPaginas).to.equal(Math.ceil(resposta.paginacao.total / resposta.paginacao.limite)));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tokenGestor}}", "type": "string" }] },
+            "url": "{{baseUrl}}/api/v1/chatbot/historico?page=1%20OR%201%3D1--&limit=10%3BSELECT%20pg_sleep(2)",
+            "description": "Confirma que query strings adversariais não chegam como operadores ao Supabase."
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 200",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tokenGestor}}", "type": "string" }] },
+                "url": "{{baseUrl}}/api/v1/chatbot/historico?page=1%20OR%201%3D1--&limit=10%3BSELECT%20pg_sleep(2)"
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"erro\": false,\n  \"dados\": [],\n  \"paginacao\": { \"total\": 0, \"pagina\": 1, \"limite\": 50, \"totalPaginas\": 0 }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Recomendações IA — paginação adversarial usa padrões seguros",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Código HTTP esperado', () => pm.response.to.have.status(200));",
+                  "const resposta = pm.response.json();",
+                  "pm.test('Envelope da resposta', () => pm.expect(resposta.erro).to.equal(false));",
+                  "pm.test('Página normalizada', () => pm.expect(resposta.paginacao.pagina).to.equal(1));",
+                  "pm.test('Limite normalizado', () => pm.expect(resposta.paginacao.limite).to.equal(10));",
+                  "pm.test('Total de páginas consistente', () => pm.expect(resposta.paginacao.totalPaginas).to.equal(Math.ceil(resposta.paginacao.total / resposta.paginacao.limite)));",
+                  "pm.test('Sem campos privados', () => pm.expect((resposta.dados || []).every(item => item.id_usuario === undefined && item.recomendacoes?.metricas_do_modelo === undefined)).to.equal(true));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "GET",
+            "header": [],
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tokenGestor}}", "type": "string" }] },
+            "url": "{{baseUrl}}/api/v1/ia/recomendacoes?page=-1%20UNION%20SELECT%201&limit=999999%3B--",
+            "description": "Confirma normalização numérica e projeção segura do histórico gerencial."
+          },
+          "response": [
+            {
+              "name": "Exemplo fictício — 200",
+              "originalRequest": {
+                "method": "GET",
+                "header": [],
+                "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{tokenGestor}}", "type": "string" }] },
+                "url": "{{baseUrl}}/api/v1/ia/recomendacoes?page=-1%20UNION%20SELECT%201&limit=999999%3B--"
+              },
+              "status": "OK",
+              "code": 200,
+              "header": [{ "key": "Content-Type", "value": "application/json" }],
+              "body": "{\n  \"erro\": false,\n  \"dados\": [],\n  \"paginacao\": { \"total\": 0, \"pagina\": 1, \"limite\": 10, \"totalPaginas\": 0 }\n}"
+            }
+          ]
+        }
+      ]
     }
   ]
 }

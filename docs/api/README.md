@@ -1,10 +1,11 @@
 # Coleção da API do SIGAuto
 
-> Execução local mais recente: [30/30 requisições e 91/91 assertions aprovadas em
+> Execução funcional local: [30/30 requisições e 91/91 assertions aprovadas em
 > 26/10/2026](RESULTADO_POSTMAN_LOCAL_2026-10-26.md), mais a contraprova RN30 com
-> e-mail inexistente (3/3 assertions).
+> e-mail inexistente (3/3 assertions). A pasta de segurança foi executada
+> separadamente: 3/3 requisições e 16/16 assertions aprovadas.
 
-Importe [SIGAuto.postman_collection.json](SIGAuto.postman_collection.json) no **Postman**, no formato Collection v2.1. A coleção contém **30 requisições para os 12 pares método/rota** do Express: sucesso, rejeições por autenticação/perfil, validação de entrada e paginação. Os exemplos de resposta são fictícios; não representam execução contra um servidor.
+Importe [SIGAuto.postman_collection.json](SIGAuto.postman_collection.json) no **Postman**, no formato Collection v2.1. A coleção contém **33 requisições para os 12 pares método/rota** do Express: sucesso, rejeições por autenticação/perfil, validação de entrada, paginação e entradas adversariais. Os exemplos de resposta são fictícios; não representam execução contra um servidor.
 
 O frontend envia credenciais de login ao backend e estabelece a sessão do Supabase com os tokens retornados; os cadastros comuns continuam usando a chave `anon` e RLS. Esta coleção exercita as rotas do backend Express; não cria rotas de clientes, veículos, OS ou estoque. Não precisa de `service_role` nem da chave Gemini no Postman: essas credenciais ficam exclusivamente no backend.
 
@@ -50,7 +51,7 @@ O frontend envia credenciais de login ao backend e estabelece a sessão do Supab
 8. Para RN30, rode `Solicitar recuperação de senha` duas vezes: uma com conta
    controlada existente e outra inexistente. Os dois envelopes devem ser neutros e
    equivalentes, sem revelar cadastro.
-9. Registre **30 requisições executadas**, sem `skipped`, e exporte o resumo do
+9. Registre **33 requisições executadas**, sem `skipped`, e exporte o resumo do
    Runner. Antes de anexá-lo ao TCC, remova tokens, cookies, senhas, e-mails pessoais,
    payloads reais e cabeçalhos de autorização.
 10. Volte `habilitarEfeitos` para `nao`, limpe as variáveis sensíveis da cópia local
@@ -67,7 +68,7 @@ Execute a pasta **05 individualmente**, habilitando `habilitarEfeitos=sim` somen
 - Chatbot consome cota Gemini e tenta persistir a conversa. Análise consome cota e tenta persistir recomendações. Compare com as leituras depois da execução. `200` do chatbot pode ocorrer mesmo com falha de persistência; `id_analise: null` também exige registro de falha de persistência da análise. Falha externa da IA deve aparecer como falha do cenário de sucesso, sem aceitar indisponibilidade como resultado aprovado.
 - Logout deve ser o último. Ele limpa os tokens locais; seu `200` isolado não comprova revogação imediata de um access token já emitido. Não há endpoint de exclusão de conta nesta API: a limpeza das contas fictícias deve ocorrer no ambiente dedicado, fora da coleção.
 
-Os scripts anteriores à requisição usam `pm.execution.skipRequest()` quando faltam variáveis ou quando efeitos estão desabilitados. Use versão do Postman que ofereça essa API. **Requisição ignorada não é teste aprovado.** Para uma rodada completa, registre as 30 requisições executadas e as verificações aprovadas/falhas, sem contar ignoradas como cobertura. Não execute a coleção inteira com efeitos habilitados sem antes revisar os dados de cada operação.
+Os scripts anteriores à requisição usam `pm.execution.skipRequest()` quando faltam variáveis ou quando efeitos estão desabilitados. Use versão do Postman que ofereça essa API. **Requisição ignorada não é teste aprovado.** Para uma rodada completa, registre as 33 requisições executadas e as verificações aprovadas/falhas, sem contar ignoradas como cobertura. Não execute a coleção inteira com efeitos habilitados sem antes revisar os dados de cada operação.
 
 Guarde como evidência: data, versão/commit, ambiente, perfil usado, requisição, código recebido, resultado das assertions e observações de persistência. Exporte o relatório do Runner sem credenciais, tokens, cookies, e-mails pessoais nem conteúdo real da oficina. Esta entrega cria os cenários; a aplicação real e o relatório da rodada ficam a cargo da execução em ambiente dedicado.
 
