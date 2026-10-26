@@ -4,7 +4,7 @@ import { ArrowLeft, CheckCircle, Package, Wrench } from 'lucide-react'
 import { GlassPanel } from '../../components/GlassPanel'
 import { AcoesDocumentoOS } from '../../components/ui/AcoesDocumentoOS'
 import { useDatabase } from '../../hooks/useDatabase'
-import { calcOSTotals, formatCurrency, getLineTotal } from '../../utils/osFinance'
+import { calcDescontoPercentual, calcOSTotals, centesimos, formatCurrency, getLineTotal } from '../../utils/osFinance'
 import { PAGAMENTO_LABEL } from '../../utils/osPdf'
 import css from './EncerrarOS.module.css'
 
@@ -73,10 +73,11 @@ export function EncerrarOS() {
   const descontoNum = tipoDesconto === 'pct'
     ? Math.min(100, descontoInformado)
     : Math.min(totals.valorTotal, descontoInformado)
+  // Mesma conta do RPC de encerramento, em centavos (QA-10).
   const descontoValor = tipoDesconto === 'pct'
-    ? totals.valorTotal * (descontoNum / 100)
-    : descontoNum
-  const valorFinal = Math.max(0, totals.valorTotal - descontoValor)
+    ? calcDescontoPercentual(totals.valorTotal, descontoNum)
+    : centesimos(descontoNum) / 100
+  const valorFinal = Math.max(0, (centesimos(totals.valorTotal) - centesimos(descontoValor)) / 100)
 
   const jaEncerrada = os?.status === 'concluida' || os?.status === 'Concluído'
 

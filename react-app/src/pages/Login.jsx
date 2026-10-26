@@ -4,6 +4,8 @@ import { Eye, EyeOff, Mail, Lock, X } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { DEMO_LOGIN_HABILITADO } from '../demoLogin'
 import { supabase } from '../supabaseClient'
+import { Captcha } from '../components/ui/Captcha'
+import { captchaHabilitado } from '../utils/captcha'
 import css from './Login.module.css'
 
 export function Login() {
@@ -22,6 +24,12 @@ export function Login() {
   const [resetEnviado, setResetEnviado] = useState(false)
   const [loadingReset, setLoadingReset] = useState(false)
 
+  // QA-11: token de uso unico; `renovar*` reinicia o widget apos cada tentativa.
+  const [captchaToken, setCaptchaToken] = useState(null)
+  const [renovarCaptcha, setRenovarCaptcha] = useState(0)
+  const [captchaResetToken, setCaptchaResetToken] = useState(null)
+  const [renovarCaptchaReset, setRenovarCaptchaReset] = useState(0)
+
   const estaBloqueado = Boolean(bloqueadoAte)
 
   useEffect(() => {
@@ -39,11 +47,16 @@ export function Login() {
       return
     }
 
+    if (captchaHabilitado() && !captchaToken) {
+      setErro('Conclua a verificação de segurança antes de entrar.')
+      return
+    }
+
     setLoading(true)
     setErro('')
 
     try {
-      await login(email, senha)
+      await login(email, senha, captchaToken || undefined)
       navigate('/')
     } catch (err) {
       const ate = err?.data?.dados?.bloqueadoAte
@@ -55,6 +68,7 @@ export function Login() {
       } else {
         setErro(err?.message || 'E-mail ou senha incorretos.')
       }
+      if (captchaHabilitado()) setRenovarCaptcha(n => n + 1)
     } finally {
       setLoading(false)
     }
@@ -74,10 +88,12 @@ export function Login() {
 
   const handleResetSenha = async (e) => {
     e.preventDefault()
+    if (captchaHabilitado() && !captchaResetToken) return
     setLoadingReset(true)
     try {
       await supabase.auth.resetPasswordForEmail(emailReset, {
-        redirectTo: `${window.location.origin}/reset-password`
+        redirectTo: `${window.location.origin}/reset-password`,
+        ...(captchaResetToken ? { captchaToken: captchaResetToken } : {}),
       })
       setResetEnviado(true)
     } catch {
@@ -85,6 +101,7 @@ export function Login() {
       setResetEnviado(true)
     } finally {
       setLoadingReset(false)
+      if (captchaHabilitado()) setRenovarCaptchaReset(n => n + 1)
     }
   }
 
@@ -155,6 +172,8 @@ export function Login() {
               </button>
             </div>
           </div>
+
+          <Captcha onToken={setCaptchaToken} renovar={renovarCaptcha} />
 
           {erro && (
             <div className={css.erro}>
@@ -252,12 +271,13 @@ export function Login() {
                       required
                     />
                   </div>
+                  <Captcha onToken={setCaptchaResetToken} renovar={renovarCaptchaReset} />
                 </div>
                 <div className="modal-footer">
                   <button type="button" className="btn-secondary" onClick={() => setModalEsqueci(false)}>
                     Cancelar
                   </button>
-                  <button type="submit" className="btn-primary" disabled={loadingReset}>
+                  <button type="submit" className="btn-primary" disabled={loadingReset || (captchaHabilitado() && !captchaResetToken)}>
                     {loadingReset ? 'Enviando...' : 'Enviar Link'}
                   </button>
                 </div>

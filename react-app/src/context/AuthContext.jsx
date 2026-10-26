@@ -113,7 +113,7 @@ export function AuthProvider({ children }) {
     return () => subscription.unsubscribe()
   }, [])
 
-  const login = async (email, senha) => {
+  const login = async (email, senha, captchaToken) => {
     // Modo demo: valida contra DEMO_USERS quando Supabase não está configurado
     if (!isSupabaseReal()) {
       const fakeUser = loginDemo(email, senha)
@@ -122,7 +122,7 @@ export function AuthProvider({ children }) {
       return { user: fakeUser }
     }
 
-    const resposta = await authApi.login(email, senha)
+    const resposta = await authApi.login(email, senha, captchaToken)
     const { data, error } = await supabase.auth.setSession({
       access_token: resposta.dados.token,
       refresh_token: resposta.dados.refresh_token,

@@ -46,10 +46,22 @@ export function Servicos() {
   const handleSubmit = (e) => {
     e.preventDefault()
 
+    // RN45: `required` do HTML aceita nome so com espacos; o banco tambem recusa.
+    const nomeLimpo = nome.trim()
+    const precoNumero = Number(String(preco).replace(',', '.'))
+    if (!nomeLimpo) {
+      alert('Informe o nome do serviço.')
+      return
+    }
+    if (String(preco).trim() === '' || !Number.isFinite(precoNumero) || precoNumero < 0) {
+      alert('Informe um preço base válido, igual ou maior que zero.')
+      return
+    }
+
     const payload = {
-      nome,
+      nome: nomeLimpo,
       descricao,
-      preco: Number(preco)
+      preco: precoNumero
     }
 
     if (editingId) {

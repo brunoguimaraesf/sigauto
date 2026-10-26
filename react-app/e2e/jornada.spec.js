@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test'
+import { randomInt } from 'node:crypto'
 
 // Jornada ponta a ponta do atendimento (RF01 a RF07), com usuario real no
 // navegador e banco efemero: cadastrar cliente e veiculo na abertura da O.S.,
@@ -6,6 +7,10 @@ import { test, expect } from '@playwright/test'
 // mudar o status, finalizar com desconto, gerar o documento e sair.
 
 const sufixo = () => String(Date.now())
+const placaUnica = () => {
+  const letras = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+  return `${letras[randomInt(26)]}${letras[randomInt(26)]}${letras[randomInt(26)]}${randomInt(10)}${letras[randomInt(26)]}${String(randomInt(100)).padStart(2, '0')}`
+}
 
 // CPF valido gerado a partir de uma base unica por execucao. Isso permite
 // repetir a suite no mesmo banco sem colidir com a unicidade do documento.
@@ -41,7 +46,7 @@ test.describe('jornada completa do atendimento', () => {
     test.slow()
     const id = sufixo()
     const nomeCliente = `Cliente E2E ${id}`
-    const placa = `TST${id.slice(-1)}E${id.slice(-2)}`
+    const placa = placaUnica()
     const cpf = cpfValido(`7${id.slice(-8)}`)
 
     await entrarComoGestor(page)

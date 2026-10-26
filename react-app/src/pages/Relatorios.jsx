@@ -2,8 +2,9 @@ import { useEffect, useState } from 'react'
 import { GlassPanel } from '../components/GlassPanel'
 import { useDatabase } from '../hooks/useDatabase'
 import { BarChart3, TrendingUp, Package, Users, Wrench, Download, Percent } from 'lucide-react'
-import { calcOSCommissions, calcOSTotals, formatCurrency, resolveEquipe } from '../utils/osFinance'
+import { calcOSCommissions, calcOSTotals, centesimos, formatCurrency, resolveEquipe } from '../utils/osFinance'
 import { supabaseDb } from '../supabaseClient'
+import { dentroDoPeriodo } from '../utils/periodo'
 import css from './Relatorios.module.css'
 
 const TIPOS = [
@@ -53,14 +54,11 @@ export function Relatorios() {
     return mecanico?.id === funcionarioSel || atendente?.id === funcionarioSel
   }
 
-  const osNoPeriodo = ordensServico.filter(os => {
-    const dt = new Date(os.data_abertura || os.created_at)
-    return dt >= new Date(dataInicio) && dt <= new Date(`${dataFim}T23:59:59`) && daEquipe(os)
-  })
-  const getOSDateInPeriod = (os, field) => {
-    const dt = new Date(os[field] || os.data_abertura || os.created_at)
-    return dt >= new Date(dataInicio) && dt <= new Date(`${dataFim}T23:59:59`)
-  }
+  const osNoPeriodo = ordensServico.filter(os =>
+    dentroDoPeriodo(os.data_abertura || os.created_at, dataInicio, dataFim) && daEquipe(os),
+  )
+  const getOSDateInPeriod = (os, field) =>
+    dentroDoPeriodo(os[field] || os.data_abertura || os.created_at, dataInicio, dataFim)
 
   const getVeiculo = (os) => veiculos.find(v => v.id === (os.veiculo_id || os.id_veiculo)) || {}
   const getCliente = (os) => {
@@ -91,18 +89,28 @@ export function Relatorios() {
 
   const gerarDados = () => {
     if (tipoSel === 'faturamento') {
-      const concluidas = osNoPeriodo.filter(os => os.status === 'concluida' || os.status === 'Concluido' || os.status === 'Concluído')
-      const receita = concluidas.reduce((s, os) => s + getValorOS(os), 0)
+      // QA-09: receita entra no periodo pela data de ENCERRAMENTO, como no
+      // chatbot, no Painel IA (RN43) e no relatorio de comissoes. Pela abertura,
+      // uma O.S. aberta em setembro e paga em outubro sumia do faturamento de
+      // outubro. "Total de O.S." continua contando as abertas no periodo.
+      const concluidas = ordensServico.filter(os =>
+        (os.status === 'concluida' || os.status === 'Concluido' || os.status === 'Concluído')
+        && getOSDateInPeriod(os, 'data_encerramento')
+        && daEquipe(os),
+      )
+      const receita = concluidas.reduce((s, os) => s + centesimos(getValorOS(os)), 0) / 100
       return {
         titulo: 'Faturamento no Periodo',
         totais: [
           { label: 'Total de O.S.', valor: osNoPeriodo.length },
           { label: 'O.S. Concluidas', valor: concluidas.length },
           { label: 'Receita Total', valor: formatCurrency(receita) },
-          { label: 'Ticket Medio', valor: concluidas.length ? formatCurrency(receita / concluidas.length) : formatCurrency(0) },
+          { label: 'Ticket Medio', valor: concluidas.length ? formatCurrency(Math.round(receita * 100 / concluidas.length) / 100) : formatCurrency(0) },
         ],
-        colunas: ['N. O.S.', 'Cliente', 'Placa', 'Status', 'Valor', 'Data'],
-        linhas: osNoPeriodo.map(os => {
+        // As linhas sao as O.S. que compoem a receita, para o CSV fechar com o
+        // total exibido (RN25).
+        colunas: ['N. O.S.', 'Cliente', 'Placa', 'Status', 'Valor', 'Encerramento'],
+        linhas: concluidas.map(os => {
           const v = getVeiculo(os)
           const c = getCliente(os)
           return [
@@ -111,7 +119,7 @@ export function Relatorios() {
             v.placa || '-',
             statusLabel(os.status),
             formatCurrency(getValorOS(os)),
-            new Date(os.data_abertura || os.created_at).toLocaleDateString('pt-BR'),
+            formatData(os.data_encerramento),
           ]
         }),
       }

@@ -185,6 +185,11 @@ export async function login(req, res, next) {
   try {
     const email = String(req.body?.email || '').trim().toLowerCase()
     const senha = req.body?.senha
+    // QA-11: token do CAPTCHA do Supabase Auth, repassado ao provedor. Sem o
+    // CAPTCHA ligado no painel o provedor ignora o campo.
+    const captchaToken = typeof req.body?.captchaToken === 'string' && req.body.captchaToken.length <= 4096
+      ? req.body.captchaToken
+      : undefined
 
     if (!EMAIL_VALIDO.test(email) || typeof senha !== 'string' || !senha) {
       return res.status(400).json({
@@ -209,11 +214,35 @@ export async function login(req, res, next) {
     let data
     let error
     try {
-      ({ data, error } = await criarClienteAutenticacao().auth.signInWithPassword({ email, password: senha }))
+      ({ data, error } = await criarClienteAutenticacao().auth.signInWithPassword(
+        captchaToken ? { email, password: senha, options: { captchaToken } } : { email, password: senha }
+      ))
     } catch (erroProvedor) {
       await atualizarBloqueioLogin(email, 'liberar', reserva)
       reservaAberta = false
       throw Object.assign(new Error('Não foi possível validar as credenciais agora. Tente novamente.'), { status: 503, cause: erroProvedor })
+    }
+
+    // CAPTCHA recusado pelo provedor responde 400, como senha errada. Nao conta
+    // como falha de credencial: a senha nem chegou a ser verificada.
+    if (error && /captcha/i.test(error.message || '')) {
+      await atualizarBloqueioLogin(email, 'liberar', reserva)
+      reservaAberta = false
+      return res.status(400).json({
+        erro: true,
+        codigo: 'CAPTCHA_INVALIDO',
+        mensagem: 'Verificação de segurança inválida ou expirada. Tente novamente.'
+      })
+    }
+
+    if (error?.status === 429) {
+      await atualizarBloqueioLogin(email, 'liberar', reserva)
+      reservaAberta = false
+      return res.status(429).json({
+        erro: true,
+        codigo: 'LOGIN_BLOQUEADO',
+        mensagem: 'Muitas tentativas incorretas. Aguarde antes de tentar novamente.'
+      })
     }
 
     if (error || !data.session) {
@@ -375,8 +404,12 @@ export async function forgotPassword(req, res, next) {
       })
     }
 
+    const captchaToken = typeof req.body?.captchaToken === 'string' && req.body.captchaToken.length <= 4096
+      ? req.body.captchaToken
+      : undefined
     const { error } = await criarClienteAutenticacao().auth.resetPasswordForEmail(email, {
-      redirectTo: `${process.env.FRONTEND_URL}/reset-password`
+      redirectTo: `${process.env.FRONTEND_URL}/reset-password`,
+      ...(captchaToken ? { captchaToken } : {})
     })
 
     if (error) {

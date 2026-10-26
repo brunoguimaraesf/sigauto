@@ -11,6 +11,9 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
+    "test:seguranca:sql": "node scripts/auditar-injecao-sql.mjs",
+    "test:desempenho": "node scripts/medir-desempenho.mjs",
+    "test:recursos": "node scripts/medir-recursos-aplicacao.mjs",
     "verifica:bundle": "node scripts/verifica-bundle.mjs"
   },
   "dependencies": {

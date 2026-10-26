@@ -1,6 +1,11 @@
 # Coleção da API do SIGAuto
 
-Importe [SIGAuto.postman_collection.json](SIGAuto.postman_collection.json) no **Postman**, no formato Collection v2.1. A coleção contém **30 requisições para os 12 pares método/rota** do Express: sucesso, rejeições por autenticação/perfil, validação de entrada e paginação. Os exemplos de resposta são fictícios; não representam execução contra um servidor.
+> Execução funcional local: [30/30 requisições e 91/91 assertions aprovadas em
+> 26/10/2026](RESULTADO_POSTMAN_LOCAL_2026-10-26.md), mais a contraprova RN30 com
+> e-mail inexistente (3/3 assertions). A pasta de segurança foi executada
+> separadamente: 3/3 requisições e 16/16 assertions aprovadas.
+
+Importe [SIGAuto.postman_collection.json](SIGAuto.postman_collection.json) no **Postman**, no formato Collection v2.1. A coleção contém **33 requisições para os 12 pares método/rota** do Express: sucesso, rejeições por autenticação/perfil, validação de entrada, paginação e entradas adversariais. Os exemplos de resposta são fictícios; não representam execução contra um servidor.
 
 O frontend envia credenciais de login ao backend e estabelece a sessão do Supabase com os tokens retornados; os cadastros comuns continuam usando a chave `anon` e RLS. Esta coleção exercita as rotas do backend Express; não cria rotas de clientes, veículos, OS ou estoque. Não precisa de `service_role` nem da chave Gemini no Postman: essas credenciais ficam exclusivamente no backend.
 
@@ -24,6 +29,34 @@ O frontend envia credenciais de login ao backend e estabelece a sessão do Supab
 
 ## Execução e evidências
 
+### Checklist da rodada completa
+
+1. Confirme que o Supabase e o backend são de teste e que `GET {{baseUrl}}/health`
+   não aponta para produção. Rode `node docs/api/validar-colecao.cjs` na raiz.
+2. Importe a coleção, duplique-a com o nome `Execução AAAA-MM-DD` e preencha somente
+   as variáveis da cópia. Não salve tokens ou senhas no arquivo versionado.
+3. Com `habilitarEfeitos=nao`, execute a pasta **01** e confirme cinco requisições
+   executadas, sem itens ignorados e com todas as assertions aprovadas.
+4. Preencha `emailGestor` e `senhaGestor`, mude temporariamente
+   `habilitarEfeitos=sim` e execute a pasta **02**. Confirme que `tokenGestor` e
+   `refreshToken` foram capturados; depois volte imediatamente para `nao`.
+5. Obtenha `tokenNaoGestor` fazendo um login separado com uma conta ativa de
+   atendente ou mecânico do mesmo ambiente. Execute as pastas **03** e **04**.
+6. Configure o Runner com **1 iteração**, intervalo de **6500 ms** e timeout de
+   **30000 ms**. Se ocorrer `429`, aguarde a janela do rate limit e reinicie a
+   rodada; não conte essa execução como aprovada.
+7. Em ambiente descartável, preencha e-mail/senha fictícios inéditos, revise todas
+   as variáveis e execute cada requisição da pasta **05 individualmente**, com
+   `habilitarEfeitos=sim`. Execute `Logout` por último.
+8. Para RN30, rode `Solicitar recuperação de senha` duas vezes: uma com conta
+   controlada existente e outra inexistente. Os dois envelopes devem ser neutros e
+   equivalentes, sem revelar cadastro.
+9. Registre **33 requisições executadas**, sem `skipped`, e exporte o resumo do
+   Runner. Antes de anexá-lo ao TCC, remova tokens, cookies, senhas, e-mails pessoais,
+   payloads reais e cabeçalhos de autorização.
+10. Volte `habilitarEfeitos` para `nao`, limpe as variáveis sensíveis da cópia local
+    e remova as contas fictícias somente pelo ambiente administrativo de teste.
+
 Comece pela pasta **01**, que verifica health e rejeições sem credenciais. Para verificar leituras e permissões, obtenha os JWTs das contas de teste. A pasta **02** realiza login/renovação do gestor com `habilitarEfeitos=sim`, capturando tokens. Volte para `nao` ao terminar essa preparação. Execute então **03** e **04**.
 
 No Collection Runner, configure **uma iteração**, intervalo de **6500 ms** entre requisições e timeout de pelo menos **30000 ms**. IA e chatbot compartilham o limite de 10 requisições por minuto, inclusive nas negativas; a API permite 100 por minuto. Login tem limite próprio de 5 requisições por 10 minutos. Não repita a coleção rapidamente; `429` indica limite atingido e não satisfaz os códigos esperados. O limite do backend é distinto do bloqueio de 15 minutos no navegador previsto pela RN29, validado na suíte do frontend.
@@ -35,7 +68,7 @@ Execute a pasta **05 individualmente**, habilitando `habilitarEfeitos=sim` somen
 - Chatbot consome cota Gemini e tenta persistir a conversa. Análise consome cota e tenta persistir recomendações. Compare com as leituras depois da execução. `200` do chatbot pode ocorrer mesmo com falha de persistência; `id_analise: null` também exige registro de falha de persistência da análise. Falha externa da IA deve aparecer como falha do cenário de sucesso, sem aceitar indisponibilidade como resultado aprovado.
 - Logout deve ser o último. Ele limpa os tokens locais; seu `200` isolado não comprova revogação imediata de um access token já emitido. Não há endpoint de exclusão de conta nesta API: a limpeza das contas fictícias deve ocorrer no ambiente dedicado, fora da coleção.
 
-Os scripts anteriores à requisição usam `pm.execution.skipRequest()` quando faltam variáveis ou quando efeitos estão desabilitados. Use versão do Postman que ofereça essa API. **Requisição ignorada não é teste aprovado.** Para uma rodada completa, registre as 30 requisições executadas e as verificações aprovadas/falhas, sem contar ignoradas como cobertura. Não execute a coleção inteira com efeitos habilitados sem antes revisar os dados de cada operação.
+Os scripts anteriores à requisição usam `pm.execution.skipRequest()` quando faltam variáveis ou quando efeitos estão desabilitados. Use versão do Postman que ofereça essa API. **Requisição ignorada não é teste aprovado.** Para uma rodada completa, registre as 33 requisições executadas e as verificações aprovadas/falhas, sem contar ignoradas como cobertura. Não execute a coleção inteira com efeitos habilitados sem antes revisar os dados de cada operação.
 
 Guarde como evidência: data, versão/commit, ambiente, perfil usado, requisição, código recebido, resultado das assertions e observações de persistência. Exporte o relatório do Runner sem credenciais, tokens, cookies, e-mails pessoais nem conteúdo real da oficina. Esta entrega cria os cenários; a aplicação real e o relatório da rodada ficam a cargo da execução em ambiente dedicado.
 

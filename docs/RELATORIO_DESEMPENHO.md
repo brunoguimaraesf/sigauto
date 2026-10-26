@@ -18,7 +18,7 @@ Os limites de 2 s e 3 s vêm do texto da especificação. Para a análise compar
 
 Arquivo: [`react-app/scripts/medir-desempenho.mjs`](../react-app/scripts/medir-desempenho.mjs).
 
-O script semeia 200 clientes e 200 veículos, autentica 1 ou 20 sessões virtuais com uma conta de gestor, mede as mesmas consultas de listagem executadas pelo `DataProvider` (incluindo as OS já presentes no ambiente) e atualiza clientes de fixture sob a chave anon/RLS. Não cria nem apaga OS: a migração 33 preserva as transições num ledger append-only. São 30 rodadas por sessão; a carga 1 produz 30 amostras por operação e a carga 20 produz 600. Cada saída traz p50, p95, máximo, número de erros e até três mensagens distintas. Registre no resultado o número de OS já existentes; se a massa for pequena, a latência dessa consulta não representa uma tabela carregada.
+O script semeia 200 clientes e 200 veículos, autentica sessões virtuais com uma conta de gestor, mede as mesmas consultas de listagem executadas pelo `DataProvider` (incluindo as OS já presentes no ambiente) e atualiza clientes de fixture sob a chave anon/RLS. Não cria nem apaga OS: a migração 33 preserva as transições num ledger append-only. Os níveis são configuráveis e, por padrão, progridem por 1, 5, 10, 20 e 50 sessões; repetições, rampa, duração e limites de parada também podem ser definidos por variáveis de ambiente. Cada saída traz p50, p95, p99, máximo, RPS, erros, respostas 429, timeouts, recuperação e amostras pontuais do container PostgreSQL. Registre no resultado o número de OS já existentes; se a massa for pequena, a latência dessa consulta não representa uma tabela carregada.
 
 Para executar contra o Supabase local, inicie o stack local e configure as variáveis na sessão PowerShell. Use conta gestor sintética/local e nunca imprima os valores das chaves:
 
@@ -39,24 +39,60 @@ O cenário mede um UPDATE simples de telefone de cliente para cada sessão, não
 
 DS04 não é inferido das chamadas repetidas que o harness faz de propósito para formar amostras. Verifique separadamente com o navegador apontado ao mesmo ambiente e uma conta de ensaio:
 
-1. Abra DevTools → Network, limpe o log e autentique; filtre requisições PostgREST (`/rest/v1/`). Registre o número de chamadas de `cliente`, `veiculo` e `ordem_servico` durante a carga inicial.
-2. Navegue por Dashboard, Clientes, Veículos, Ordens de Serviço e retorne às telas sem recarregar a página nem acionar busca/filtros que consultem o servidor. Registre chamadas adicionais para essas tabelas.
-3. Faça uma recarga completa e repita a contagem como uma nova sessão. Exclua da contagem autenticação, Storage, consultas de outras tabelas, chamadas explicitamente iniciadas por ações do usuário e tentativas repetidas de rede identificáveis como retry.
-4. Anexe export HAR sem cabeçalhos/cookies/tokens ou registre apenas método, caminho, horário e status. Não inclua payloads com dados pessoais.
+1. Gere e sirva o build de produção (`npm run build` e
+   `npm run preview -- --host 127.0.0.1 --port 4173`) com as variáveis apontando para
+   o Supabase e backend isolados. Não use `npm run dev`: em desenvolvimento o
+   `React.StrictMode` pode repetir efeitos e falsear a contagem inicial.
+2. Abra DevTools → Network, marque `Disable cache`, deixe `Preserve log` desligado,
+   limpe o log e autentique. Filtre `/rest/v1/` e registre as chamadas de `cliente`,
+   `veiculo` e `ordem_servico` durante a carga inicial.
+3. Sem recarregar, navegue por Dashboard, Clientes, Veículos, Ordens de Serviço e
+   Histórico, volte às telas e registre quantas chamadas adicionais ocorreram para
+   essas três tabelas. Não execute criação, edição, exclusão, busca remota ou o botão
+   de recarga explícita.
+4. O critério de aprovação desta arquitetura é **zero chamada adicional** dessas
+   tabelas durante a navegação; os dados devem vir do `DataProvider`. Retry de rede
+   comprovado não conta como nova consulta funcional, mas deve ser anotado.
+5. Faça uma recarga completa e repita a contagem como uma segunda sessão. A nova
+   carga inicial é esperada e deve ser registrada separadamente.
+6. Use capturas da lista de requisições ou uma tabela com método, caminho, horário e
+   status. HAR contém cabeçalhos e payloads: só o anexe depois de remover autorização,
+   cookies, chaves, parâmetros e dados pessoais.
 
 | Sessão | Registros presentes na carga cliente/veículo/OS | Chamadas extras ao navegar (sem retry/ação explícita) | Resultado DS04 | Evidência |
 |---|---:|---:|---|---|
-| 1 | 200 clientes / 200 veículos / 6 OS visíveis | Pendente | Não avaliado | Massa de dados conhecida; chamadas de rede iniciais e extras não medidas |
+| 1 | 1 GET por tabela na carga inicial; volume não recontado nesta rodada | 0 cliente / 0 veículo / 0 OS em 7 navegações | **Aprovado localmente**; uma recarga completa iniciou nova sessão com 1 GET por tabela | [Relatório e captura](evidencias/RESULTADO_DS04_DS05_2026-10-26.md) |
 
 ## Verificação separada de RNF-DS05
 
 Não faz parte do ensaio de carga. Para não consumir chamadas Gemini reais, o script não invoca chatbot nem PainelIA. Verifique o indicador visual com serviço de IA simulado ou ambiente de teste instrumentado: manter a requisição pendente por mais de 3 s, confirmar que o indicador aparece antes da resposta e registrar a latência e evidência visual. Qualquer medição com Gemini real deve ser identificada em separado, com quantidade de chamadas, modelo e horário, e não misturada ao benchmark de banco.
 
+Procedimento manual reproduzível no Chrome/Edge, em ambiente isolado:
+
+1. Abra o build de produção e autentique como gestor. Em DevTools → Network →
+   Throttling, crie um perfil `DS05-4s` com **4000 ms de latência** e largura de banda
+   alta, para isolar a espera sem transformar o teste em limite de download.
+2. Ative o perfil, limpe o log, abra o Painel IA e filtre
+   `/api/v1/ia/analisar`. Inicie gravação de tela ou prepare capturas com relógio visível.
+3. Clique em `Analisar Dados`. Depois de três segundos, registre que o botão mostra
+   `Analisando...` e que o painel mostra `Processando Análise`, antes da resposta.
+4. Ao terminar, abra `Timing` da requisição e registre duração superior a 3000 ms,
+   horário, ambiente e resultado. O critério DS05 é aprovado quando o indicador fica
+   visível durante a espera e desaparece após sucesso ou erro, sem segundo envio.
+5. Desative o throttling. Se a chamada usou Gemini real, registre uma chamada, modelo,
+   data/hora e ambiente; se usou backend simulado, identifique claramente a simulação.
+   Não publique chave, token, prompt com dados reais ou resposta contendo PII.
+
 | Execução | Ambiente / simulação | Latência observada | Indicador durante a espera | Resultado DS05 |
 |---|---|---:|---|---|
-| Pendente | Pendente | Pendente | Pendente | Não avaliado |
+| 26/10/2026 | Build de produção; resposta sintética atrasada em 4.200 ms, sem Gemini | 5.072 ms | `Analisando...` e `Processando Análise` visíveis aos 3.200 ms; ausentes após a resposta | **Aprovado localmente** |
 
 ## Registro formal dos resultados
+
+A auditoria progressiva adicional de 26/10/2026, com níveis de 1 a 50 sessões e
+1.720 requisições medidas sem erros, 429 ou timeout, está registrada em
+[`RELATORIO_AUDITORIA_SEGURANCA_PERFORMANCE.md`](RELATORIO_AUDITORIA_SEGURANCA_PERFORMANCE.md).
+Ela complementa, sem substituir, a rodada formal abaixo.
 
 Execução: **22/10/2026 13:38 BRT** (JSON UTC: `2026-10-22T16:38:30.152Z`); HEAD `1b42bac` com alterações locais não commitadas; Windows, Node `v24.19.0`; Supabase local efêmero Docker; perfil gestor sintético; 200 clientes e 200 veículos sintéticos, **6 OS existentes**. Trinta rodadas em concorrência 1 e 600 amostras por operação em concorrência 20. O teste não altera OS nem chama o Gemini. RTT, CPU/RAM do host e navegador não foram coletados; as métricas são tempo de ida e volta do PostgREST sobre loopback. Não extrapolar estes números para produção.
 
@@ -79,4 +115,4 @@ Execução: **22/10/2026 13:38 BRT** (JSON UTC: `2026-10-22T16:38:30.152Z`); HEA
 | Ordens de serviço | +261,9% | p95 permaneceu em 174,77 ms; apenas 6 OS disponíveis |
 | Gravação | -9,0% | p95 de 58,25 ms; variação compatível com ruído de uma rodada local |
 
-**Conclusão:** DS01 e DS02 atenderam aos limites numéricos nesta execução local; DS03 suportou 20 sessões sem erros e com p95 abaixo de 200 ms, embora a especificação não defina um teto quantitativo para degradação perceptível. A amostra de OS é pequena. Isto não comprova ambiente de produção. DS04 segue pendente de contagem de chamadas em navegador e DS05 de verificação do indicador com IA simulada.
+**Conclusão:** DS01 e DS02 atenderam aos limites numéricos nesta execução local; DS03 suportou 20 sessões sem erros e com p95 abaixo de 200 ms, embora a especificação não defina um teto quantitativo para degradação perceptível. A amostra de OS é pequena. Em 26/10/2026, DS04 foi aprovado com uma carga inicial por tabela e nenhuma consulta extra durante sete navegações SPA; DS05 foi aprovado com os dois indicadores visíveis após 3,2 s de espera controlada e removidos após a resposta. Estes resultados caracterizam somente o ambiente local e não comprovam produção.
