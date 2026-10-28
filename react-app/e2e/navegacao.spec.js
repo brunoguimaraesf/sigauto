@@ -18,7 +18,7 @@ test('navega até Clientes', async ({ page }) => {
 })
 
 test('navega até Veículos', async ({ page }) => {
-  await page.getByRole('link', { name: 'Veiculos', exact: true }).click()
+  await page.getByRole('link', { name: 'Veículos', exact: true }).click()
   await expect(page.getByRole('heading', { name: /Ve[íi]culos/ })).toBeVisible()
 })
 
@@ -28,13 +28,13 @@ test('navega até Estoque', async ({ page }) => {
 })
 
 test('navega até Relatórios', async ({ page }) => {
-  await page.getByRole('link', { name: 'Relatorios', exact: true }).click()
+  await page.getByRole('link', { name: 'Relatórios', exact: true }).click()
   await expect(page.getByRole('heading', { name: /Relat/ })).toBeVisible()
 })
 
 test('navega até Funcionarios', async ({ page }) => {
-  await page.getByRole('link', { name: 'Funcionarios', exact: true }).click()
-  await expect(page.getByRole('heading', { name: /Funcionarios/ })).toBeVisible()
+  await page.getByRole('link', { name: 'Funcionários', exact: true }).click()
+  await expect(page.getByRole('heading', { name: /Funcionários/ })).toBeVisible()
 })
 
 test('abre o assistente (chatbot)', async ({ page }) => {
@@ -50,7 +50,7 @@ test('mantém sino e filtros do histórico alinhados', async ({ page }) => {
   expect(caixaSino).not.toBeNull()
   expect(caixaSino.x + caixaSino.width).toBeGreaterThan(larguraTela - 48)
 
-  await page.getByRole('link', { name: 'Historico', exact: true }).click()
+  await page.getByRole('link', { name: 'Histórico', exact: true }).click()
   const busca = page.getByPlaceholder(/Buscar cliente, placa/i)
   const filtroStatus = page.getByRole('combobox')
 

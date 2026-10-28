@@ -53,7 +53,7 @@ const linhasDaTabela = () => Array.from(document.querySelectorAll('tbody tr')).m
 )
 
 const selecionarFuncionario = async (valor) => {
-  const select = await screen.findByLabelText(/Funcionario/i)
+  const select = await screen.findByLabelText(/Funcionário/i)
   await waitFor(() => expect(select.querySelectorAll('option')).toHaveLength(4))
   fireEvent.change(select, { target: { value: valor } })
 }
@@ -61,7 +61,7 @@ const selecionarFuncionario = async (valor) => {
 describe('Relatorios — filtro por funcionario (RF07)', () => {
   it('separa a comissao de funcionarios homonimos pelo id', async () => {
     render(<Relatorios />)
-    fireEvent.click(screen.getByText('Comissoes'))
+    fireEvent.click(screen.getByText('Comissões'))
     await selecionarFuncionario(MECANICO_B.id)
 
     const linhas = linhasDaTabela()
@@ -73,10 +73,10 @@ describe('Relatorios — filtro por funcionario (RF07)', () => {
 
   it('os totais de comissao fecham com as linhas filtradas', async () => {
     render(<Relatorios />)
-    fireEvent.click(screen.getByText('Comissoes'))
+    fireEvent.click(screen.getByText('Comissões'))
     await selecionarFuncionario(MECANICO_A.id)
 
-    const totais = screen.getByText('Total Comissoes').parentElement
+    const totais = screen.getByText('Total Comissões').parentElement
     expect(within(totais).getByText(/100,00/)).toBeInTheDocument()
     // So o mecanico selecionado entra: a atendente da mesma OS sai do relatorio.
     expect(screen.getByText('Atendentes').parentElement.textContent).toMatch(/R\$\s?0,00/)
@@ -112,7 +112,7 @@ describe('Relatorios — filtro por funcionario (RF07)', () => {
     }
     useDatabase.mockReturnValue({ ...db, ordensServico: [osParcial] })
     render(<Relatorios />)
-    fireEvent.click(screen.getByText('Comissoes'))
+    fireEvent.click(screen.getByText('Comissões'))
     await selecionarFuncionario(ATENDENTE.id)
 
     const linhas = linhasDaTabela()
@@ -125,7 +125,7 @@ describe('Relatorios — filtro por funcionario (RF07)', () => {
   it('desabilita o filtro no relatorio de estoque, que nao tem funcionario', async () => {
     render(<Relatorios />)
     fireEvent.click(screen.getByText('Estoque'))
-    expect(await screen.findByLabelText(/Funcionario/i)).toBeDisabled()
+    expect(await screen.findByLabelText(/Funcionário/i)).toBeDisabled()
   })
 
   it('volta a mostrar todos os funcionarios com a opcao Todos', async () => {

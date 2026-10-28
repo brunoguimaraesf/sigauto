@@ -63,7 +63,7 @@ describe('Tela de Atualizar O.S.', () => {
 
   it('mostra aviso quando a OS nao existe', () => {
     renderAt('inexistente')
-    expect(screen.getByText(/Ordem de servico nao encontrada/i)).toBeInTheDocument()
+    expect(screen.getByText(/Ordem de serviço não encontrada/i)).toBeInTheDocument()
   })
 
   // RF05: o documento da O.S. pode ser salvo ou impresso em qualquer status.

@@ -50,7 +50,7 @@ export function Clientes() {
     const achado = await buscarCep(valor)
     setBuscandoCep(false)
     if (!achado) {
-      setErroCep('CEP nao encontrado. Preencha manualmente.')
+      setErroCep('CEP não encontrado. Preencha manualmente.')
       return
     }
     setEndereco(e => ({
@@ -106,7 +106,7 @@ export function Clientes() {
     const documentoDuplicado = documento && clientes.some(cliente =>
       cliente.id !== editingId && String(cliente.cpf_cnpj || '').replace(/\D/g, '') === documento
     )
-    if (documentoDuplicado) { alert('CPF/CNPJ ja cadastrado para outro cliente.'); return }
+    if (documentoDuplicado) { alert('CPF/CNPJ já cadastrado para outro cliente.'); return }
 
     const payload = {
       nome: nome.trim(),
@@ -202,7 +202,7 @@ export function Clientes() {
                           <div>
                             <strong className={css.nome}>{c.nome}</strong>
                             <span className={css.documento}>
-                              {c.tipo_pessoa === 'juridica' ? 'CNPJ' : 'CPF'}: {c.cpf_cnpj || 'Nao informado'}
+                              {c.tipo_pessoa === 'juridica' ? 'CNPJ' : 'CPF'}: {c.cpf_cnpj || 'Não informado'}
                             </span>
                           </div>
                         </div>
@@ -249,7 +249,7 @@ export function Clientes() {
                             onClick={() => {
                               if (confirm(`Tem certeza que deseja excluir o cliente ${c.nome}?`)) {
                                 deleteCliente(c.id).catch(err => {
-                                  alert(`Nao foi possivel inativar o cliente: ${err?.message || 'erro desconhecido'}`)
+                                  alert(`Não foi possível inativar o cliente: ${err?.message || 'erro desconhecido'}`)
                                 })
                               }
                             }}

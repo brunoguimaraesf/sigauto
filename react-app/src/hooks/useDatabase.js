@@ -239,7 +239,7 @@ export const normalizeOficinaForDb = (oficina = {}) => {
   if (!normalizada.nome_fantasia) throw new Error('Informe o nome fantasia da oficina.')
   if (normalizada.cnpj.length !== 14) throw new Error('O CNPJ da oficina deve ter 14 digitos.')
   if (normalizada.logo_path && !caminhoLogoControlado(normalizada.logo_path)) {
-    throw new Error('Caminho de logotipo invalido.')
+    throw new Error('Caminho de logotipo inválido.')
   }
   return normalizada
 }
@@ -381,14 +381,14 @@ function useDatabaseState() {
   }
 
   const removerLogoOficina = async (path) => {
-    if (!caminhoLogoControlado(path)) throw new Error('Caminho de logotipo invalido.')
+    if (!caminhoLogoControlado(path)) throw new Error('Caminho de logotipo inválido.')
 
     let salvo = oficina
     if (oficina?.logo_path === path) salvo = await salvarOficina({ ...oficina, logo_path: null })
 
     const { error } = await supabase.storage.from(OFICINA_BUCKET).remove([path])
     if (error) {
-      throw new Error(`O logotipo foi desvinculado, mas o arquivo nao pode ser apagado: ${error.message || error}`)
+      throw new Error(`O logotipo foi desvinculado, mas o arquivo não pode ser apagado: ${error.message || error}`)
     }
     return salvo
   }

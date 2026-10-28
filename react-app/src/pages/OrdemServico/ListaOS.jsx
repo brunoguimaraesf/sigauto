@@ -184,7 +184,7 @@ export function ListaOS() {
                     <td data-label="Status"><StatusBadge status={os.status} /></td>
                     <td data-label="Valores" className={css.celulaTextoMenor}>
                       <span className={css.linha}>Serv.: {formatCurrency(os.valorServicos)}</span>
-                      <span className={css.linha}>Pecas: {formatCurrency(os.valorPecas)}</span>
+                      <span className={css.linha}>Peças: {formatCurrency(os.valorPecas)}</span>
                       <strong className={css.total}>{formatCurrency(os.valorTotal)}</strong>
                     </td>
                     <td data-label="Abertura" className={css.celulaTextoMenor}>

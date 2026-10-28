@@ -99,7 +99,7 @@ export function AtualizarOS() {
     return (
       <div className="dashboard-grid">
         <GlassPanel className={`panel stagger-1 ${css.painelVazio}`}>
-          <p className={css.textoVazio}>Ordem de servico nao encontrada.</p>
+          <p className={css.textoVazio}>Ordem de serviço não encontrada.</p>
           <button className={`btn-primary ${css.btnVoltarLista}`} onClick={() => navigate('/ordens-servico')}>Voltar</button>
         </GlassPanel>
       </div>
@@ -115,7 +115,7 @@ export function AtualizarOS() {
         setTimeout(() => setSaved(false), 2500)
         return true
       } catch (error) {
-        setErroSalvar(error?.message || 'Nao foi possivel salvar a ordem de servico.')
+        setErroSalvar(error?.message || 'Não foi possível salvar a ordem de serviço.')
         return false
       }
     }
@@ -308,14 +308,14 @@ export function AtualizarOS() {
             </div>
             <div className={css.linhaCampos}>
               <div className={`form-group ${css.campoSemMargem}`}>
-                <label>Mecanico responsavel</label>
+                <label>Mecânico responsável</label>
                 <select className="form-control" value={mecanicoId} onChange={e => setMecanicoId(e.target.value)} disabled={bloqueada || !podeGerenciar}>
                   <option value="">A definir</option>
                   {mecanicos.map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
                 </select>
               </div>
               <div className={`form-group ${css.campoSemMargem}`}>
-                <label>Atendente responsavel</label>
+                <label>Atendente responsável</label>
                 <select className="form-control" value={atendenteId} onChange={e => setAtendenteId(e.target.value)} disabled={bloqueada || !podeGerenciar}>
                   <option value="">A definir</option>
                   {atendentes.map(a => <option key={a.id} value={a.id}>{a.nome}</option>)}
@@ -421,7 +421,7 @@ function ItensTable({ items, onRemove, locked }) {
       <table className="tech-table">
         <thead>
           <tr>
-            <th>Descricao</th>
+            <th>Descrição</th>
             <th>Qtd</th>
             <th>Valor unit.</th>
             <th>Total</th>
@@ -469,14 +469,14 @@ function ItensModal({ tipo, busca, setBusca, catalogo, selecionados, onAdd, onQt
         <div className="modal-body">
           <div className={css.busca}>
             <Search size={16} color="var(--text-secondary)" className={css.buscaIcone} />
-            <input className={`form-control ${css.buscaInput}`} value={busca} onChange={e => setBusca(e.target.value)} placeholder="Pesquisar por codigo ou nome..." />
+            <input className={`form-control ${css.buscaInput}`} value={busca} onChange={e => setBusca(e.target.value)} placeholder="Pesquisar por código ou nome..." />
           </div>
 
           <div className="tech-table-container">
             <table className="tech-table">
               <thead>
                 <tr>
-                  <th>Codigo</th>
+                  <th>Código</th>
                   <th>Nome</th>
                   <th>Valor</th>
                   {tipo === 'peca' && <th>Saldo</th>}
@@ -516,7 +516,7 @@ function ItensSelecionados({ items, onQty, onRemove }) {
       <table className="tech-table">
         <thead>
           <tr>
-            <th>Descricao</th>
+            <th>Descrição</th>
             <th>Qtd</th>
             <th>Valor unit.</th>
             <th>Total</th>

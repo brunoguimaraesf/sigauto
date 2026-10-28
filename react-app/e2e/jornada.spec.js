@@ -52,7 +52,7 @@ test.describe('jornada completa do atendimento', () => {
     await entrarComoGestor(page)
 
     // 1. Abrir O.S. e cadastrar cliente pelo fluxo rapido da propria tela.
-    await page.getByRole('link', { name: 'Ordens de Servico', exact: true }).click()
+    await page.getByRole('link', { name: 'Ordens de Serviço', exact: true }).click()
     await page.getByRole('button', { name: /Nova O\.S\./i }).click()
     await expect(page.getByRole('heading', { name: 'Abrir Nova O.S.' })).toBeVisible()
 
@@ -194,11 +194,11 @@ test.describe('caminhos alternativos e dados invalidos', () => {
   })
 
   test('veiculo com placa invalida e recusado', async ({ page }) => {
-    await page.getByRole('link', { name: 'Veiculos', exact: true }).click()
-    await page.getByRole('button', { name: 'Adicionar Veiculo' }).click()
+    await page.getByRole('link', { name: 'Veículos', exact: true }).click()
+    await page.getByRole('button', { name: 'Adicionar Veículo' }).click()
 
     const modal = page.locator('.modal-content').filter({
-      has: page.getByRole('heading', { name: 'Cadastrar Novo Veiculo' }),
+      has: page.getByRole('heading', { name: 'Cadastrar Novo Veículo' }),
     })
     await modal.getByRole('combobox').selectOption({ index: 1 })
     await modal.getByPlaceholder(/ABC1D23/).fill('ABC123')
@@ -213,15 +213,15 @@ test.describe('caminhos alternativos e dados invalidos', () => {
       resolve(mensagem)
     }))
     const [, mensagem] = await Promise.all([
-      modal.getByRole('button', { name: 'Adicionar Veiculo' }).click(),
+      modal.getByRole('button', { name: 'Adicionar Veículo' }).click(),
       mensagemAviso,
     ])
     expect(mensagem).toContain('Placa inválida')
-    await expect(page.getByRole('heading', { name: 'Cadastrar Novo Veiculo' })).toBeVisible()
+    await expect(page.getByRole('heading', { name: 'Cadastrar Novo Veículo' })).toBeVisible()
   })
 
   test('busca sem resultado mostra estado vazio, e nao erro', async ({ page }) => {
-    await page.getByRole('link', { name: 'Ordens de Servico', exact: true }).click()
+    await page.getByRole('link', { name: 'Ordens de Serviço', exact: true }).click()
     await page.getByPlaceholder('Buscar por OS, cliente, placa...').fill('zzz-inexistente-999')
     await expect(page.getByText('Nenhuma O.S. encontrada.')).toBeVisible({ timeout: 10000 })
   })
