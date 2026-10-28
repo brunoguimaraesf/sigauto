@@ -144,7 +144,7 @@ const COR = {
 
 const MARGEM = 14
 const RODAPE_ALTURA = 20
-const ASSINATURA_ALTURA = 34
+const ASSINATURA_ALTURA = 24
 
 export function criarDocumentoOS({
   os, cliente = {}, veiculo = {}, equipe = {}, oficina, logoDataUrl = null,
@@ -248,15 +248,15 @@ export function criarDocumentoOS({
 
   // ── Cliente e veiculo, lado a lado ──
   const caixa = (titulo, linhas, x, w, inicioY) => {
-    fonte(8.5)
+    fonte(8)
     const quebradas = linhas.flatMap(l => doc.splitTextToSize(l, w - 8))
-    const altura = 9 + quebradas.length * 4 + 2
+    const altura = 8 + quebradas.length * 3.6 + 2
     doc.setFillColor(...COR.caixa)
     doc.roundedRect(x, inicioY, w, altura, 1.5, 1.5, 'F')
     fonte(7.5, 'bold', COR.laranja)
     doc.text(titulo.toUpperCase(), x + 4, inicioY + 5)
-    fonte(8.5)
-    quebradas.forEach((l, i) => doc.text(l, x + 4, inicioY + 10 + i * 4))
+    fonte(8)
+    quebradas.forEach((l, i) => doc.text(l, x + 4, inicioY + 9.5 + i * 3.6))
     return inicioY + altura
   }
 
@@ -281,7 +281,7 @@ export function criarDocumentoOS({
   y = Math.max(
     caixa('Cliente', linhasCliente, MARGEM, larguraCaixa, y),
     caixa('Veículo', linhasVeiculo, MARGEM + larguraCaixa + 6, larguraCaixa, y),
-  ) + 6
+  ) + 5
 
   // ── Atendimento: queixa, diagnostico, observacoes e equipe ──
   const blocos = [
@@ -291,35 +291,37 @@ export function criarDocumentoOS({
     ['Observações internas', os?.observacoes],
   ].filter(([, texto]) => valido(texto))
   for (const [titulo, texto] of blocos) {
-    fonte(8.5)
+    fonte(8)
     const linhas = doc.splitTextToSize(String(texto), util)
-    garantirEspaco(6 + linhas.length * 4)
+    garantirEspaco(5 + linhas.length * 3.6)
     fonte(7.5, 'bold', COR.laranja)
     doc.text(titulo.toUpperCase(), MARGEM, y)
-    fonte(8.5)
-    doc.text(linhas, MARGEM, y + 4.5)
-    y += 6 + linhas.length * 4
+    fonte(8)
+    doc.text(linhas, MARGEM, y + 4)
+    y += 5 + linhas.length * 3.6
   }
-  garantirEspaco(8)
-  fonte(8.5)
+  garantirEspaco(7)
+  fonte(8)
   doc.text(
     `Mecânico: ${valido(equipe.mecanico?.nome) ? equipe.mecanico.nome : 'não informado'}    ·    Atendente: ${valido(equipe.atendente?.nome) ? equipe.atendente.nome : 'não informado'}`,
     MARGEM, y + 1,
   )
-  y += 8
+  y += 6
 
   // ── Itens ──
   const estiloTabela = {
     theme: 'grid',
     showHead: 'everyPage',
     margin: { left: MARGEM, right: MARGEM, top: 16, bottom: RODAPE_ALTURA + 2 },
-    styles: { fontSize: 8.5, cellPadding: 2.2, textColor: COR.texto, lineColor: COR.linha, lineWidth: 0.1 },
-    headStyles: { fillColor: [40, 40, 46], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 8 },
+    styles: { fontSize: 8, cellPadding: 1.5, textColor: COR.texto, lineColor: COR.linha, lineWidth: 0.1 },
+    headStyles: { fillColor: [40, 40, 46], textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 7.5 },
     footStyles: { fillColor: COR.caixa, textColor: COR.texto, fontStyle: 'bold' },
     columnStyles: { 1: { halign: 'right', cellWidth: 16 }, 2: { halign: 'right', cellWidth: 32 }, 3: { halign: 'right', cellWidth: 32 } },
   }
   const financeiro = resumoFinanceiroOS(os, desconto)
-  const tabelaItens = (titulo, itens, rotuloSubtotal, subtotal) => {
+  // Os subtotais ficam so no resumo financeiro: repeti-los no rodape de cada
+  // tabela custava duas linhas e empurrava as assinaturas para a 2a pagina.
+  const tabelaItens = (titulo, itens) => {
     if (!itens?.length) return
     garantirEspaco(18)
     fonte(8, 'bold', COR.laranja)
@@ -334,13 +336,11 @@ export function criarDocumentoOS({
         formatCurrency(item.valor_unitario),
         formatCurrency(getLineTotal(item)),
       ]),
-      foot: [['', '', rotuloSubtotal, formatCurrency(subtotal)]],
-      showFoot: 'lastPage',
     })
-    y = doc.lastAutoTable.finalY + 6
+    y = doc.lastAutoTable.finalY + 4
   }
-  tabelaItens('SERVIÇOS', os?.servicos_itens, 'Subtotal serviços', financeiro.valorServicos)
-  tabelaItens('PEÇAS E PRODUTOS', os?.pecas_itens, 'Subtotal peças', financeiro.valorPecas)
+  tabelaItens('SERVIÇOS', os?.servicos_itens)
+  tabelaItens('PEÇAS E PRODUTOS', os?.pecas_itens)
   if (!os?.servicos_itens?.length && !os?.pecas_itens?.length) {
     fonte(8.5, 'italic', COR.suave)
     doc.text('Nenhum serviço ou peça lançado nesta O.S.', MARGEM, y)
@@ -378,11 +378,11 @@ export function criarDocumentoOS({
       }
     },
   })
-  y = doc.lastAutoTable.finalY + 10
+  y = doc.lastAutoTable.finalY + 6
 
   // ── Assinaturas: bloco inteiro na mesma pagina ──
   garantirEspaco(ASSINATURA_ALTURA)
-  const linhaAssinatura = y + 18
+  const linhaAssinatura = y + 12
   const metade = (util - 20) / 2
   doc.setDrawColor(...COR.suave)
   doc.setLineWidth(0.2)
