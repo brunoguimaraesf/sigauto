@@ -11,6 +11,7 @@
 /* Linha de filtros: busca elastica, status e o intervalo de datas. */
 .filtros {
   display: flex;
+  align-items: flex-end;
   gap: 12px;
   margin-bottom: 24px;
   flex-wrap: wrap;
@@ -35,6 +36,24 @@
 :global(.form-control).campoFiltro {
   width: 160px;
   flex: 0 0 160px;
+}
+
+/* Rotulo visivel acima do filtro: sem ele, as duas datas eram indistinguiveis. */
+.campoRotulado {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Dentro da coluna, o flex-basis de 160px viraria altura: a largura fica no campo. */
+.campoRotulado :global(.form-control).campoFiltro {
+  flex: none;
+}
+
+.campoRotulado label {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-secondary);
 }
 
 .numero {
@@ -152,8 +171,13 @@
 @media (max-width: 768px) {
   .filtros {
     flex-direction: column;
+    align-items: stretch;
     gap: 10px;
     margin-bottom: 16px;
+  }
+
+  .campoRotulado {
+    width: 100%;
   }
 
   .busca {

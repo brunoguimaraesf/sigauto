@@ -30,8 +30,8 @@ function renderizarComPeriodo(inicio, fim) {
     ],
   })
   render(<Historico />)
-  if (inicio) fireEvent.change(screen.getByTitle('Data início'), { target: { value: inicio } })
-  if (fim) fireEvent.change(screen.getByTitle('Data fim'), { target: { value: fim } })
+  if (inicio) fireEvent.change(screen.getByLabelText('Data de início'), { target: { value: inicio } })
+  if (fim) fireEvent.change(screen.getByLabelText('Data de fim'), { target: { value: fim } })
 }
 
 const visiveis = () => [101, 102, 103, 104].filter(n => screen.queryByText(new RegExp(`#?${n}\\b`)))
