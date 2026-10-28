@@ -84,44 +84,52 @@ A interface deve ser uma aplicação web de página única desenvolvida em React
 
 A persistência, a autenticação e a API de dados devem ser providas pelo Supabase, que reúne o PostgreSQL gerenciado, o Supabase Auth e o PostgREST, acessado diretamente pelo frontend com a chave pública. A plataforma elimina a manutenção de servidor próprio, oferece integridade relacional e autenticação nativa e dispõe de plano gratuito compatível com o contexto acadêmico. O critério de ajuste exige que todas as tabelas tenham RLS habilitado, com políticas por perfil, e que nenhuma chave administrativa esteja presente no código executado no navegador.
 
-As funções que exigem credenciais secretas devem ser executadas por um serviço em Node.js com Express, publicado como função serverless na Vercel, uma vez que a chave do modelo de linguagem e a chave administrativa do banco não podem ser expostas no navegador. Como critério de ajuste, as rotas do chatbot e da inteligência artificial devem exigir JWT válido de usuário ativo e aplicar limite de requisições.
+As funções que exigem credenciais secretas ou controle no servidor, como o login com limite de tentativas, a comunicação com o modelo de linguagem e a criação administrativa de contas de acesso, devem ser executadas por um serviço em Node.js com Express, publicado como função serverless na Vercel, uma vez que a chave do modelo de linguagem e a chave administrativa do banco não podem ser expostas no navegador. Como critério de ajuste, as rotas protegidas do serviço devem exigir JWT válido de usuário ativo, conferir o perfil diretamente na tabela de usuários e aplicar limite de requisições, e o controle das tentativas de login deve ser mantido no banco de dados, sem armazenar o e-mail em texto claro. No provedor de autenticação, as chamadas diretas ao endpoint de senha devem ser limitadas pelo hook de verificação de senha, quando o plano contratado o oferecer, ou pelo CAPTCHA nativo do provedor (Supabase, 2026a; Cloudflare, 2026).
 
-O processamento de linguagem natural deve utilizar o Google Gemini, no modelo gemini-flash-lite-latest, por meio do SDK oficial, em razão da baixa latência, do custo reduzido e da qualidade das respostas em português. A indisponibilidade do modelo não pode interromper os demais módulos, que devem contar com resposta de contingência.
+O processamento de linguagem natural deve utilizar o Google Gemini, no modelo gemini-flash-lite-latest, com o modelo gemini-3.1-flash-lite como alternativa, por meio do SDK oficial, em razão da baixa latência, do custo reduzido e da qualidade das respostas em português. A indisponibilidade do modelo não pode interromper os demais módulos: o serviço repete a chamada em falhas transitórias, recorre ao modelo alternativo e, esgotadas as tentativas, informa a indisponibilidade, sem fabricar respostas, análises ou números.
 
 A inteligência artificial deve atuar exclusivamente como apoio consultivo à decisão, pois a decisão final sobre a operação da oficina cabe ao gestor. Por esse motivo, todas as recomendações devem exibir aviso de caráter consultivo, e nenhuma delas pode alterar dados automaticamente.
 
-Por fim, o código deve ser versionado em Git, hospedado no GitHub e submetido à integração contínua, garantindo a rastreabilidade das alterações e a verificação automática da qualidade. Como critério de ajuste, cada envio e cada pull request devem executar análise estática, empacotamento e testes automatizados.
+Por fim, o código deve ser versionado em Git, hospedado no GitHub e submetido à integração contínua, garantindo a rastreabilidade das alterações e a verificação automática da qualidade. Como critério de ajuste, cada envio e cada pull request devem executar análise estática, empacotamento, testes automatizados, testes ponta a ponta e verificações do banco de dados em ambiente efêmero.
 
 ### 2.3 NOMEANDO CONVENÇÕES E DEFINIÇÕES
 
 Esta seção apresenta os termos, siglas e definições utilizados no projeto e nos requisitos do SIGAuto, com o objetivo de garantir a compreensão inequívoca dos termos técnicos e operacionais e evitar ambiguidades na interpretação dos requisitos. As definições constam no Quadro 3.
 
-Quadro 3 – Termos e siglas do projeto SIGAuto
+Quadro  – Termos e siglas do projeto SIGAuto
 
 
 | Termo / Sigla | Definição |
 | --- | --- |
-| API | Application Programming Interface – conjunto de rotas HTTP pelas quais o frontend se comunica com o Supabase (PostgREST) e com o serviço de IA em Node.js. |
+| API | Application Programming Interface – conjunto de rotas HTTP pelas quais o frontend se comunica com o Supabase (PostgREST) e com o serviço em Node.js. |
 | BaaS | Backend as a Service – modelo em que banco de dados, autenticação e API são fornecidos como serviço gerenciado, papel exercido pelo Supabase. |
-| Backend | Serviço em Node.js com Express, executado como função serverless, responsável pela comunicação com o modelo de linguagem e pelo acesso administrativo ao banco para o chatbot e a IA. |
+| Backend | Serviço em Node.js com Express, executado como função serverless, responsável pelo login com controle de tentativas, pela comunicação com o modelo de linguagem, pela criação administrativa de contas e pelo acesso administrativo ao banco para o chatbot e a IA. |
+| Baixa automática | Saída de estoque gerada no encerramento da ordem de serviço para as peças vinculadas a itens do estoque, registrada uma única vez por item. |
+| CAPTCHA | Completely Automated Public Turing test to tell Computers and Humans Apart – desafio de verificação, fornecido opcionalmente pelo Cloudflare Turnstile, que distingue pessoas de programas automatizados no login e na recuperação de senha. |
 | Chatbot | Assistente conversacional disponível em todas as telas, destinado a suporte operacional e a consultas rápidas pelos usuários autenticados. |
-| Comissão | Valor devido a um funcionário em uma ordem de serviço, calculado pelo percentual cadastrado sobre os serviços, as peças ou ambos. |
+| Comissão | Valor devido a um funcionário em uma ordem de serviço, calculado pelo percentual cadastrado sobre os serviços, as peças ou ambos e registrado no encerramento. |
+| Configuração da oficina | Cadastro único com os dados de identificação da oficina, o logotipo e o texto de rodapé utilizados no documento da ordem de serviço. |
 | Consumidor | Cadastro genérico de cliente utilizado em atendimentos sem identificação do cliente. |
 | CRUD | Create, Read, Update, Delete – operações básicas de inclusão, consulta, alteração e exclusão de dados. |
 | DERS | Documento de Especificação de Requisitos de Software. |
 | Estoque | Conjunto de peças, insumos e materiais da oficina, controlados por código, unidade, quantidade atual, quantidade mínima, custo e preço de venda. |
+| Estorno | Entrada de estoque que devolve as peças baixadas quando uma ordem de serviço concluída é cancelada. |
 | Frontend | Camada com a qual o usuário interage, composta pela aplicação de página única em React. |
 | Funcionário | Colaborador da oficina, com cargo e regra de comissão, que pode ou não possuir conta de acesso; distinto de usuário. |
-| Gestor | Perfil com permissões completas, incluindo relatórios, painel da IA, funcionários e usuários. |
+| Gestor | Perfil com permissões completas, incluindo relatórios, painel da IA, funcionários, usuários e configuração da oficina. |
 | Gemini | Família de modelos de linguagem do Google utilizada pelo chatbot e pelo painel de recomendações. |
+| Histórico de status | Registro automático de cada mudança de status da ordem de serviço, com data, hora e autor, que não admite alteração nem exclusão e permite calcular a duração de cada etapa do atendimento. |
+| HMAC | Hash-based Message Authentication Code – código calculado com chave secreta que identifica o e-mail no controle de tentativas de login sem armazená-lo em texto claro. |
+| Hook de verificação de senha | Função do banco de dados chamada pelo provedor de autenticação a cada tentativa de senha, que permite recusar novas tentativas após falhas consecutivas, inclusive em chamadas feitas fora da aplicação. |
 | Inativação | Operação que torna um cadastro indisponível para novas operações sem excluir os dados históricos associados. |
 | JWT | JSON Web Token – credencial emitida pelo Supabase Auth na autenticação e enviada em cada requisição. |
 | LGPD | Lei Geral de Proteção de Dados Pessoais (Lei nº 13.709/2018). |
 | OS (Ordem de Serviço) | Registro de um atendimento, com cliente, veículo, queixa, diagnóstico, serviços, peças, equipe, valores, forma de pagamento e status. |
 | RF / RN / RNF | Requisito funcional, regra de negócio e requisito não funcional, respectivamente. |
 | RLS | Row Level Security – mecanismo do PostgreSQL que restringe as linhas acessíveis a cada usuário por meio de políticas. |
+| RPC | Remote Procedure Call – função do banco de dados chamada pelo frontend para executar, em uma única transação, operações como abrir, salvar, encerrar e cancelar ordens de serviço. |
 | Serverless | Modelo de execução em que o código é executado sob demanda pela plataforma de hospedagem, sem servidor dedicado. |
-| Supabase | Plataforma que fornece PostgreSQL gerenciado, autenticação, API REST automática (PostgREST) e RLS. |
+| Supabase | Plataforma que fornece PostgreSQL gerenciado, autenticação, armazenamento de arquivos, API REST automática (PostgREST) e RLS. |
 | Usuário | Pessoa com conta de acesso, identificada pelo perfil de gestor, atendente ou mecânico, cadastrada pelo gestor. |
 | ViaCEP | Serviço público de consulta de endereços a partir do CEP. |
 
@@ -161,11 +169,11 @@ As regras de negócio orientam o comportamento esperado do sistema e garantem a 
 
 •	RN02: toda ordem de serviço deve estar associada a um veículo e ao usuário que a registrou.
 
-•	RN03: os perfis possuem níveis de acesso distintos: o gestor tem acesso total; o atendente acessa a visão geral, as ordens de serviço, o histórico e os cadastros de clientes, veículos, serviços e estoque; o mecânico consulta o histórico e visualiza e atualiza apenas as ordens de serviço em que figura como mecânico responsável.
+•	RN03: os perfis possuem níveis de acesso distintos: o gestor tem acesso total, inclusive à configuração da oficina; o atendente acessa a visão geral, as ordens de serviço, o histórico e os cadastros de clientes, veículos, serviços e estoque, sem visualizar o custo de aquisição dos itens; o mecânico consulta o histórico e visualiza apenas as ordens de serviço em que figura como mecânico responsável, podendo alterar somente o diagnóstico, as observações e o status.
 
-•	RN04: cada registro armazena a data e a hora de criação e da última alteração, atualizadas automaticamente pelo banco de dados.
+•	RN04: cada registro armazena a data e a hora de criação e da última alteração, atualizadas automaticamente pelo banco de dados, que desconsidera os valores enviados pela aplicação e não permite alterar a data de criação.
 
-•	RN05: clientes, veículos, serviços, funcionários e usuários não são excluídos definitivamente, mas inativados, preservando o histórico associado; ordens de serviço não são excluídas, mas canceladas.
+•	RN05: clientes, veículos, serviços, funcionários e usuários não são excluídos definitivamente, mas inativados, preservando o histórico associado; ordens de serviço não são excluídas, mas canceladas, e o cancelamento de uma ordem concluída estorna, uma única vez, as peças baixadas do estoque.
 
 •	RN06: não é permitido cadastrar dois clientes com o mesmo CPF ou CNPJ.
 
@@ -173,7 +181,7 @@ As regras de negócio orientam o comportamento esperado do sistema e garantem a 
 
 •	RN08: as recomendações geradas pela inteligência artificial possuem caráter exclusivamente consultivo; nenhuma ação sobre os dados operacionais é executada automaticamente com base nelas.
 
-•	RN09: o número da ordem de serviço é gerado automaticamente pelo banco de dados, de forma sequencial, e não pode ser editado pelo usuário.
+•	RN09: o número da ordem de serviço é gerado automaticamente pelo banco de dados, de forma sequencial, e não pode ser informado nem editado pelo usuário, inclusive em chamadas diretas à API de dados.
 
 •	RN10: o acesso aos dados é controlado pelas políticas de segurança em nível de linha (RLS) do banco, conforme o perfil do usuário autenticado.
 
@@ -189,13 +197,13 @@ As regras de negócio orientam o comportamento esperado do sistema e garantem a 
 
 •	RN14: a ordem de serviço é aberta para um cliente e um veículo pertencente a esse cliente; atendimentos sem identificação do cliente utilizam o cadastro genérico Consumidor.
 
-•	RN15: toda ordem de serviço deve possuir a descrição da queixa com, no mínimo, 10 caracteres.
+•	RN15: toda ordem de serviço deve possuir a descrição da queixa com, no mínimo, 10 caracteres, verificados na tela e no banco de dados.
 
-•	RN16: toda ordem de serviço inicia com o status Aberta.
+•	RN16: toda ordem de serviço inicia com o status Aberta, imposto pelo banco de dados.
 
-•	RN17: os status válidos da ordem de serviço são Aberta, Em andamento, Aguardando peça, Concluída e Cancelada.
+•	RN17: os status válidos da ordem de serviço são Aberta, Em andamento, Aguardando peça, Concluída e Cancelada; o status inicial e cada mudança posterior são registrados automaticamente pelo banco de dados, com data, hora e usuário responsável, em histórico que não admite alteração nem exclusão.
 
-•	RN18: ordens de serviço com status Concluída ou Cancelada ficam bloqueadas para alteração de itens, equipe e valores; qualquer alteração exige a reabertura, confirmada pelo usuário, que retorna o status para Em andamento.
+•	RN18: ordens de serviço com status Concluída ou Cancelada ficam bloqueadas para alteração de itens, equipe e valores; qualquer alteração exige a reabertura, confirmada por usuário com perfil de gestor ou atendente, que retorna o status para Em andamento.
 
 •	RN19: somente usuários com perfil de gestor ou atendente acessam a tela de encerramento da ordem de serviço.
 
@@ -203,15 +211,15 @@ As regras de negócio orientam o comportamento esperado do sistema e garantem a 
 
 •	RN21: o valor final da ordem de serviço corresponde ao subtotal de serviços e peças deduzido do desconto, informado em percentual ou em valor fixo, não podendo resultar em valor negativo.
 
-•	RN22: o total de serviços e o total de peças correspondem à soma de quantidade multiplicada pelo valor unitário de cada item; as comissões são calculadas conforme o percentual e a base definidos no cadastro do funcionário.
+•	RN22: o total de serviços e o total de peças correspondem à soma de quantidade multiplicada pelo valor unitário de cada item; as comissões são calculadas conforme o percentual e a base definidos no cadastro do funcionário. Os valores são calculados em centavos e arredondados a duas casas decimais da mesma forma que no banco de dados, de modo que o valor exibido coincide com o gravado.
 
 •	RN23: as ordens de serviço encerradas permanecem disponíveis no histórico para consulta.
 
 **Regras específicas — Histórico e relatórios (RF06, RF07)**
 
-•	RN24: a consulta por período considera as ordens de serviço cuja data de abertura esteja dentro do intervalo informado, inclusive as datas limite.
+•	RN24: a consulta por período considera as ordens de serviço cuja data de abertura esteja dentro do intervalo informado, inclusive as datas limite, contadas em dias civis no fuso horário da oficina.
 
-•	RN25: os relatórios são calculados a partir dos dados efetivamente registrados, e a exportação em CSV reproduz o relatório exibido para o tipo e o período selecionados.
+•	RN25: os relatórios são calculados a partir dos dados efetivamente registrados, e a exportação em CSV reproduz o relatório exibido para o tipo, o período e, quando selecionado, o funcionário; o faturamento e as comissões consideram as ordens de serviço concluídas cuja data de encerramento esteja no período.
 
 •	RN26: os relatórios, o painel de inteligência artificial e os cadastros de funcionários e de usuários são exclusivos do perfil gestor.
 
@@ -221,7 +229,7 @@ As regras de negócio orientam o comportamento esperado do sistema e garantem a 
 
 •	RN28: em caso de falha no login, o sistema exibe mensagem genérica de credenciais inválidas, sem indicar qual campo está incorreto.
 
-•	RN29: após cinco tentativas consecutivas de login sem sucesso, novas tentativas ficam bloqueadas por 15 minutos no navegador utilizado.
+•	RN29: após cinco tentativas consecutivas de login sem sucesso para o mesmo e-mail, novas tentativas com esse e-mail ficam bloqueadas por 15 minutos; o controle é mantido no servidor, persiste após o recarregamento da página ou a troca de navegador e não armazena o e-mail em texto claro. As chamadas feitas diretamente ao provedor de autenticação são limitadas pelo hook de verificação de senha ou, quando o plano não o oferece, pelo CAPTCHA.
 
 •	RN30: a solicitação de recuperação de senha não informa se o e-mail está ou não cadastrado.
 
@@ -233,19 +241,19 @@ As regras de negócio orientam o comportamento esperado do sistema e garantem a 
 
 •	RN33: não é permitido registrar saída manual ou baixa automática de peça com quantidade superior ao saldo disponível; a insuficiência de qualquer item cancela integralmente o encerramento da ordem de serviço.
 
-•	RN34: toda entrada, saída, ajuste ou baixa automática deve permanecer no histórico com data, quantidade, motivo, usuário responsável e ordem de serviço, quando aplicável; itens com saldo menor ou igual ao mínimo geram alerta.
+•	RN34: toda entrada, saída, ajuste, baixa automática ou estorno deve permanecer no histórico com data, quantidade, motivo, usuário responsável e ordem de serviço, quando aplicável, sem possibilidade de alteração ou exclusão; o ajuste de saldo é restrito ao gestor, e itens com saldo menor ou igual ao mínimo geram alerta.
 
 •	RN35: a margem do item é calculada automaticamente a partir do custo unitário e do preço de venda informados.
 
 •	RN36: as unidades de medida permitidas são UN, PC, LT, MT, KG e CX.
 
-**Regras específicas — ****Chatbot**** e inteligência artificial (RF11, RF12)**
+**Regras específicas — Chatbot e inteligência artificial (RF11, RF12)**
 
-•	RN37: as perguntas e as respostas processadas pelo modelo de linguagem são registradas por usuário.
+•	RN37: as perguntas e as respostas processadas pelo modelo de linguagem são registradas por usuário, e o histórico persistido das conversas pode ser consultado somente pelo perfil gestor.
 
-•	RN38: a indisponibilidade do modelo de linguagem não impede o uso do chatbot, que passa a responder com orientações locais pré-definidas.
+•	RN38: a indisponibilidade do modelo de linguagem não impede o uso dos demais módulos; o chatbot repete a chamada em falhas transitórias, recorre ao modelo alternativo e, esgotadas as tentativas, informa que o assistente está indisponível, sem fabricar respostas locais.
 
-•	RN39: o contexto enviado ao modelo é recortado conforme o perfil de quem pergunta: dados financeiros apenas para o gestor e dados de cadastro apenas para gestor e atendente.
+•	RN39: o contexto enviado ao modelo é recortado conforme o perfil de quem pergunta: dados financeiros apenas para o gestor e dados de cadastro apenas para gestor e atendente; os valores financeiros informados pelo chatbot são calculados pelo sistema a partir das ordens de serviço concluídas, e não estimados pelo modelo.
 
 •	RN40: as métricas do painel analítico são calculadas pelo sistema; o modelo de linguagem é responsável apenas pelo resumo e pela redação das recomendações.
 
@@ -259,9 +267,9 @@ As regras de negócio orientam o comportamento esperado do sistema e garantem a 
 
 **Regras específicas — Serviços (RF13)**
 
-•	RN45: todo serviço deve possuir nome e preço base.
+•	RN45: todo serviço deve possuir nome preenchido e preço base igual ou maior que zero, restrição aplicada na tela e no banco de dados.
 
-•	RN46: serviços removidos do catálogo são inativados, e apenas serviços ativos podem ser incluídos em ordens de serviço.
+•	RN46: serviços removidos do catálogo são inativados, e apenas serviços ativos podem ser incluídos em ordens de serviço, inclusive por chamadas diretas à API de dados; um serviço que já constava da ordem de serviço antes da inativação permanece nela.
 
 **Regras específicas — Usuários e funcionários (RF14, RF15)**
 
@@ -301,7 +309,7 @@ O SIGAuto centraliza e digitaliza os processos operacionais da oficina. Fazem pa
 
 •	cadastro de veículos vinculados a clientes;
 
-•	abertura, atualização, encerramento, cancelamento e reabertura de ordens de serviço, com serviços, peças, desconto, forma de pagamento e emissão do resumo em PDF;
+•	abertura, atualização, encerramento, cancelamento com estorno e reabertura de ordens de serviço, com serviços, peças, desconto, forma de pagamento, registro automático das mudanças de status e emissão do documento da ordem de serviço em PDF, visualizado na própria página;
 
 •	catálogo de serviços da oficina;
 
@@ -311,11 +319,11 @@ O SIGAuto centraliza e digitaliza os processos operacionais da oficina. Fazem pa
 
 •	tela de visão geral da operação e histórico de atendimentos com filtros por texto, status e período;
 
-•	relatórios gerenciais com exportação em CSV;
+•	relatórios gerenciais filtráveis por período e por funcionário, com exportação em CSV;
 
 •	chatbot para suporte e consultas operacionais e painel de recomendações da inteligência artificial;
 
-•	autenticação com controle de acesso por perfil e gerenciamento de usuários pelo gestor.
+•	autenticação com bloqueio de tentativas controlado no servidor e no provedor de autenticação, verificação CAPTCHA opcional, redefinição de senha por e-mail e controle de acesso por perfil, gerenciamento de usuários pelo gestor e cadastro único da oficina, com logotipo e texto de rodapé.
 
 
 #### 2.6.3 Escopo excluído
@@ -342,7 +350,7 @@ A prioridade dos requisitos segue a classificação: essencial, quando o sistema
 
 As fichas dos requisitos RF01 a RF15 são apresentadas do Quadro 4 ao Quadro 18.
 
-Quadro 4 – Ficha do requisito RF01 – Manter clientes
+Quadro  – Ficha do requisito RF01 – Manter clientes
 
 
 | Requisito nº | 01 | Manter clientes | Manter clientes | Manter clientes | Manter clientes |
@@ -353,7 +361,7 @@ Quadro 4 – Ficha do requisito RF01 – Manter clientes
 
 Fonte: elaborado pelo autor (2026).
 
-Quadro 5 – Ficha do requisito RF02 – Manter veículos
+Quadro  – Ficha do requisito RF02 – Manter veículos
 
 
 | Requisito nº | 02 | Manter veículos | Manter veículos | Manter veículos | Manter veículos |
@@ -364,7 +372,7 @@ Quadro 5 – Ficha do requisito RF02 – Manter veículos
 
 Fonte: elaborado pelo autor (2026).
 
-Quadro 6 – Ficha do requisito RF03 – Abrir ordem de serviço
+Quadro  – Ficha do requisito RF03 – Abrir ordem de serviço
 
 
 | Requisito nº | 03 | Abrir ordem de serviço | Abrir ordem de serviço | Abrir ordem de serviço | Abrir ordem de serviço |
@@ -375,7 +383,7 @@ Quadro 6 – Ficha do requisito RF03 – Abrir ordem de serviço
 
 Fonte: elaborado pelo autor (2026).
 
-Quadro 7 – Ficha do requisito RF04 – Atualizar ordem de serviço
+Quadro  – Ficha do requisito RF04 – Atualizar ordem de serviço
 
 
 | Requisito nº | 04 | Atualizar ordem de serviço | Atualizar ordem de serviço | Atualizar ordem de serviço | Atualizar ordem de serviço |
@@ -386,7 +394,7 @@ Quadro 7 – Ficha do requisito RF04 – Atualizar ordem de serviço
 
 Fonte: elaborado pelo autor (2026).
 
-Quadro 8 – Ficha do requisito RF05 – Encerrar ordem de serviço
+Quadro  – Ficha do requisito RF05 – Encerrar ordem de serviço
 
 
 | Requisito nº | 05 | Encerrar ordem de serviço | Encerrar ordem de serviço | Encerrar ordem de serviço | Encerrar ordem de serviço |
@@ -397,7 +405,7 @@ Quadro 8 – Ficha do requisito RF05 – Encerrar ordem de serviço
 
 Fonte: elaborado pelo autor (2026).
 
-Quadro 9 – Ficha do requisito RF06 – Consultar histórico
+Quadro  – Ficha do requisito RF06 – Consultar histórico
 
 
 | Requisito nº | 06 | Consultar histórico | Consultar histórico | Consultar histórico | Consultar histórico |
@@ -408,7 +416,7 @@ Quadro 9 – Ficha do requisito RF06 – Consultar histórico
 
 Fonte: elaborado pelo autor (2026).
 
-Quadro 10 – Ficha do requisito RF07 – Emitir relatórios
+Quadro  – Ficha do requisito RF07 – Emitir relatórios
 
 
 | Requisito nº | 07 | Emitir relatórios | Emitir relatórios | Emitir relatórios | Emitir relatórios |
@@ -419,7 +427,7 @@ Quadro 10 – Ficha do requisito RF07 – Emitir relatórios
 
 Fonte: elaborado pelo autor (2026).
 
-Quadro 11 – Ficha do requisito RF08 – Autenticar usuários
+Quadro  – Ficha do requisito RF08 – Autenticar usuários
 
 
 | Requisito nº | 08 | Autenticar usuários | Autenticar usuários | Autenticar usuários | Autenticar usuários |
@@ -430,7 +438,7 @@ Quadro 11 – Ficha do requisito RF08 – Autenticar usuários
 
 Fonte: elaborado pelo autor (2026).
 
-Quadro 12 – Ficha do requisito RF09 – Manter estoque
+Quadro  – Ficha do requisito RF09 – Manter estoque
 
 
 | Requisito nº | 09 | Manter estoque | Manter estoque | Manter estoque | Manter estoque |
@@ -441,7 +449,7 @@ Quadro 12 – Ficha do requisito RF09 – Manter estoque
 
 Fonte: elaborado pelo autor (2026).
 
-Quadro 13 – Ficha do requisito RF10 – Movimentar estoque
+Quadro  – Ficha do requisito RF10 – Movimentar estoque
 
 
 | Requisito nº | 10 | Movimentar estoque | Movimentar estoque | Movimentar estoque | Movimentar estoque |
@@ -452,7 +460,7 @@ Quadro 13 – Ficha do requisito RF10 – Movimentar estoque
 
 Fonte: elaborado pelo autor (2026).
 
-Quadro 14 – Ficha do requisito RF11 – Responder via chatbot
+Quadro  – Ficha do requisito RF11 – Responder via chatbot
 
 
 | Requisito nº | 11 | Responder via chatbot | Responder via chatbot | Responder via chatbot | Responder via chatbot |
@@ -463,7 +471,7 @@ Quadro 14 – Ficha do requisito RF11 – Responder via chatbot
 
 Fonte: elaborado pelo autor (2026).
 
-Quadro 15 – Ficha do requisito RF12 – Gerar recomendações da IA
+Quadro  – Ficha do requisito RF12 – Gerar recomendações da IA
 
 
 | Requisito nº | 12 | Gerar recomendações da IA | Gerar recomendações da IA | Gerar recomendações da IA | Gerar recomendações da IA |
@@ -474,7 +482,7 @@ Quadro 15 – Ficha do requisito RF12 – Gerar recomendações da IA
 
 Fonte: elaborado pelo autor (2026).
 
-Quadro 16 – Ficha do requisito RF13 – Manter serviços
+Quadro  – Ficha do requisito RF13 – Manter serviços
 
 
 | Requisito nº | 13 | Manter serviços | Manter serviços | Manter serviços | Manter serviços |
@@ -485,7 +493,7 @@ Quadro 16 – Ficha do requisito RF13 – Manter serviços
 
 Fonte: elaborado pelo autor (2026).
 
-Quadro 17 – Ficha do requisito RF14 – Manter usuários
+Quadro  – Ficha do requisito RF14 – Manter usuários
 
 
 | Requisito nº | 14 | Manter usuários | Manter usuários | Manter usuários | Manter usuários |
@@ -496,7 +504,7 @@ Quadro 17 – Ficha do requisito RF14 – Manter usuários
 
 Fonte: elaborado pelo autor (2026).
 
-Quadro 18 – Ficha do requisito RF15 – Manter funcionários
+Quadro  – Ficha do requisito RF15 – Manter funcionários
 
 
 | Requisito nº | 15 | Manter funcionários | Manter funcionários | Manter funcionários | Manter funcionários |
@@ -606,7 +614,7 @@ Os fluxos de eventos do RF01 compreendem o fluxo básico, os fluxos alternativos
 
 O Quadro 19 apresenta os campos, as informações exibidas e as ações disponíveis na tela do RF01.
 
-Quadro 19 – Campos da tela do RF01 – Manter clientes
+Quadro  – Campos da tela do RF01 – Manter clientes
 
 
 | Campo | Valor padrão | Domínio de valores | Tipo | Obrigatório | Validação |
@@ -639,11 +647,17 @@ Fonte: elaborado pelo autor (2026).
 
 ##### 2.7.1.9 Protótipo
 
-A Figura 2 apresenta a tela do RF01 implementada no sistema.
+A Figura 2 apresenta a listagem de clientes, e a Figura 3, o formulário de cadastro com o endereço estruturado.
 
-Figura 2 – Protótipo da tela Manter clientes
+Figura  – Protótipo da tela Manter clientes
 
 ![image2.png](img/image2.png)
+
+Fonte: elaborado pelo autor (2026).
+
+Figura  – Protótipo da tela Manter clientes – novo cliente
+
+![image3.png](img/image3.png)
 
 Fonte: elaborado pelo autor (2026).
 
@@ -738,7 +752,7 @@ Os fluxos de eventos do RF02 compreendem o fluxo básico, os fluxos alternativos
 
 O Quadro 20 apresenta os campos, as informações exibidas e as ações disponíveis na tela do RF02.
 
-Quadro 20 – Campos da tela do RF02 – Manter veículos
+Quadro  – Campos da tela do RF02 – Manter veículos
 
 
 | Campo | Valor padrão | Domínio de valores | Tipo | Obrigatório | Validação |
@@ -765,11 +779,11 @@ Fonte: elaborado pelo autor (2026).
 
 ##### 2.7.2.9 Protótipo
 
-A Figura 3 apresenta a tela do RF02 implementada no sistema.
+A Figura 4 apresenta a tela do RF02 implementada no sistema.
 
-Figura 3 – Protótipo da tela Manter veículos
+Figura  – Protótipo da tela Manter veículos
 
-![image3.png](img/image3.png)
+![image4.png](img/image4.png)
 
 Fonte: elaborado pelo autor (2026).
 
@@ -870,7 +884,7 @@ Os fluxos de eventos do RF03 compreendem o fluxo básico, os fluxos alternativos
 
 O Quadro 21 apresenta os campos, as informações exibidas e as ações disponíveis na tela do RF03.
 
-Quadro 21 – Campos da tela do RF03 – Abrir ordem de serviço
+Quadro  – Campos da tela do RF03 – Abrir ordem de serviço
 
 
 | Campo | Valor padrão | Domínio de valores | Tipo | Obrigatório | Validação |
@@ -902,11 +916,11 @@ Fonte: elaborado pelo autor (2026).
 
 ##### 2.7.3.9 Protótipo
 
-A Figura 4 apresenta a tela do RF03 implementada no sistema.
+A Figura 5 apresenta a tela do RF03 implementada no sistema.
 
-Figura 4 – Protótipo da tela Abrir ordem de serviço
+Figura  – Protótipo da tela Abrir ordem de serviço
 
-![image4.png](img/image4.png)
+![image5.png](img/image5.png)
 
 Fonte: elaborado pelo autor (2026).
 
@@ -960,18 +974,20 @@ Os fluxos de eventos do RF04 compreendem o fluxo básico, os fluxos alternativos
 
 ###### 2.7.4.3.2 Fluxos alternativos
 
-•	**Alterar status**: o usuário seleciona Aberta, Em andamento, Aguardando peça, Concluída ou Cancelada e salva a alteração.
+•	**Alterar status**: o usuário seleciona Aberta, Em andamento, Aguardando peça, Concluída ou Cancelada e salva a alteração; o mecânico pode alterar apenas o diagnóstico, as observações e o status das ordens sob sua responsabilidade.
 
 •	**Remover item**: o usuário remove um serviço ou uma peça da ordem de serviço, e os valores são recalculados e gravados.
 
-•	**Reabrir ordem de serviço**: em uma ordem de serviço concluída ou cancelada, o usuário aciona Reabrir O.S. e confirma; o status passa a Em andamento e a edição é liberada.
+•	**Cancelar ordem de serviço**: o gestor ou o atendente seleciona o status Cancelada e confirma a operação; o sistema executa o cancelamento em uma única transação no banco e estorna as peças eventualmente baixadas do estoque.
+
+•	**Reabrir ordem de serviço**: em uma ordem de serviço concluída ou cancelada, o gestor ou o atendente aciona Reabrir O.S. e confirma; o status passa a Em andamento e a edição é liberada.
 
 •	**Finalizar ordem de serviço**: o usuário aciona Finalizar O.S. e é direcionado ao encerramento (RF05).
 
 
 ###### 2.7.4.3.3 Fluxos de exceção
 
-•	Saldo insuficiente: o sistema informa o item sem saldo e não conclui a ordem de serviço nem grava movimentos parciais.
+•	**Campo não permitido**: o banco de dados recusa a alteração, pelo mecânico, de campos diferentes do diagnóstico, das observações e do status, e o sistema exibe a mensagem de erro.
 
 •	**Ordem de serviço inexistente**: o sistema exibe a mensagem “Ordem de serviço não encontrada.”.
 
@@ -997,6 +1013,8 @@ Os fluxos de eventos do RF04 compreendem o fluxo básico, os fluxos alternativos
 
 •	As peças vinculadas ao catálogo de estoque são baixadas automaticamente e de forma atômica quando a ordem de serviço é encerrada (RF05 e RF10).
 
+•	Cada mudança de status fica registrada no histórico de status da ordem de serviço, com data, hora e usuário responsável.
+
 
 ##### 2.7.4.6 Critérios de aceite
 
@@ -1006,14 +1024,18 @@ Os fluxos de eventos do RF04 compreendem o fluxo básico, os fluxos alternativos
 
 •	O sistema deve bloquear a edição de ordens de serviço concluídas ou canceladas até a reabertura confirmada.
 
-•	O sistema deve restringir o mecânico às ordens de serviço sob sua responsabilidade.
+•	O sistema deve restringir o mecânico às ordens de serviço sob sua responsabilidade e à edição do diagnóstico, das observações e do status.
+
+•	O sistema deve estornar as peças baixadas ao cancelar uma ordem de serviço concluída, sem duplicar o estorno.
+
+•	O sistema deve registrar automaticamente o status inicial e cada mudança de status da ordem de serviço, sem permitir a alteração ou a exclusão desse histórico.
 
 
 ##### 2.7.4.7 Campos da tela
 
 O Quadro 22 apresenta os campos, as informações exibidas e as ações disponíveis na tela do RF04.
 
-Quadro 22 – Campos da tela do RF04 – Atualizar ordem de serviço
+Quadro  – Campos da tela do RF04 – Atualizar ordem de serviço
 
 
 | Campo | Valor padrão | Domínio de valores | Tipo | Obrigatório | Validação |
@@ -1048,17 +1070,17 @@ Fonte: elaborado pelo autor (2026).
 
 ##### 2.7.4.9 Protótipo
 
-As Figura 5 e Figura 6 apresentam a tela do RF04 implementada no sistema.
+As Figuras 6 e 7 apresentam, respectivamente, a tela do RF04 para o perfil gestor e a visão do perfil mecânico, restrita às ordens de serviço sob sua responsabilidade.
 
-Figura 5 – Protótipo da tela Atualizar ordem de serviço (parte 1)
+Figura  – Protótipo da tela Atualizar ordem de serviço
 
-![image5.png](img/image5.png)
+![image6.png](img/image6.png)
 
 Fonte: elaborado pelo autor (2026).
 
-Figura 6 – Protótipo da tela Atualizar ordem de serviço (parte 2)
+Figura  – Protótipo da listagem de ordens de serviço – perfil mecânico
 
-![image6.png](img/image6.png)
+![image7.png](img/image7.png)
 
 Fonte: elaborado pelo autor (2026).
 
@@ -1108,11 +1130,11 @@ Os fluxos de eventos do RF05 compreendem o fluxo básico, os fluxos alternativos
 
 ###### 2.7.5.3.2 Fluxos alternativos
 
-•	Visualizar PDF: em qualquer status, o usuário autenticado com acesso à ordem de serviço abre o documento com os dados da oficina, do cliente, do veículo e da própria ordem de serviço; serviços e peças; valores, descontos e forma de pagamento; observações; e áreas de assinatura. O visualizador permite salvar o arquivo; se a nova guia for bloqueada, o sistema baixa o mesmo PDF.
+•	**Visualizar PDF**: em qualquer status, o usuário autenticado com acesso à ordem de serviço abre o documento com os dados da oficina, do cliente, do veículo e da própria ordem de serviço; serviços e peças; valores, descontos e forma de pagamento; observações; e áreas de assinatura. O documento é exibido em um visualizador na própria página, com as opções Baixar PDF, Imprimir e Fechar, sem depender da abertura de nova guia.
 
-•	Imprimir: em qualquer status, o sistema abre para impressão o mesmo documento produzido pela ação Visualizar PDF.
+•	**Imprimir**: em qualquer status, o sistema abre para impressão o mesmo documento produzido pela ação Visualizar PDF; em dispositivos móveis cujo navegador não abre o diálogo de impressão, o documento é baixado em PDF, e o sistema orienta o usuário a imprimi-lo pelo aplicativo de documentos.
 
-•	Configurar oficina: o gestor cria ou altera o único cadastro da oficina, informando nome fantasia, razão social, CNPJ, telefone, e-mail, endereço estruturado, logotipo e texto de rodapé.
+•	**Configurar oficina**: o gestor cria ou altera o único cadastro da oficina, informando nome fantasia, razão social, CNPJ, telefone, e-mail, endereço estruturado, logotipo e texto de rodapé.
 
 •	**Reabrir ordem de serviço encerrada**: ao acessar o encerramento de uma ordem de serviço já concluída, o usuário pode confirmar a reabertura, que retorna o status para Em andamento.
 
@@ -1120,6 +1142,8 @@ Os fluxos de eventos do RF05 compreendem o fluxo básico, os fluxos alternativos
 ###### 2.7.5.3.3 Fluxos de exceção
 
 •	**Forma de pagamento não selecionada**: o sistema exibe a mensagem “Selecione a forma de pagamento.” e não conclui o encerramento.
+
+•	**Saldo insuficiente**: o sistema informa o item sem saldo e não conclui a ordem de serviço nem grava movimentos parciais.
 
 •	**Perfil sem permissão**: o sistema exibe a tela de acesso negado para o perfil mecânico.
 
@@ -1134,7 +1158,7 @@ Os fluxos de eventos do RF05 compreendem o fluxo básico, os fluxos alternativos
 
 •	Para salvar ou imprimir o documento, o usuário deve estar autenticado e possuir permissão para visualizar a ordem de serviço, independentemente do status.
 
-•	A configuração da oficina pode ser lida por usuários autenticados e alterada somente pelo gestor.
+•	A configuração da oficina pode ser lida por usuários autenticados e ativos e alterada somente pelo gestor.
 
 
 ##### 2.7.5.5 Pós-condições
@@ -1154,7 +1178,7 @@ Os fluxos de eventos do RF05 compreendem o fluxo básico, os fluxos alternativos
 
 •	O sistema deve registrar automaticamente a data e a hora de encerramento.
 
-•	O sistema deve disponibilizar Visualizar PDF e Imprimir em qualquer status, utilizando o mesmo documento e oferecendo download quando a nova guia for bloqueada.
+•	O sistema deve disponibilizar Visualizar PDF e Imprimir em qualquer status, utilizando o mesmo documento, exibido em visualizador na própria página; quando a impressão não puder ser aberta no dispositivo, o documento deve ser baixado em PDF, com aviso ao usuário.
 
 •	O documento deve conter os dados da oficina, do cliente, do veículo e da ordem de serviço; serviços e peças; valores, descontos e forma de pagamento; e áreas de assinatura do cliente e do responsável pela oficina.
 
@@ -1167,7 +1191,7 @@ Os fluxos de eventos do RF05 compreendem o fluxo básico, os fluxos alternativos
 
 O Quadro 23 apresenta os campos, as informações exibidas e as ações disponíveis na tela do RF05.
 
-Quadro 23 – Campos da tela do RF05 – Encerrar ordem de serviço
+Quadro  – Campos da tela do RF05 – Encerrar ordem de serviço
 
 
 | Campo | Valor padrão | Domínio de valores | Tipo | Obrigatório | Validação |
@@ -1181,8 +1205,8 @@ Quadro 23 – Campos da tela do RF05 – Encerrar ordem de serviço
 | Forma de pagamento | Selecione... | Dinheiro, Pix, Cartão de débito, Cartão de crédito, Transferência ou Boleto | Seleção | Sim | Obrigatória para finalizar. |
 | Observações finais | – | Texto livre | Área de texto | Não | – |
 | Finalizar O.S. | – | Ação de encerramento | Botão | – | Exige confirmação. |
-| Visualizar PDF | – | Ação de visualização e salvamento | Botão | – | Disponível em qualquer status; baixa o arquivo se a nova guia for bloqueada. |
-| Imprimir | – | Ação de impressão | Botão | – | Disponível em qualquer status; usa o mesmo documento do PDF. |
+| Visualizar PDF | – | Ação de visualização e salvamento | Botão | – | Disponível em qualquer status; abre o visualizador na própria página. |
+| Imprimir | – | Ação de impressão | Botão | – | Disponível em qualquer status; usa o mesmo documento do PDF; no celular sem diálogo de impressão, baixa o PDF. |
 | Configuração da oficina | Cadastro único | Nome fantasia, razão social, CNPJ, telefone, e-mail, endereço estruturado, logotipo e texto de rodapé | Formulário | Nome fantasia e CNPJ | Somente o gestor altera; usuários autenticados podem consultar para emitir a O.S. |
 
 Fonte: elaborado pelo autor (2026).
@@ -1199,11 +1223,23 @@ Fonte: elaborado pelo autor (2026).
 
 ##### 2.7.5.9 Protótipo
 
-A Figura 7 apresenta a tela do RF05 implementada no sistema.
+A Figura 8 apresenta a tela de encerramento do RF05; a Figura 9, o visualizador do documento da ordem de serviço; e a Figura 10, a tela de configuração da oficina.
 
-Figura 7 – Protótipo da tela Encerrar ordem de serviço
+Figura  – Protótipo da tela Encerrar ordem de serviço
 
-![image7.png](img/image7.png)
+![image8.png](img/image8.png)
+
+Fonte: elaborado pelo autor (2026).
+
+Figura  – Protótipo do visualizador do documento da ordem de serviço
+
+![image9.png](img/image9.png)
+
+Fonte: elaborado pelo autor (2026).
+
+Figura  – Protótipo da tela Configuração da oficina
+
+![image10.png](img/image10.png)
 
 Fonte: elaborado pelo autor (2026).
 
@@ -1282,7 +1318,7 @@ Os fluxos de eventos do RF06 compreendem o fluxo básico, os fluxos alternativos
 
 O Quadro 24 apresenta os campos, as informações exibidas e as ações disponíveis na tela do RF06.
 
-Quadro 24 – Campos da tela do RF06 – Consultar histórico
+Quadro  – Campos da tela do RF06 – Consultar histórico
 
 
 | Campo | Valor padrão | Domínio de valores | Tipo | Obrigatório | Validação |
@@ -1306,11 +1342,11 @@ Fonte: elaborado pelo autor (2026).
 
 ##### 2.7.6.9 Protótipo
 
-A Figura 8 apresenta a tela do RF06 implementada no sistema.
+A Figura 11 apresenta a tela do RF06 implementada no sistema.
 
-Figura 8 – Protótipo da tela Consultar histórico
+Figura  – Protótipo da tela Consultar histórico
 
-![image8.png](img/image8.png)
+![image11.png](img/image11.png)
 
 Fonte: elaborado pelo autor (2026).
 
@@ -1322,7 +1358,7 @@ A especificação a seguir detalha o requisito RF07, cuja ficha consta no Quadro
 
 ##### 2.7.7.1 Breve descrição
 
-Realiza a geração de relatórios gerenciais a partir dos dados registrados, apresentando indicadores totais e a tabela detalhada de cada tipo de relatório, com exportação em arquivo CSV.
+Realiza a geração de relatórios gerenciais a partir dos dados registrados, apresentando indicadores totais e a tabela detalhada de cada tipo de relatório, com exportação em arquivo CSV. O faturamento e as comissões consideram as ordens de serviço concluídas pela data de encerramento, e os períodos são contados em dias civis no fuso horário da oficina.
 
 
 ##### 2.7.7.2 Atores
@@ -1341,7 +1377,7 @@ Os fluxos de eventos do RF07 compreendem o fluxo básico, os fluxos alternativos
 
 2.	O sistema exibe os tipos de relatório disponíveis e o período padrão correspondente ao último mês.
 
-3.	O gestor seleciona o tipo de relatório e ajusta as datas inicial e final.
+3.	O gestor seleciona o tipo de relatório, ajusta as datas inicial e final e, opcionalmente, seleciona um funcionário.
 
 4.	O sistema calcula e exibe os indicadores totais e a tabela do relatório.
 
@@ -1352,7 +1388,7 @@ Os fluxos de eventos do RF07 compreendem o fluxo básico, os fluxos alternativos
 
 ###### 2.7.7.3.2 Fluxos alternativos
 
-•	**Troca de tipo ou de período**: a cada alteração do tipo ou das datas, o sistema recalcula o relatório.
+•	**Troca de tipo, de período ou de funcionário**: a cada alteração dos filtros, o sistema recalcula o relatório; o filtro por funcionário aplica-se aos relatórios derivados de ordens de serviço e ao de comissões.
 
 
 ###### 2.7.7.3.3 Fluxos de exceção
@@ -1376,6 +1412,8 @@ Os fluxos de eventos do RF07 compreendem o fluxo básico, os fluxos alternativos
 
 •	O sistema deve gerar os seis tipos de relatório para o período informado.
 
+•	O sistema deve somar no faturamento as ordens de serviço concluídas cuja data de encerramento esteja no período e listar, na tabela e no CSV, exatamente essas ordens de serviço.
+
 •	O sistema deve exportar em CSV exatamente o relatório exibido.
 
 •	O sistema deve restringir o módulo ao perfil gestor.
@@ -1385,7 +1423,7 @@ Os fluxos de eventos do RF07 compreendem o fluxo básico, os fluxos alternativos
 
 O Quadro 25 apresenta os campos, as informações exibidas e as ações disponíveis na tela do RF07.
 
-Quadro 25 – Campos da tela do RF07 – Emitir relatórios
+Quadro  – Campos da tela do RF07 – Emitir relatórios
 
 
 | Campo | Valor padrão | Domínio de valores | Tipo | Obrigatório | Validação |
@@ -1393,6 +1431,7 @@ Quadro 25 – Campos da tela do RF07 – Emitir relatórios
 | Tipo de relatório | Faturamento | Faturamento, Atendimentos, Estoque, Serviços Frequentes, Clientes Frequentes ou Comissões | Cartões de seleção | Sim | – |
 | Data início | Hoje menos um mês | Data | Data | Sim | – |
 | Data fim | Data atual | Data | Data | Sim | – |
+| Funcionário | Todos os funcionários | Funcionários ativos | Seleção | Não | Restringe as O.S. e as comissões ao funcionário. |
 | Indicadores | Calculado | Totais do relatório | Exibição | – | – |
 | Tabela do relatório | Calculado | Colunas conforme o tipo | Tabela | – | – |
 | Exportar CSV | – | Ação de exportação | Botão | – | Codificação UTF-8. |
@@ -1401,12 +1440,12 @@ Fonte: elaborado pelo autor (2026).
 
 O Quadro 26 detalha os indicadores e as colunas de cada tipo de relatório.
 
-Quadro 26 – Tipos de relatório disponíveis no RF07
+Quadro  – Tipos de relatório disponíveis no RF07
 
 
 | Relatório | Indicadores | Colunas da tabela |
 | --- | --- | --- |
-| Faturamento | Total de O.S., O.S. concluídas, receita total e ticket médio | Nº da O.S., cliente, placa, status, valor e data |
+| Faturamento | Total de O.S. abertas no período, O.S. concluídas no período, receita total e ticket médio | Nº da O.S., cliente, placa, status, valor e data de encerramento |
 | Atendimentos | Total no período e quantidade por status | Status, quantidade e percentual do total |
 | Estoque | Total de itens, itens em alerta e itens zerados | Código, item, unidade, quantidade, mínimo e situação |
 | Serviços Frequentes | Total de O.S. e serviços lançados | Serviço, quantidade de realizações e percentual |
@@ -1425,11 +1464,11 @@ Fonte: elaborado pelo autor (2026).
 
 ##### 2.7.7.9 Protótipo
 
-A Figura 9 apresenta a tela do RF07 implementada no sistema.
+A Figura 12 apresenta a tela do RF07 implementada no sistema, com o relatório de comissões filtrado por funcionário.
 
-Figura 9 – Protótipo da tela Emitir relatórios
+Figura  – Protótipo da tela Emitir relatórios
 
-![image9.png](img/image9.png)
+![image12.png](img/image12.png)
 
 Fonte: elaborado pelo autor (2026).
 
@@ -1441,7 +1480,7 @@ A especificação a seguir detalha o requisito RF08, cuja ficha consta no Quadro
 
 ##### 2.7.8.1 Breve descrição
 
-Realiza a autenticação dos usuários por meio do Supabase Auth, carrega o perfil de acesso cadastrado e direciona o usuário às funcionalidades permitidas, além de oferecer a recuperação de senha e o encerramento da sessão.
+Realiza a autenticação dos usuários por meio do serviço em Node.js, que valida as credenciais no Supabase Auth e controla, no banco de dados, as tentativas sem sucesso de cada e-mail; carrega o perfil de acesso cadastrado e direciona o usuário às funcionalidades permitidas, além de oferecer a recuperação e a redefinição de senha e o encerramento da sessão.
 
 
 ##### 2.7.8.2 Atores
@@ -1464,13 +1503,13 @@ Os fluxos de eventos do RF08 compreendem o fluxo básico, os fluxos alternativos
 
 2.	O usuário informa e-mail e senha e aciona a entrada.
 
-3.	O sistema verifica se as tentativas estão bloqueadas no navegador.
+3.	O sistema envia as credenciais ao serviço em Node.js, que consulta no banco de dados o controle de tentativas associado ao e-mail.
 
-4.	O sistema envia as credenciais ao Supabase Auth.
+4.	Não havendo bloqueio, o serviço em Node.js submete as credenciais ao Supabase Auth, acompanhadas do token de verificação de segurança quando o CAPTCHA está habilitado.
 
 5.	O Supabase Auth valida as credenciais e emite a sessão com JWT.
 
-6.	O sistema consulta o perfil e a situação do usuário na tabela de usuários.
+6.	O serviço confirma que o usuário está ativo, zera as tentativas sem sucesso e devolve a sessão, que o sistema estabelece no navegador, consultando o perfil e a situação do usuário na tabela de usuários.
 
 7.	O sistema direciona o usuário à tela inicial e exibe no menu apenas os módulos permitidos ao perfil.
 
@@ -1479,7 +1518,11 @@ Os fluxos de eventos do RF08 compreendem o fluxo básico, os fluxos alternativos
 
 •	**Exibir senha**: o usuário alterna a exibição da senha digitada.
 
+•	**Verificação de segurança**: quando a chave do CAPTCHA está configurada, o usuário conclui o desafio exibido antes de entrar ou de solicitar a recuperação de senha; sem a verificação concluída, o envio não é realizado.
+
 •	**Recuperar senha**: o usuário aciona a recuperação, informa o e-mail cadastrado, e o sistema solicita ao Supabase Auth o envio do link de redefinição, exibindo sempre a confirmação de envio.
+
+•	**Redefinir senha**: ao abrir o link recebido por e-mail, o usuário informa e confirma a nova senha, com no mínimo 8 caracteres; o sistema grava a senha, encerra as sessões abertas e retorna à tela de login. Link expirado ou inválido é informado, com orientação para solicitar nova redefinição.
 
 •	**Encerrar sessão**: o usuário aciona a saída, e o sistema encerra a sessão no Supabase Auth e retorna à tela de login.
 
@@ -1488,9 +1531,13 @@ Os fluxos de eventos do RF08 compreendem o fluxo básico, os fluxos alternativos
 
 •	**Credenciais inválidas**: o sistema exibe a mensagem “E-mail ou senha incorretos.”.
 
-•	**E-mail não confirmado**: o sistema informa que o e-mail ainda não foi confirmado e orienta a verificar a caixa de entrada.
+•	**Conta inativa**: o sistema exibe a mesma mensagem genérica de credenciais inválidas e não inicia a sessão.
 
-•	**Tentativas esgotadas**: na quinta falha consecutiva, o sistema exibe “Muitas tentativas incorretas. Acesso bloqueado por 15 minutos.” e bloqueia novas tentativas no navegador.
+•	**Serviço de autenticação indisponível**: o sistema informa que não foi possível validar as credenciais e solicita nova tentativa, sem contabilizar a falha no controle de tentativas.
+
+•	**CAPTCHA inválido ou expirado**: o sistema exibe "Verificação de segurança inválida ou expirada. Tente novamente." e renova o desafio, sem contabilizar a tentativa no controle de falhas.
+
+•	**Tentativas esgotadas**: na quinta falha consecutiva, o sistema exibe “Muitas tentativas incorretas. Acesso bloqueado por 15 minutos.” e o servidor bloqueia novas tentativas com o e-mail informado, inclusive após o recarregamento da página.
 
 •	**Acesso a módulo não permitido**: o sistema exibe a tela de acesso negado, informando o perfil do usuário.
 
@@ -1513,16 +1560,20 @@ Os fluxos de eventos do RF08 compreendem o fluxo básico, os fluxos alternativos
 
 •	O sistema deve exibir mensagem genérica em caso de falha.
 
-•	O sistema deve bloquear novas tentativas por 15 minutos após cinco falhas consecutivas.
+•	O sistema deve bloquear, no servidor, novas tentativas com o mesmo e-mail por 15 minutos após cinco falhas consecutivas, mantendo o bloqueio após o recarregamento da página.
 
 •	O sistema deve enviar link de recuperação sem revelar se o e-mail existe.
+
+•	O sistema deve permitir redefinir a senha pelo link recebido, exigindo no mínimo 8 caracteres e a confirmação da nova senha.
+
+•	Quando o CAPTCHA estiver habilitado, o sistema deve exigir a verificação de segurança no login e na recuperação de senha.
 
 
 ##### 2.7.8.7 Campos da tela
 
 O Quadro 27 apresenta os campos, as informações exibidas e as ações disponíveis na tela do RF08.
 
-Quadro 27 – Campos da tela do RF08 – Autenticar usuários
+Quadro  – Campos da tela do RF08 – Autenticar usuários
 
 
 | Campo | Valor padrão | Domínio de valores | Tipo | Obrigatório | Validação |
@@ -1532,6 +1583,9 @@ Quadro 27 – Campos da tela do RF08 – Autenticar usuários
 | Entrar | – | Ação de autenticação | Botão | – | Indisponível durante o bloqueio. |
 | Esqueci minha senha | – | Abre a janela de recuperação | Link | – | – |
 | E-mail cadastrado | – | Formato usuario@dominio | Texto | Sim | Usado apenas na recuperação. |
+| Verificação de segurança | – | Desafio CAPTCHA do Cloudflare Turnstile | Componente | Sim, quando habilitado | Exibida somente com a chave do CAPTCHA configurada. |
+| Nova senha | – | Texto mascarado | Senha | Sim | Mínimo de 8 caracteres; usado na redefinição. |
+| Confirmar nova senha | – | Texto mascarado | Senha | Sim | Deve ser igual à nova senha. |
 
 Fonte: elaborado pelo autor (2026).
 
@@ -1540,16 +1594,16 @@ Fonte: elaborado pelo autor (2026).
 
 •	Autenticação em dois fatores.
 
-•	Bloqueio de tentativas controlado no servidor por e-mail.
+•	Ativação, no ambiente publicado, do CAPTCHA do provedor de autenticação ou do hook de verificação de senha, conforme o plano contratado.
 
 
 ##### 2.7.8.9 Protótipo
 
-A Figura 10 apresenta a tela do RF08 implementada no sistema.
+A Figura 13 apresenta a tela do RF08 implementada no sistema.
 
-Figura 10 – Protótipo da tela Autenticar usuários
+Figura  – Protótipo da tela Autenticar usuários
 
-![image10.png](img/image10.png)
+![image13.png](img/image13.png)
 
 Fonte: elaborado pelo autor (2026).
 
@@ -1601,6 +1655,8 @@ Os fluxos de eventos do RF09 compreendem o fluxo básico, os fluxos alternativos
 
 •	**Filtrar itens em alerta**: o sistema exibe apenas os itens com quantidade atual menor ou igual à mínima.
 
+•	**Perfil atendente**: o sistema não exibe o custo unitário nem a margem, e o banco de dados impede que o atendente altere o custo do item.
+
 
 ###### 2.7.9.3.3 Fluxos de exceção
 
@@ -1634,7 +1690,7 @@ Os fluxos de eventos do RF09 compreendem o fluxo básico, os fluxos alternativos
 
 O Quadro 28 apresenta os campos, as informações exibidas e as ações disponíveis na tela do RF09.
 
-Quadro 28 – Campos da tela do RF09 – Manter estoque
+Quadro  – Campos da tela do RF09 – Manter estoque
 
 
 | Campo | Valor padrão | Domínio de valores | Tipo | Obrigatório | Validação |
@@ -1668,17 +1724,17 @@ Fonte: elaborado pelo autor (2026).
 
 ##### 2.7.9.9 Protótipo
 
-As Figura 11 e Figura 12 apresentam a tela do RF09 implementada no sistema.
+As Figuras 14 e 15 apresentam a tela do RF09 implementada no sistema.
 
-Figura 11 – Protótipo da tela Manter estoque
+Figura  – Protótipo da tela Manter estoque
 
-![image11.png](img/image11.png)
+![image14.png](img/image14.png)
 
 Fonte: elaborado pelo autor (2026).
 
-Figura 12 – Protótipo da tela Novo item de estoque
+Figura  – Protótipo da tela Novo item de estoque
 
-![image12.png](img/image12.png)
+![image15.png](img/image15.png)
 
 Fonte: elaborado pelo autor (2026).
 
@@ -1711,7 +1767,7 @@ Os fluxos de eventos do RF10 compreendem o fluxo básico, os fluxos alternativos
 
 2.	O sistema apresenta a janela de movimentação com o tipo correspondente.
 
-3.	O usuário informa a quantidade e, opcionalmente, o motivo ou observação.
+3.	O usuário informa a quantidade e o motivo ou observação, que é obrigatório.
 
 4.	O usuário confirma a operação.
 
@@ -1722,11 +1778,11 @@ Os fluxos de eventos do RF10 compreendem o fluxo básico, os fluxos alternativos
 
 ###### 2.7.10.3.2 Fluxos alternativos
 
-•	**Ajuste de saldo**: o usuário seleciona o tipo Ajuste, e a quantidade informada passa a ser o novo saldo do item.
+•	**Ajuste de saldo**: o gestor seleciona o tipo Ajuste, e a quantidade informada passa a ser o novo saldo do item; para os demais perfis, o banco de dados recusa o ajuste.
 
 •	**Troca do tipo**: o usuário altera o tipo entre Entrada, Saída e Ajuste antes de confirmar.
 
-•	Baixa automática: ao encerrar a ordem de serviço, o sistema agrega as peças por item, registra a saída vinculada à O.S. e ajusta somente a diferença em uma nova conclusão após reabertura.
+•	**Baixa automática**: ao encerrar a ordem de serviço, o sistema agrega as peças por item, registra a saída vinculada à O.S. e ajusta somente a diferença em uma nova conclusão após reabertura; no cancelamento de ordem concluída, as peças são estornadas.
 
 
 ###### 2.7.10.3.3 Fluxos de exceção
@@ -1734,6 +1790,8 @@ Os fluxos de eventos do RF10 compreendem o fluxo básico, os fluxos alternativos
 •	**Quantidade inválida**: o sistema exibe a mensagem “Quantidade inválida” para valores vazios, nulos ou negativos.
 
 •	**Saldo insuficiente**: o sistema exibe a mensagem “Saldo insuficiente para saída.” e não altera o saldo.
+
+•	**Motivo ausente**: o sistema exibe a mensagem "Informe o motivo da movimentação." e não registra a movimentação.
 
 
 ##### 2.7.10.4 Pré-condições
@@ -1754,7 +1812,7 @@ Os fluxos de eventos do RF10 compreendem o fluxo básico, os fluxos alternativos
 
 •	O sistema deve somar a quantidade nas entradas e subtraí-la nas saídas manuais ou automáticas.
 
-•	O sistema deve definir o saldo informado nos ajustes.
+•	O sistema deve definir o saldo informado nos ajustes realizados pelo gestor.
 
 •	O sistema deve impedir saídas superiores ao saldo e desfazer integralmente a operação que falhou.
 
@@ -1763,13 +1821,13 @@ Os fluxos de eventos do RF10 compreendem o fluxo básico, os fluxos alternativos
 
 O Quadro 29 apresenta os campos, as informações exibidas e as ações disponíveis na tela do RF10.
 
-Quadro 29 – Campos da tela do RF10 – Movimentar estoque
+Quadro  – Campos da tela do RF10 – Movimentar estoque
 
 
 | Campo | Valor padrão | Domínio de valores | Tipo | Obrigatório | Validação |
 | --- | --- | --- | --- | --- | --- |
-| Tipo de movimentação | Conforme o botão acionado | Entrada, Saída ou Ajuste | Seleção | Sim | – |
-| Quantidade | – | Número inteiro maior que zero | Numérico | Sim | Na saída, não pode exceder o saldo. |
+| Tipo de movimentação | Conforme o botão acionado | Entrada, Saída ou Ajuste | Seleção | Sim | Ajuste aceito somente para o gestor. |
+| Quantidade | – | Número maior que zero, com até duas casas decimais | Numérico | Sim | Na saída, não pode exceder o saldo. |
 | Motivo / observação | – | Texto livre | Texto | Sim | Obrigatório; registrado no histórico. |
 
 Fonte: elaborado pelo autor (2026).
@@ -1782,11 +1840,17 @@ Fonte: elaborado pelo autor (2026).
 
 ##### 2.7.10.9 Protótipo
 
-A Figura 13 apresenta a tela do RF10 implementada no sistema.
+A Figura 16 apresenta a janela de movimentação do RF10, e a Figura 17, o histórico de movimentações exibido na tela de estoque.
 
-Figura 13 – Protótipo da tela Movimentar estoque
+Figura  – Protótipo da tela Movimentar estoque
 
-![image13.png](img/image13.png)
+![image16.png](img/image16.png)
+
+Fonte: elaborado pelo autor (2026).
+
+Figura  – Protótipo do histórico de movimentações de estoque
+
+![image17.png](img/image17.png)
 
 Fonte: elaborado pelo autor (2026).
 
@@ -1798,7 +1862,7 @@ A especificação a seguir detalha o requisito RF11, cuja ficha consta no Quadro
 
 ##### 2.7.11.1 Breve descrição
 
-Realiza o atendimento conversacional ao usuário autenticado por meio do modelo de linguagem Google Gemini, com contexto agregado da oficina recortado conforme o perfil e respostas locais de contingência quando o modelo está indisponível.
+Realiza o atendimento conversacional ao usuário autenticado por meio do modelo de linguagem Google Gemini, com contexto agregado da oficina recortado conforme o perfil. Os valores financeiros solicitados pelo gestor são calculados pelo sistema, e a indisponibilidade do modelo é informada ao usuário, sem respostas fabricadas.
 
 
 ##### 2.7.11.2 Atores
@@ -1836,6 +1900,10 @@ Os fluxos de eventos do RF11 compreendem o fluxo básico, os fluxos alternativos
 
 ###### 2.7.11.3.2 Fluxos alternativos
 
+•	**Consulta financeira**: o gestor pergunta o faturamento, o ticket médio ou a quantidade de ordens concluídas em um período; o modelo interpreta a métrica e o período, o sistema confere essa interpretação com a pergunta, calcula o valor a partir das ordens concluídas pela data de encerramento e devolve a resposta formatada; quando o período é ambíguo, o assistente solicita esclarecimento.
+
+•	**Histórico persistido**: o gestor pode consultar as conversas registradas; para os demais perfis, apenas a conversa da sessão atual é exibida, e a conversa é reiniciada ao trocar de usuário ou de perfil.
+
 •	**Limpar conversa**: o usuário limpa a conversa, e a janela retorna à saudação inicial.
 
 •	**Fechar janela**: o usuário fecha a janela pelo botão ou pela tecla Esc.
@@ -1843,11 +1911,11 @@ Os fluxos de eventos do RF11 compreendem o fluxo básico, os fluxos alternativos
 
 ###### 2.7.11.3.3 Fluxos de exceção
 
-•	**Modelo ou API indisponível**: o sistema responde com orientação local selecionada por palavras-chave sobre ordens de serviço, estoque, clientes, veículos, relatórios e usuários.
+•	**Modelo ou API indisponível**: após as novas tentativas e a troca para o modelo alternativo, o sistema informa que o assistente está indisponível no momento, sem fabricar resposta.
 
 •	**Mensagem vazia**: a mensagem não é enviada.
 
-•	**Excesso de requisições**: a API recusa novas mensagens acima do limite por minuto, e o sistema aplica a resposta local.
+•	**Excesso de requisições**: a API recusa novas mensagens acima do limite por minuto, e o sistema informa o limite atingido.
 
 
 ##### 2.7.11.4 Pré-condições
@@ -1868,14 +1936,16 @@ Os fluxos de eventos do RF11 compreendem o fluxo básico, os fluxos alternativos
 
 •	O sistema não deve fornecer dados financeiros a perfis diferentes de gestor.
 
-•	O sistema deve continuar respondendo com orientações locais quando o modelo estiver indisponível.
+•	O sistema deve calcular os valores financeiros informados ao gestor a partir das ordens de serviço concluídas, sem estimativa do modelo.
+
+•	O sistema deve informar a indisponibilidade do modelo sem fabricar respostas e sem interromper os demais módulos.
 
 
 ##### 2.7.11.7 Campos da tela
 
 O Quadro 30 apresenta os campos, as informações exibidas e as ações disponíveis na tela do RF11.
 
-Quadro 30 – Campos da tela do RF11 – Responder via chatbot
+Quadro  – Campos da tela do RF11 – Responder via chatbot
 
 
 | Campo | Valor padrão | Domínio de valores | Tipo | Obrigatório | Validação |
@@ -1898,11 +1968,11 @@ Fonte: elaborado pelo autor (2026).
 
 ##### 2.7.11.9 Protótipo
 
-A Figura 14 apresenta a tela do RF11 implementada no sistema.
+A Figura 18 apresenta a janela do chatbot implementada no sistema, com uma consulta financeira do gestor.
 
-Figura 14 – Protótipo da janela do chatbot
+Figura  – Protótipo da janela do chatbot
 
-![image14.png](img/image14.png)
+![image18.png](img/image18.png)
 
 Fonte: elaborado pelo autor (2026).
 
@@ -1950,6 +2020,8 @@ Os fluxos de eventos do RF12 compreendem o fluxo básico, os fluxos alternativos
 
 •	**Nova análise**: o gestor aciona novamente a análise para obter um resultado atualizado.
 
+•	**Consultar análises anteriores**: o gestor abre a lista paginada das análises registradas e visualiza o detalhe de cada uma, somente para leitura e sem nova chamada ao modelo.
+
 
 ###### 2.7.12.3.3 Fluxos de exceção
 
@@ -1987,13 +2059,14 @@ Os fluxos de eventos do RF12 compreendem o fluxo básico, os fluxos alternativos
 
 O Quadro 31 apresenta os campos, as informações exibidas e as ações disponíveis na tela do RF12.
 
-Quadro 31 – Campos da tela do RF12 – Gerar recomendações da IA
+Quadro  – Campos da tela do RF12 – Gerar recomendações da IA
 
 
 | Campo | Valor padrão | Domínio de valores | Tipo | Obrigatório | Validação |
 | --- | --- | --- | --- | --- | --- |
 | Aviso consultivo | Fixo | Texto informativo | Exibição | – | – |
 | Analisar | – | Ação de análise | Botão | – | Exibe indicador de carregamento. |
+| Consultar análises anteriores | -- | Análises registradas | Botão e lista | -- | Somente leitura; paginada. |
 | Resumo | Gerado | Texto | Exibição | – | – |
 | Estoque inteligente | Calculado | Saídas, consumo médio, itens críticos ou sem movimentação, cobertura e sugestão de reposição | Indicadores | – | Usa somente movimentações registradas; sugestão consultiva. |
 | Produtividade das O.S. | Calculada | O.S. abertas, concluídas e canceladas, taxa de conclusão, tempos e resultados por mecânico | Indicadores | – | Não infere tempo por etapa ou status. |
@@ -2005,24 +2078,24 @@ Fonte: elaborado pelo autor (2026).
 
 ##### 2.7.12.8 Pontos de extensão
 
-•	Histórico das análises anteriores.
+•	Alertas proativos de reposição de estoque.
 
 •	Recomendações de manutenção preventiva por veículo.
 
 
 ##### 2.7.12.9 Protótipo
 
-As Figura 15 e Figura 16 apresentam a tela do RF12 implementada no sistema.
+As Figuras 19 e 20 apresentam a tela do RF12 implementada no sistema.
 
-Figura 15 – Protótipo do painel analítico da IA
+Figura  – Protótipo do painel analítico da IA
 
-![image15.png](img/image15.png)
+![image19.png](img/image19.png)
 
 Fonte: elaborado pelo autor (2026).
 
-Figura 16 – Protótipo do painel analítico da IA – vista detalhada
+Figura  – Protótipo do painel analítico da IA – recomendações explicáveis
 
-![image16.png](img/image16.png)
+![image20.png](img/image20.png)
 
 Fonte: elaborado pelo autor (2026).
 
@@ -2073,7 +2146,7 @@ Os fluxos de eventos do RF13 compreendem o fluxo básico, os fluxos alternativos
 
 ###### 2.7.13.3.3 Fluxos de exceção
 
-•	**Campos obrigatórios ausentes**: o formulário não é submetido sem nome e preço base.
+•	**Campos obrigatórios ausentes**: o sistema não grava serviço com nome vazio ou formado apenas por espaços, nem com preço base ausente ou negativo, e exibe "Informe o nome do serviço." ou "Informe um preço base válido, igual ou maior que zero."; o banco de dados aplica a mesma restrição.
 
 
 ##### 2.7.13.4 Pré-condições
@@ -2088,7 +2161,7 @@ Os fluxos de eventos do RF13 compreendem o fluxo básico, os fluxos alternativos
 
 ##### 2.7.13.6 Critérios de aceite
 
-•	O sistema deve cadastrar serviço com nome e preço base.
+•	O sistema deve cadastrar serviço somente com nome preenchido e preço base igual ou maior que zero.
 
 •	O sistema deve oferecer apenas serviços ativos no lançamento da ordem de serviço.
 
@@ -2097,14 +2170,14 @@ Os fluxos de eventos do RF13 compreendem o fluxo básico, os fluxos alternativos
 
 O Quadro 32 apresenta os campos, as informações exibidas e as ações disponíveis na tela do RF13.
 
-Quadro 32 – Campos da tela do RF13 – Manter serviços
+Quadro  – Campos da tela do RF13 – Manter serviços
 
 
 | Campo | Valor padrão | Domínio de valores | Tipo | Obrigatório | Validação |
 | --- | --- | --- | --- | --- | --- |
 | Pesquisa | – | Nome ou descrição | Texto | Não | – |
-| Nome do serviço / pacote | – | Texto com até 120 caracteres | Texto | Sim | – |
-| Preço base (R$) | – | Valor numérico | Monetário | Sim | – |
+| Nome do serviço / pacote | – | Texto com até 120 caracteres | Texto | Sim | Não pode ficar em branco. |
+| Preço base (R$) | – | Valor numérico | Monetário | Sim | Igual ou maior que zero. |
 | Descrição detalhada | – | Texto livre | Área de texto | Não | – |
 
 Fonte: elaborado pelo autor (2026).
@@ -2119,17 +2192,17 @@ Fonte: elaborado pelo autor (2026).
 
 ##### 2.7.13.9 Protótipo
 
-As Figura 17 e Figura 18 apresentam a tela do RF13 implementada no sistema.
+As Figuras 21 e 22 apresentam a tela do RF13 implementada no sistema.
 
-Figura 17 – Protótipo da tela Manter serviços
+Figura  – Protótipo da tela Manter serviços
 
-![image17.png](img/image17.png)
+![image21.png](img/image21.png)
 
 Fonte: elaborado pelo autor (2026).
 
-Figura 18 – Protótipo da tela Manter serviços – novo serviço
+Figura  – Protótipo da tela Manter serviços – novo serviço
 
-![image18.png](img/image18.png)
+![image22.png](img/image22.png)
 
 Fonte: elaborado pelo autor (2026).
 
@@ -2214,7 +2287,7 @@ Os fluxos de eventos do RF14 compreendem o fluxo básico, os fluxos alternativos
 
 O Quadro 33 apresenta os campos, as informações exibidas e as ações disponíveis na tela do RF14.
 
-Quadro 33 – Campos da tela do RF14 – Manter usuários
+Quadro  – Campos da tela do RF14 – Manter usuários
 
 
 | Campo | Valor padrão | Domínio de valores | Tipo | Obrigatório | Validação |
@@ -2234,6 +2307,23 @@ Fonte: elaborado pelo autor (2026).
 •	Redefinição de senha iniciada pelo gestor.
 
 •	Convite por e-mail para o usuário definir a própria senha inicial.
+
+
+##### 2.7.14.9 Protótipo
+
+As Figuras 23 e 24 apresentam a tela do RF14 implementada no sistema.
+
+Figura  – Protótipo da tela Manter usuários
+
+![image23.png](img/image23.png)
+
+Fonte: elaborado pelo autor (2026).
+
+Figura  – Protótipo da tela Manter usuários – novo usuário
+
+![image24.png](img/image24.png)
+
+Fonte: elaborado pelo autor (2026).
 
 
 #### 2.7.15 RF15 – Manter funcionários
@@ -2310,7 +2400,7 @@ Os fluxos de eventos do RF15 compreendem o fluxo básico, os fluxos alternativos
 
 O Quadro 34 apresenta os campos, as informações exibidas e as ações disponíveis na tela do RF15.
 
-Quadro 34 – Campos da tela do RF15 – Manter funcionários
+Quadro  – Campos da tela do RF15 – Manter funcionários
 
 
 | Campo | Valor padrão | Domínio de valores | Tipo | Obrigatório | Validação |
@@ -2331,6 +2421,23 @@ Fonte: elaborado pelo autor (2026).
 
 •	Controle de produtividade por mecânico.
 
+
+##### 2.7.15.9 Protótipo
+
+As Figuras 25 e 26 apresentam a tela do RF15 implementada no sistema.
+
+Figura  – Protótipo da tela Manter funcionários
+
+![image25.png](img/image25.png)
+
+Fonte: elaborado pelo autor (2026).
+
+Figura  – Protótipo da tela Manter funcionários – novo funcionário
+
+![image26.png](img/image26.png)
+
+Fonte: elaborado pelo autor (2026).
+
 ### 2.8 REQUISITOS NÃO FUNCIONAIS
 
 Os requisitos não funcionais definem características de qualidade que o SIGAuto deve atender, complementando os requisitos funcionais. Esses requisitos impactam a experiência do usuário, a manutenibilidade, a segurança e a confiabilidade do sistema.
@@ -2338,9 +2445,9 @@ Os requisitos não funcionais definem características de qualidade que o SIGAut
 
 #### 2.8.1 Requisitos de aparência
 
-•	RNF-AP01: a interface deve adotar identidade visual consistente em todas as telas, com tema escuro, cor de destaque laranja e tipografia Manrope.
+•	RNF-AP01: a interface deve adotar identidade visual consistente em todas as telas, com tema claro, menu lateral escuro, azul nas ações principais, laranja como cor de destaque da marca e tipografia Manrope.
 
-•	RNF-AP02: o layout deve ser responsivo, adaptando-se a resoluções de 1280×768 a 1920×1080 sem comprometer a legibilidade.
+•	RNF-AP02: o layout deve ser responsivo, adaptando-se de telas de celular a monitores de 1920×1080, com listagens, filtros e janelas utilizáveis em dispositivos móveis e sem comprometer a legibilidade.
 
 •	RNF-AP03: o status das ordens de serviço, os alertas de estoque e as prioridades devem ser diferenciados visualmente por cor e rótulo.
 
@@ -2392,7 +2499,7 @@ Os requisitos não funcionais definem características de qualidade que o SIGAut
 
 •	RNF-MT04: o código deve ser versionado com Git, com ramos por funcionalidade e integração ao ramo principal por pull request.
 
-•	RNF-MT05: a integração contínua deve executar análise estática, empacotamento e testes automatizados a cada envio ao repositório.
+•	RNF-MT05: a integração contínua deve executar análise estática, empacotamento e testes automatizados a cada envio ao repositório, incluindo os testes ponta a ponta e as verificações do banco de dados em um Supabase efêmero.
 
 
 #### 2.8.6 Requisitos de segurança
@@ -2403,13 +2510,19 @@ Os requisitos não funcionais definem características de qualidade que o SIGAut
 
 •	RNF-SE03: as senhas devem ser armazenadas pelo Supabase Auth com algoritmo de hash, nunca em texto plano.
 
-•	RNF-SE04: a tela de login deve bloquear novas tentativas por 15 minutos após cinco falhas consecutivas.
+•	RNF-SE04: o sistema deve bloquear, no servidor, novas tentativas de login com o mesmo e-mail por 15 minutos após cinco falhas consecutivas, sem armazenar o e-mail em texto claro, e oferecer meios de estender o limite às chamadas diretas ao provedor de autenticação, pelo hook de verificação de senha ou pelo CAPTCHA.
 
 •	RNF-SE05: a chave administrativa do banco e a chave do modelo de linguagem devem existir apenas no serviço em Node.js; o frontend utiliza somente a chave pública.
 
-•	RNF-SE06: a API deve aplicar cabeçalhos de segurança HTTP, CORS restrito à origem do frontend e limites de requisições de 100 por minuto nas rotas gerais e de 10 por minuto nas rotas de IA e chatbot.
+•	RNF-SE06: a API deve aplicar cabeçalhos de segurança HTTP, CORS restrito à origem do frontend e limites de requisições de 5 tentativas de login a cada 10 minutos por endereço IP, 100 por minuto nas rotas gerais e 10 por minuto nas rotas de IA e chatbot, ajustáveis por variáveis de ambiente.
 
 •	RNF-SE07: as respostas do chatbot devem ter o conteúdo HTML escapado antes da exibição.
+
+•	RNF-SE08: as funções do banco executadas com privilégios elevados devem ter caminho de busca fixo e permissão de execução revogada do papel anônimo, com verificação automática ao final de cada script de migração.
+
+•	RNF-SE09: o pacote de produção não pode conter credenciais de demonstração, o que deve ser verificado automaticamente a cada empacotamento.
+
+•	RNF-SE10: as regras de negócio críticas da ordem de serviço e do catálogo de serviços (RN04, RN09, RN15, RN16, RN45 e RN46) devem ser impostas também pelo banco de dados, de modo que chamadas diretas à API de dados não as contornem.
 
 
 #### 2.8.7 Requisitos legais
@@ -2444,79 +2557,79 @@ O SIGAuto interage com os seguintes elementos externos:
 
 #### 2.9.2 Diagramas de casos de uso
 
-Os casos de uso foram modelados em um diagrama por ator, e cada caso de uso é identificado pelo requisito funcional correspondente. A Figura 19 apresenta os casos de uso do gestor, que possui acesso a todas as funcionalidades; a Figura 20, os do atendente; e a Figura 21, os do mecânico, restrito às ordens de serviço sob sua responsabilidade. O Supabase Auth e o Google Gemini participam como sistemas adjacentes.
+Os casos de uso foram modelados em um diagrama por ator, e cada caso de uso é identificado pelo requisito funcional correspondente. A Figura 27 apresenta os casos de uso do gestor, que possui acesso a todas as funcionalidades; a Figura 28, os do atendente; e a Figura 29, os do mecânico, restrito às ordens de serviço sob sua responsabilidade. O Supabase Auth e o Google Gemini participam como sistemas adjacentes.
 
-Figura 19 – Diagrama de casos de uso – gestor
+Figura  – Diagrama de casos de uso – gestor
 
-![image19.png](img/image19.png)
-
-Fonte: elaborado pelo autor (2026).
-
-Figura 20 – Diagrama de casos de uso – atendente
-
-![image20.png](img/image20.png)
+![image27.png](img/image27.png)
 
 Fonte: elaborado pelo autor (2026).
 
-Figura 21 – Diagrama de casos de uso – mecânico
+Figura  – Diagrama de casos de uso – atendente
 
-![image21.png](img/image21.png)
+![image28.png](img/image28.png)
+
+Fonte: elaborado pelo autor (2026).
+
+Figura  – Diagrama de casos de uso – mecânico
+
+![image29.png](img/image29.png)
 
 Fonte: elaborado pelo autor (2026).
 
 
 #### 2.9.3 Diagramas de sequência
 
-Os diagramas de sequência modelam a interação entre os atores e os componentes do sistema nos casos de uso mais representativos: a abertura de ordem de serviço (Figura 22), a autenticação de usuário (Figura 23) e a geração de recomendações da IA (Figura 24).
+Os diagramas de sequência modelam a interação entre os atores e os componentes do sistema nos casos de uso mais representativos: a abertura de ordem de serviço (Figura 30), a autenticação de usuário (Figura 31) e a geração de recomendações da IA (Figura 32).
 
-Figura 22 – Diagrama de sequência – abertura de ordem de serviço
+Figura  – Diagrama de sequência – abertura de ordem de serviço
 
-![image22.png](img/image22.png)
-
-Fonte: elaborado pelo autor (2026).
-
-Figura 23 – Diagrama de sequência – autenticação de usuário
-
-![image23.png](img/image23.png)
+![image30.png](img/image30.png)
 
 Fonte: elaborado pelo autor (2026).
 
-Figura 24 – Diagrama de sequência – geração de recomendações da IA
+Figura  – Diagrama de sequência – autenticação de usuário
 
-![image24.png](img/image24.png)
+![image31.png](img/image31.png)
+
+Fonte: elaborado pelo autor (2026).
+
+Figura  – Diagrama de sequência – geração de recomendações da IA
+
+![image32.png](img/image32.png)
 
 Fonte: elaborado pelo autor (2026).
 
 
 #### 2.9.4 Diagrama de classes
 
-A Figura 25 apresenta o diagrama de classes do domínio. As classes principais são Cliente, Endereco, Veiculo, OrdemServico, OSServico, OSPeca, ServicoCatalogo, ItemEstoque, Funcionario, Usuario, MensagemChatbot e RecomendacaoIA, e seus relacionamentos refletem as regras de negócio definidas na seção 2.4.2.
+A Figura 33 apresenta o diagrama de classes do domínio. As classes principais são ConfiguracaoOficina, Cliente, Endereco, Veiculo, OrdemServico, OSServico, OSPeca, ComissaoOS, ServicoCatalogo, ItemEstoque, MovimentacaoEstoque, Funcionario, Usuario, MensagemChatbot, RecomendacaoIA e HistoricoStatusOS, e seus relacionamentos refletem as regras de negócio definidas na seção 2.4.2.
 
-Figura 25 – Diagrama de classes
+Figura  – Diagrama de classes
 
-![image25.png](img/image25.png)
+![image33.png](img/image33.png)
 
 Fonte: elaborado pelo autor (2026).
 
 
 #### 2.9.5 Modelo dos dados
 
-A Figura 26 apresenta o modelo entidade-relacionamento implementado no PostgreSQL. Os serviços e as peças de cada ordem de serviço são registrados nas tabelas os_servico e os_peca, vinculadas ao catálogo de serviços e aos itens de estoque; o endereço do cliente ocupa tabela própria; e as regras de comissão pertencem à entidade funcionario, separada da conta de acesso.
+A Figura 34 apresenta o modelo entidade-relacionamento implementado no PostgreSQL. Os serviços e as peças de cada ordem de serviço são registrados nas tabelas os_servico e os_peca, vinculadas ao catálogo de serviços e aos itens de estoque; as comissões calculadas no encerramento ficam em os_comissao; a tabela os_baixa_estoque controla, por item, a quantidade já baixada de cada ordem, o que impede baixas duplicadas; o endereço do cliente ocupa tabela própria; as regras de comissão pertencem à entidade funcionario, separada da conta de acesso; configuracao_oficina mantém o cadastro único da oficina; historico_status_os registra o status inicial e cada mudança de status da ordem de serviço; login_tentativa e login_tentativa_reserva guardam o controle das tentativas de login, identificadas pelo HMAC do e-mail e acessíveis somente pelo serviço em Node.js; e login_tentativa_auth registra as tentativas verificadas pelo hook de senha do provedor de autenticação, acessível somente por ele.
 
-Figura 26 – Modelo entidade-relacionamento
+Figura  – Modelo entidade-relacionamento
 
-![image26.png](img/image26.png)
+![image34.png](img/image34.png)
 
 Fonte: elaborado pelo autor (2026).
 
 
 #### 2.9.6 Diagrama de componentes
 
-A Figura 27 apresenta o diagrama de componentes do SIGAuto. A aplicação React concentra as páginas, os componentes de interface, o contexto de autenticação, o provedor de dados e os utilitários, e se comunica diretamente com o Supabase. O serviço em Node.js com Express reúne as rotas, os middlewares, os controladores e o serviço de integração com o Google Gemini.
+A Figura 35 apresenta o diagrama de componentes do SIGAuto. A aplicação React concentra as páginas, os componentes de interface, o componente de CAPTCHA, o contexto de autenticação, o provedor de dados e os utilitários, e se comunica diretamente com o Supabase, inclusive com o armazenamento do logotipo da oficina. O serviço em Node.js com Express reúne as rotas de login, de autenticação administrativa, de chatbot e de IA, os middlewares, os controladores e os serviços de integração com o Google Gemini.
 
-Figura 27 – Diagrama de componentes do SIGAuto
+Figura  – Diagrama de componentes do SIGAuto
 
-![image27.png](img/image27.png)
+![image35.png](img/image35.png)
 
 Fonte: elaborado pelo autor (2026).
 
@@ -2524,24 +2637,25 @@ Fonte: elaborado pelo autor (2026).
 
 Durante o desenvolvimento, desafios técnicos e a validação das telas com o fluxo real de uma oficina resultaram em adaptações do escopo inicialmente especificado. O DERS apresentado no Capítulo 2 já incorpora essas adaptações, e o Quadro 35 mapeia as alterações, inclusões e restrições em relação à especificação inicial, com as respectivas justificativas técnicas.
 
-Quadro 35 – Alterações nos requisitos funcionais em relação à especificação inicial
+Quadro  – Alterações nos requisitos funcionais em relação à especificação inicial
 
 
 | RF | Alteração | Justificativa técnica |
 | --- | --- | --- |
 | RF01 | O endereço em texto livre foi substituído por endereço estruturado, com preenchimento automático pelo CEP. | Padronizar os dados e permitir a pesquisa de clientes por bairro, cidade e CEP. |
-| RF03 | Inclusão do cliente genérico Consumidor, da busca por placa e da equipe composta por mecânico e atendente, selecionados entre os funcionários; a queixa passou a exigir no mínimo 10 caracteres. | Adequar a abertura ao atendimento de balcão, no qual o atendente costuma ter em mãos a placa ou o documento, e vincular a OS à regra de comissão da equipe. |
-| RF04 | Inclusão da baixa automática e atômica das peças vinculadas ao estoque no encerramento da O.S., com ajuste por diferença após reabertura. | Evitar divergência entre as peças efetivamente utilizadas e o saldo disponível, sem duplicar a baixa em novas conclusões. |
-| RF05 | Inclusão do cadastro único da oficina e da emissão personalizada da ordem de serviço, com Salvar PDF e Imprimir em qualquer status, além do desconto e da forma de pagamento obrigatória no encerramento. | Identificar a oficina e disponibilizar um documento completo e consistente durante todo o ciclo da O.S. |
-| RF07 | Inclusão do relatório de comissões; a exportação passou a ocorrer em CSV. | O formato CSV é aberto por qualquer editor de planilhas e atende à necessidade de exportação dos seis relatórios. |
-| RF08 | O bloqueio após cinco tentativas passou a ser controlado pela tela de login, no navegador. | O login é realizado diretamente no Supabase Auth, e não mais por rota do serviço em Node.js. |
-| RF09 | Inclusão do custo unitário, do preço de venda e da margem; a inativação de itens não foi disponibilizada na interface. | Apoiar a formação de preço das peças lançadas nas ordens de serviço. |
-| RF10 | Inclusão do histórico imutável de movimentações, com motivo, usuário e O.S., e integração com a baixa automática. | Garantir rastreabilidade operacional do saldo e permitir explicar cada entrada, saída ou ajuste. |
-| RF11 | O contexto enviado ao modelo passou a ser recortado por perfil, com respostas locais de contingência. | Evitar que perfis sem permissão obtenham dados financeiros por meio do chatbot. |
-| RF12 | Organização do painel em estoque inteligente, produtividade, comparação de 90 dias com os 90 dias anteriores e recomendações explicáveis; as métricas são calculadas pelo sistema. | Garantir números determinísticos e verificáveis e recomendações consultivas apoiadas em evidências. |
-| RF14 | O cadastro passou a ser executado pelo backend com conta confirmada e vínculo automático ao funcionário. | Preservar a sessão do gestor, manter a chave administrativa fora do navegador e tornar o colaborador selecionável na O.S. |
+| RF03 | Inclusão do cliente genérico Consumidor, da busca por placa e da equipe composta por mecânico e atendente, selecionados entre os funcionários; a queixa passou a exigir no mínimo 10 caracteres. Essa exigência, o status inicial e a numeração passaram a ser impostos também pelo banco de dados. | Adequar a abertura ao atendimento de balcão, no qual o atendente costuma ter em mãos a placa ou o documento, e vincular a O.S. à regra de comissão da equipe. Impedir, ainda, que chamadas diretas à API contornem essas regras. |
+| RF04 | O cancelamento passou a ser executado por função transacional do banco, com estorno das peças baixadas, e o mecânico passou a editar apenas o diagnóstico, as observações e o status; as mudanças de status passaram a ser registradas em histórico próprio. | Evitar saldo de estoque inconsistente após cancelamentos, impedir que o mecânico altere valores e comissões que não lhe cabem e permitir medir o tempo de cada etapa do atendimento. |
+| RF05 | Inclusão do cadastro único da oficina, do documento personalizado da ordem de serviço em qualquer status e da baixa automática e atômica das peças no encerramento; o documento passou a ser exibido em visualizador na própria página, e não em nova guia, e é baixado em PDF quando o celular não abre a impressão. | Identificar a oficina, manter o saldo coerente com as peças utilizadas e evitar que o bloqueio de janelas do navegador ou a limitação dos navegadores móveis impeça a visualização e a impressão do documento. |
+| RF07 | Inclusão do relatório de comissões e do filtro por funcionário; a exportação passou a ocorrer em CSV. O faturamento passou a considerar a data de encerramento das O.S. concluídas e os dias civis no fuso da oficina. | Permitir a conferência da produção e das comissões de cada profissional; o formato CSV é aberto por qualquer editor de planilhas. Alinhar o faturamento ao chatbot, ao painel da IA e ao relatório de comissões. |
+| RF08 | O login passou a ser intermediado pelo serviço em Node.js, que mantém no banco de dados o controle das tentativas por e-mail, de modo que o bloqueio persiste após o recarregamento da página; foi incluída a tela de redefinição de senha acessada pelo link enviado por e-mail. Foram incluídos o suporte ao CAPTCHA no login e na recuperação de senha e o bloqueio também nas chamadas diretas ao provedor de autenticação. | Impedir que o bloqueio seja contornado pela recarga da página ou pela troca de navegador, sem armazenar o e-mail em texto claro, e concluir a recuperação de senha no próprio sistema. Evitar que o endpoint público do provedor seja usado para contornar o limite. |
+| RF09 | Inclusão do custo unitário, do preço de venda e da margem, com o custo visível e editável somente pelo gestor; a inativação de itens não foi disponibilizada na interface. | Apoiar a formação de preço das peças e restringir informação gerencial de custo ao perfil responsável. |
+| RF10 | Inclusão do histórico imutável de movimentações, com motivo obrigatório, usuário e O.S., integrado à baixa automática; o ajuste de saldo foi restrito ao gestor. | Garantir rastreabilidade operacional do saldo e reservar a redefinição direta do saldo ao responsável pelo estoque. |
+| RF11 | As respostas locais de contingência foram removidas; a contingência passou a ser feita por novas tentativas e por modelo alternativo; os valores financeiros passaram a ser calculados pelo sistema; e o histórico persistido foi restrito ao gestor. | Evitar respostas e números fabricados e impedir que perfis sem permissão obtenham dados financeiros, inclusive de conversas anteriores. |
+| RF12 | Organização do painel em estoque inteligente, produtividade, comparação de 90 dias com os 90 dias anteriores e recomendações explicáveis, com consulta às análises anteriores; as métricas são calculadas pelo sistema. | Garantir números determinísticos e verificáveis e recomendações consultivas apoiadas em evidências. |
+| RF13 | O nome e o preço base passaram a ser validados também pelo banco de dados, que recusa ainda a inclusão de serviço inativo em O.S. por chamada direta. | Garantir que as regras do catálogo valham mesmo fora da tela. |
+| RF14 | O cadastro passou a ser executado pelo serviço em Node.js, com conta confirmada e vínculo automático ao funcionário. | Preservar a sessão do gestor, manter a chave administrativa fora do navegador e tornar o colaborador selecionável na O.S. |
 | RF15 | Requisito incluído para o cadastro de funcionários e de regras de comissão. | Separar o colaborador da conta de acesso, já que nem todo funcionário utiliza o sistema. |
 
 Fonte: elaborado pelo autor (2026).
 
-Além das alterações nos requisitos funcionais, a trilha de auditoria por operação e a documentação da API no padrão OpenAPI deixaram de integrar o escopo desta versão, uma vez que as operações de cadastro passaram a ser realizadas diretamente no Supabase, sob controle das políticas RLS, e o serviço em Node.js passou a expor apenas as rotas de chatbot e de inteligência artificial.
+Além das alterações nos requisitos funcionais, a trilha de auditoria por operação deixou de integrar o escopo desta versão, embora a estrutura de dados tenha sido mantida, e a documentação da API no padrão OpenAPI foi substituída por uma coleção de requisições do Postman, uma vez que o serviço em Node.js passou a expor apenas as rotas de autenticação administrativa, de chatbot e de inteligência artificial.
