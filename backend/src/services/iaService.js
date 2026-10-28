@@ -192,8 +192,10 @@ const MAPA_DO_SISTEMA = `MENUS REAIS (lateral esquerda), com quem enxerga cada u
 
 FLUXOS PRINCIPAIS:
 - Abrir OS: menu "Ordens de Servico" > botao de nova OS. Informe a placa (o sistema busca o veiculo e o cliente), preencha a queixa e confirme. O numero da OS e gerado automaticamente. Restrito a gestor e atendente.
-- Atualizar OS: menu "Ordens de Servico" > clique na OS desejada. Ali se lancam servicos e pecas e se muda o status. Todos os perfis.
-- Encerrar OS: abra a OS e use a acao de encerrar; informe valor final e forma de pagamento. Restrito a gestor e atendente.
+- Atualizar OS: menu "Ordens de Servico" > clique na OS desejada. Gestor e atendente lancam servicos e pecas e mudam o status. O mecanico altera apenas diagnostico, observacoes e status das OS em que e o responsavel.
+- Encerrar OS: abra a OS e use a acao de encerrar; informe valor final e forma de pagamento. As pecas do estoque sao baixadas automaticamente. Restrito a gestor e atendente.
+- Reabrir OS concluida ou cancelada: abra a OS > botao "Reabrir O.S." > confirme. O status volta para Em andamento e a edicao e liberada. Restrito a gestor e atendente.
+- Cancelar OS: abra a OS (se estiver concluida, reabra antes) > no campo Status escolha "Cancelada" > "Salvar alteracoes" > confirme. As pecas ja baixadas voltam ao estoque uma unica vez. Restrito a gestor e atendente.
 - Entrada/saida de peca: menu "Estoque" > localize o item > acao de entrada ou saida > informe quantidade e motivo.
 - Cadastrar cliente ou veiculo: menus "Clientes" e "Veiculos". No cadastro de veiculo, ao digitar a placa o sistema tenta identificar o modelo automaticamente.
 - Inativar cliente: menu "Clientes" > localize o cliente > acao de inativar. O sistema verifica se ha OS abertas antes de permitir.
