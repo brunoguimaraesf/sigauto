@@ -168,15 +168,17 @@ describe('Painel de IA', () => {
     expect(screen.getByText(/Revisar a reposição com o responsável/i)).toBeInTheDocument()
     expect(screen.getByText(/Melhor previsibilidade do atendimento/i)).toBeInTheDocument()
     expect(screen.getByText(/Período analisado/i)).toBeInTheDocument()
-    expect(screen.getByText(/estoque\.itens_criticos: 2 itens/i)).toBeInTheDocument()
-    expect(screen.getByText(/faturamento\.valor: R\$/i)).toBeInTheDocument()
+    // Nome do indicador em portugues, nunca o identificador interno do backend.
+    expect(screen.getByText(/Itens em estoque crítico: 2 itens/i)).toBeInTheDocument()
+    expect(screen.getByText(/Faturamento concluído: R\$/i)).toBeInTheDocument()
+    expect(screen.queryByText(/estoque\.itens_criticos/)).not.toBeInTheDocument()
     expect(screen.getByText(/Caráter consultivo/i)).toBeInTheDocument()
   })
 
   it('mantém contraste legível no selo de prioridade alta', async () => {
     await analisarCom(ANALISE_COMPLETA)
 
-    expect(screen.getByText('alta')).toHaveStyle({
+    expect(screen.getByText('Alta')).toHaveStyle({
       color: 'var(--color-danger)',
       background: 'var(--color-danger-tint)',
     })
