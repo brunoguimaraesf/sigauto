@@ -3,10 +3,32 @@ import { GlassPanel } from '../GlassPanel'
 import css from './RecomendacaoExplicavel.module.css'
 
 const CONFIG_PRIORIDADE = {
-  alta: { cor: 'var(--color-danger)', fundo: 'var(--color-danger-tint)' },
-  media: { cor: 'var(--color-warning)', fundo: 'var(--color-warning-tint)' },
-  baixa: { cor: 'var(--text-secondary)', fundo: 'var(--bg-subtle)' },
+  alta: { cor: 'var(--color-danger)', fundo: 'var(--color-danger-tint)', rotulo: 'Alta' },
+  media: { cor: 'var(--color-warning)', fundo: 'var(--color-warning-tint)', rotulo: 'Média' },
+  baixa: { cor: 'var(--text-secondary)', fundo: 'var(--bg-subtle)', rotulo: 'Baixa' },
 }
+
+// As chaves vem do catalogo do backend (metricasPainelIA.js); a tela mostra o
+// nome do indicador, nao o identificador interno.
+const ROTULO_EVIDENCIA = {
+  'faturamento.valor': 'Faturamento concluído',
+  'ordens.abertas': 'O.S. abertas',
+  'ordens.concluidas': 'O.S. concluídas',
+  'ordens.taxa_conclusao': 'Taxa de conclusão',
+  'ordens.ticket_medio': 'Ticket médio',
+  'produtividade.tempo_medio_horas': 'Tempo médio de conclusão',
+  'produtividade.tempo_mediano_horas': 'Tempo mediano de conclusão',
+  'estoque.itens_criticos': 'Itens em estoque crítico',
+  'estoque.quantidade_saidas': 'Saídas de estoque',
+}
+
+const UNIDADE = {
+  ordens: ['O.S.', 'O.S.'],
+  itens: ['item', 'itens'],
+  unidades: ['unidade', 'unidades'],
+}
+
+const rotuloEvidencia = (chave) => ROTULO_EVIDENCIA[chave] ?? chave
 
 function data(valor) {
   const instancia = new Date(valor)
@@ -18,7 +40,9 @@ function valorEvidencia(valor, unidade) {
   if (unidade === 'BRL') return Number(valor).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL' })
   if (unidade === 'percentual') return `${Number(valor).toLocaleString('pt-BR', { maximumFractionDigits: 1 })}%`
   if (unidade === 'horas') return `${Number(valor).toLocaleString('pt-BR', { maximumFractionDigits: 1 })} h`
-  return `${Number(valor).toLocaleString('pt-BR')} ${unidade ?? ''}`.trim()
+  const formas = UNIDADE[unidade]
+  const sufixo = formas ? formas[Number(valor) === 1 ? 0 : 1] : (unidade ?? '')
+  return `${Number(valor).toLocaleString('pt-BR')} ${sufixo}`.trim()
 }
 
 /** Cartão somente de leitura de uma recomendação com evidências validadas no backend. */
@@ -37,7 +61,7 @@ export function RecomendacaoExplicavel({ recomendacao }) {
         <div className={css.conteudo}>
           <div className={css.cabecalho}>
             <h4 className={css.titulo}>{recomendacao.titulo}</h4>
-            <span className={css.prioridade} style={{ color: config.cor, background: config.fundo }}>{recomendacao.prioridade}</span>
+            <span className={css.prioridade} style={{ color: config.cor, background: config.fundo }}>{config.rotulo}</span>
           </div>
           <p className={css.descricao}>{recomendacao.descricao}</p>
           <dl className={css.lista}>
@@ -48,7 +72,7 @@ export function RecomendacaoExplicavel({ recomendacao }) {
           </dl>
           <div className={css.evidencias}>
             <strong className={css.evidenciasTitulo}>Evidências calculadas</strong>
-            {evidencias.length === 0 ? <p className={css.evidenciasVazio}>Evidências indisponíveis.</p> : <ul className={css.evidenciasLista}>{evidencias.map((evidencia, indice) => <li key={`${evidencia.chave}-${indice}`}>{evidencia.chave}: {valorEvidencia(evidencia.valor, evidencia.unidade)}</li>)}</ul>}
+            {evidencias.length === 0 ? <p className={css.evidenciasVazio}>Evidências indisponíveis.</p> : <ul className={css.evidenciasLista}>{evidencias.map((evidencia, indice) => <li key={`${evidencia.chave}-${indice}`}>{rotuloEvidencia(evidencia.chave)}: {valorEvidencia(evidencia.valor, evidencia.unidade)}</li>)}</ul>}
           </div>
         </div>
       </div>

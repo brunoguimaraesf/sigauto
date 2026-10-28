@@ -28,7 +28,7 @@ beforeEach(() => vi.clearAllMocks())
 describe('Tela de Usuarios', () => {
   it('mostra o titulo', () => {
     render(<Usuarios />)
-    expect(screen.getByRole('heading', { name: /Gestao de Usuarios/i })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: /Gestão de Usuários/i })).toBeInTheDocument()
   })
 
   it('carrega e lista os usuarios', async () => {
@@ -43,12 +43,12 @@ describe('Tela de Usuarios', () => {
     render(<Usuarios />)
     await screen.findByText('Gestor Um')
 
-    fireEvent.click(screen.getByRole('button', { name: /Novo Usuario/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Novo Usuário/i }))
     fireEvent.change(screen.getByPlaceholderText('Ex: Joao da Silva'), { target: { value: 'Carlos Mecânico' } })
     fireEvent.change(screen.getByPlaceholderText('usuario@oficina.com'), { target: { value: 'carlos@oficina.com' } })
     fireEvent.change(screen.getByPlaceholderText('Min. 8 caracteres'), { target: { value: 'Senha1234' } })
     fireEvent.change(screen.getByRole('combobox'), { target: { value: 'mecanico' } })
-    fireEvent.click(screen.getByRole('button', { name: 'Criar Usuario' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Criar Usuário' }))
 
     await waitFor(() => expect(criarUsuario).toHaveBeenCalledWith(expect.objectContaining({
       nome: 'Carlos Mecânico',
@@ -69,8 +69,8 @@ describe('Tela de Usuarios', () => {
 async function criarPelaTela({ nome = 'Novo Usuario', email = 'novo@oficina.com', senha = 'Senha1234', perfil } = {}) {
   render(<Usuarios />)
   await screen.findByText('Gestor Um')
-  fireEvent.click(screen.getByRole('button', { name: /Novo Usuario/i }))
-  const form = screen.getByRole('button', { name: 'Criar Usuario' }).closest('form')
+  fireEvent.click(screen.getByRole('button', { name: /Novo Usuário/i }))
+  const form = screen.getByRole('button', { name: 'Criar Usuário' }).closest('form')
   fireEvent.change(screen.getByPlaceholderText('Ex: Joao da Silva'), { target: { value: nome } })
   fireEvent.change(screen.getByPlaceholderText('usuario@oficina.com'), { target: { value: email } })
   fireEvent.change(screen.getByPlaceholderText('Min. 8 caracteres'), { target: { value: senha } })
@@ -99,7 +99,7 @@ describe('Usuarios — validação do formulário na tela', () => {
   it('deve_oferecer_apenas_os_tres_perfis_do_enum_sem_opcao_vazia', async () => {
     render(<Usuarios />)
     await screen.findByText('Gestor Um')
-    fireEvent.click(screen.getByRole('button', { name: /Novo Usuario/i }))
+    fireEvent.click(screen.getByRole('button', { name: /Novo Usuário/i }))
     const opcoes = within(screen.getByRole('combobox')).getAllByRole('option')
     expect(opcoes.map(o => o.value)).toEqual(['gestor', 'atendente', 'mecanico'])
   })
@@ -110,7 +110,7 @@ describe('Usuarios — validação do formulário na tela', () => {
   it('deve_rejeitar_perfil_fora_do_enum_antes_de_chamar_a_api', async () => {
     criarUsuario.mockResolvedValue({ erro: false })
     await criarPelaTela({ perfil: 'superadmin' })
-    expect(await screen.findByText(/perfil de acesso valido/i)).toBeInTheDocument()
+    expect(await screen.findByText(/perfil de acesso válido/i)).toBeInTheDocument()
     expect(criarUsuario).not.toHaveBeenCalled()
   })
 
@@ -135,13 +135,13 @@ describe('Usuarios — validação do formulário na tela', () => {
   it('deve_rejeitar_email_ja_cadastrado_antes_de_chamar_a_api', async () => {
     criarUsuario.mockResolvedValue({ erro: false })
     await criarPelaTela({ email: 'gestor@x.com' })
-    expect(await screen.findByText(/e-mail ja esta cadastrado/i)).toBeInTheDocument()
+    expect(await screen.findByText(/e-mail já está cadastrado/i)).toBeInTheDocument()
     expect(criarUsuario).not.toHaveBeenCalled()
   })
 
   it('deve_comparar_email_duplicado_sem_diferenciar_maiusculas', async () => {
     await criarPelaTela({ email: 'GESTOR@X.COM' })
-    expect(await screen.findByText(/e-mail ja esta cadastrado/i)).toBeInTheDocument()
+    expect(await screen.findByText(/e-mail já está cadastrado/i)).toBeInTheDocument()
     expect(criarUsuario).not.toHaveBeenCalled()
   })
 
@@ -149,7 +149,7 @@ describe('Usuarios — validação do formulário na tela', () => {
     criarUsuario.mockRejectedValue(new Error('Falha de rede'))
     await criarPelaTela({})
     expect(await screen.findByText('Falha de rede')).toBeInTheDocument()
-    const botao = screen.getByRole('button', { name: 'Criar Usuario' })
+    const botao = screen.getByRole('button', { name: 'Criar Usuário' })
     expect(botao).toBeInTheDocument()
     await waitFor(() => expect(botao).not.toBeDisabled())
     expect(reloadDatabase).not.toHaveBeenCalled()

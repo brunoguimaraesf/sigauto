@@ -41,12 +41,14 @@ export function AbrirOS() {
     : atendentes[0]
   const atendenteSelecionadoId = atendenteId || atendentePadrao?.id || ''
 
+  // O Consumidor ja gravado entra com o id real: com o id ficticio, os veiculos
+  // dele nao seriam encontrados e a O.S. de balcao nao abriria.
   const clientesComConsumidor = useMemo(() => {
     const consumidor = clientes.find(c => c.id === CONSUMIDOR_ID || c.nome?.toLowerCase() === 'consumidor')
     const base = consumidor || {
       id: CONSUMIDOR_ID,
       nome: 'Consumidor',
-      telefone: 'Nao informado',
+      telefone: 'Não informado',
       email: '',
       tipo_pessoa: 'fisica',
       cpf_cnpj: '000.000.000-00',
@@ -75,7 +77,7 @@ export function AbrirOS() {
     return addCliente({
       id: CONSUMIDOR_ID,
       nome: 'Consumidor',
-      telefone: 'Nao informado',
+      telefone: 'Não informado',
       email: '',
       tipo_pessoa: 'fisica',
       cpf_cnpj: '000.000.000-00',
@@ -95,7 +97,7 @@ export function AbrirOS() {
       cliente = await addCliente({
         ...clienteForm,
         nome: clienteForm.nome.trim(),
-        telefone: clienteForm.telefone || 'Nao informado',
+        telefone: clienteForm.telefone || 'Não informado',
         cpf_cnpj: clienteForm.cpf_cnpj || `SC${Date.now().toString().slice(-9)}`,
         ativo: true,
       })
@@ -112,12 +114,15 @@ export function AbrirOS() {
   const salvarVeiculoRapido = async (ownerId) => {
     const resolvedOwner = typeof ownerId === 'string' ? ownerId : null
     if (!veiculoForm.placa.trim() || !veiculoForm.marca.trim() || !veiculoForm.modelo.trim()) {
-      alert('Informe placa, marca e modelo do veiculo.')
+      alert('Informe placa, marca e modelo do veículo.')
       return null
     }
     let donoId = resolvedOwner || clienteId
     try {
-      if (!resolvedOwner && clienteId === CONSUMIDOR_ID) donoId = (await garantirConsumidor()).id
+      if (!resolvedOwner && clienteId === CONSUMIDOR_ID) {
+        donoId = (await garantirConsumidor()).id
+        setClienteId(donoId)
+      }
     } catch (err) {
       alert(`Erro ao salvar cliente: ${err?.message || 'tente novamente.'}`)
       return null
@@ -130,14 +135,14 @@ export function AbrirOS() {
         ...veiculoForm,
         placa: veiculoForm.placa.toUpperCase(),
         ano: veiculoForm.ano || new Date().getFullYear(),
-        cor: veiculoForm.cor || 'Nao informada',
+        cor: veiculoForm.cor || 'Não informada',
         cliente_id: donoId,
         id_cliente: donoId,
         status: 'Pendente',
         ativo: true,
       })
     } catch (err) {
-      alert(`Erro ao salvar veiculo: ${err?.message || 'tente novamente.'}`)
+      alert(`Erro ao salvar veículo: ${err?.message || 'tente novamente.'}`)
       return null
     }
     setVeiculoId(veiculo.id)
@@ -152,7 +157,7 @@ export function AbrirOS() {
     let veiculoFinal = veiculoSelecionado
 
     if (descricao.trim().length < 10) {
-      alert('A descricao da queixa deve ter pelo menos 10 caracteres.')
+      alert('A descrição da queixa deve ter pelo menos 10 caracteres.')
       return
     }
 
@@ -181,7 +186,7 @@ export function AbrirOS() {
         if (!veiculoFinal) return
       }
       if (!veiculoFinal) {
-        alert('Selecione ou cadastre um veiculo.')
+        alert('Selecione ou cadastre um veículo.')
         return
       }
 
@@ -251,7 +256,7 @@ export function AbrirOS() {
       <section className={`welcome-section stagger-1 ${css.topo}`}>
         <div>
           <h2>Abrir Nova O.S.</h2>
-          <p>Selecione o cliente, escolha o veiculo e registre a entrada.</p>
+          <p>Selecione o cliente, escolha o veículo e registre a entrada.</p>
         </div>
         <button className={`btn-secondary ${css.btnVoltar}`} onClick={() => navigate('/ordens-servico')}>
           <ArrowLeft size={16} /> Voltar
@@ -335,7 +340,7 @@ export function AbrirOS() {
                         <button
                           type="button"
                           className={`btn-link ${css.btnConsumidor}`}
-                          onClick={() => { setClienteId(CONSUMIDOR_ID); setVeiculoId('') }}
+                          onClick={() => { setClienteId(clientesComConsumidor[0].id); setVeiculoId('') }}
                         >
                           Usar &quot;Consumidor&quot;
                         </button>
@@ -411,14 +416,14 @@ export function AbrirOS() {
 
           <div className={css.gradeEquipe}>
             <div className={`form-group ${css.campoSemMargem}`}>
-              <label><Wrench size={12} className={css.iconeRotulo} />Mecanico responsavel</label>
+              <label><Wrench size={12} className={css.iconeRotulo} />Mecânico responsável</label>
               <select className="form-control" value={mecanicoId} onChange={e => setMecanicoId(e.target.value)}>
                 <option value="">A definir</option>
                 {mecanicos.map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
               </select>
             </div>
             <div className={`form-group ${css.campoSemMargem}`}>
-              <label><User size={12} className={css.iconeRotulo} />Atendente responsavel</label>
+              <label><User size={12} className={css.iconeRotulo} />Atendente responsável</label>
               <select className="form-control" value={atendenteSelecionadoId} onChange={e => setAtendenteId(e.target.value)} required>
                 <option value="">Selecione...</option>
                 {atendentes.map(a => <option key={a.id} value={a.id}>{a.nome}</option>)}

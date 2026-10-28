@@ -58,7 +58,7 @@ export function ListaEstoque() {
       .order('data_hora', { ascending: false })
       .limit(100)
     if (error) {
-      console.error('Erro ao carregar historico de estoque:', error)
+      console.error('Erro ao carregar histórico de estoque:', error)
       return
     }
     setMovimentacoes(data || [])
@@ -186,7 +186,7 @@ export function ListaEstoque() {
     const item = modalMovimentacao
     if (mTipo === 'saida' && qty > Number(item.quantidade)) { alert('Saldo insuficiente para saída.'); return }
     if (!usuarioAtual?.id) {
-      setErroPersistencia('Nao foi possivel identificar o usuario responsavel pela movimentacao.')
+      setErroPersistencia('Não foi possível identificar o usuário responsável pela movimentação.')
       return
     }
     const { error } = await supabaseDb.from('movimentacao_estoque').insert({
@@ -198,7 +198,7 @@ export function ListaEstoque() {
       origem: 'manual',
     })
     if (error) {
-      setErroPersistencia(`Nao foi possivel registrar a movimentacao: ${error.message || 'erro no banco de dados'}.`)
+      setErroPersistencia(`Não foi possível registrar a movimentação: ${error.message || 'erro no banco de dados'}.`)
       return
     }
     await Promise.all([carregarEstoque(), carregarMovimentacoes()])

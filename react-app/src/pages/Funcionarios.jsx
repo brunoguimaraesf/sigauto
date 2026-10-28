@@ -38,7 +38,7 @@ export function Funcionarios() {
   const carregar = async () => {
     setCarregando(true)
     const { data, error } = await supabaseDb.from('funcionario').select('*').order('nome')
-    if (error) { console.error('Erro ao carregar funcionarios:', error); setFuncionarios([]) }
+    if (error) { console.error('Erro ao carregar funcionários:', error); setFuncionarios([]) }
     else setFuncionarios(data || [])
     setCarregando(false)
   }
@@ -66,7 +66,7 @@ export function Funcionarios() {
 
   const handleSubmit = async (e) => {
     e.preventDefault()
-    if (!CARGOS_VALIDOS.has(form.cargo)) { setErroForm('Selecione um cargo valido.'); return }
+    if (!CARGOS_VALIDOS.has(form.cargo)) { setErroForm('Selecione um cargo válido.'); return }
     if (!form.nome.trim()) { setErroForm('Informe o nome do funcionário.'); return }
     setSalvando(true)
     const payload = {
@@ -108,15 +108,15 @@ export function Funcionarios() {
     <div className="dashboard-grid">
       <section className={`welcome-section stagger-1 ${css.topo}`}>
         <div>
-          <h2>Funcionarios</h2>
-          <p>Colaboradores da oficina e suas regras de comissao.</p>
+          <h2>Funcionários</h2>
+          <p>Colaboradores da oficina e suas regras de comissão.</p>
         </div>
         <div className={css.acoesTopo}>
           <button className={`btn-secondary ${css.btnAtualizar}`} onClick={carregar}>
             <RefreshCw size={16} /> Atualizar
           </button>
           <button className={`btn-primary ${css.btnNovo}`} onClick={abrirNovo}>
-            <Plus size={16} /> Novo Funcionario
+            <Plus size={16} /> Novo Funcionário
           </button>
         </div>
       </section>
@@ -129,18 +129,18 @@ export function Funcionarios() {
 
         <div className="tech-table-container">
           {carregando ? (
-            <div className={css.vazio}>Carregando funcionarios...</div>
+            <div className={css.vazio}>Carregando funcionários...</div>
           ) : filtrados.length === 0 ? (
-            <div className={css.vazio}>Nenhum funcionario cadastrado.</div>
+            <div className={css.vazio}>Nenhum funcionário cadastrado.</div>
           ) : (
             <table className="tech-table">
               <thead>
                 <tr>
-                  <th>Funcionario</th>
+                  <th>Funcionário</th>
                   <th>Cargo</th>
-                  <th>Comissao</th>
+                  <th>Comissão</th>
                   <th>Login vinculado</th>
-                  <th>Acoes</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -149,8 +149,8 @@ export function Funcionarios() {
                   const cc = CARGO_COLORS[f.cargo] || CARGO_COLORS.atendente
                   const login = usuarios.find(u => u.id === f.id_usuario)
                   const bases = [
-                    f.comissao_sobre_servicos ? 'servicos' : null,
-                    f.comissao_sobre_pecas ? 'pecas/produtos' : null,
+                    f.comissao_sobre_servicos ? 'serviços' : null,
+                    f.comissao_sobre_pecas ? 'peças/produtos' : null,
                   ].filter(Boolean).join(' + ')
                   return (
                     <tr key={f.id}>
@@ -201,7 +201,7 @@ export function Funcionarios() {
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h3>{editandoId ? 'Editar Funcionario' : 'Novo Funcionario'}</h3>
+              <h3>{editandoId ? 'Editar Funcionário' : 'Novo Funcionário'}</h3>
               <button onClick={() => setModalAberto(false)} className={css.btnFechar}><X size={20} /></button>
             </div>
             <form onSubmit={handleSubmit}>
@@ -214,7 +214,7 @@ export function Funcionarios() {
                   <div className="form-group">
                     <label>Cargo *</label>
                     <select className="form-control" value={form.cargo} onChange={e => setF('cargo', e.target.value)}>
-                      <option value="mecanico">Mecanico</option>
+                      <option value="mecanico">Mecânico</option>
                       <option value="atendente">Atendente</option>
                       <option value="gestor">Gestor</option>
                     </select>
@@ -230,7 +230,7 @@ export function Funcionarios() {
 
                 <div className={css.blocoComissao}>
                   <div className={css.blocoComissaoTitulo}>
-                    <Percent size={15} /> Comissao
+                    <Percent size={15} /> Comissão
                   </div>
                   <div className="form-row">
                     <div className="form-group">
@@ -238,14 +238,14 @@ export function Funcionarios() {
                       <input type="number" className="form-control" value={form.comissao_percentual} onChange={e => setF('comissao_percentual', e.target.value)} min="0" max="100" step="0.01" placeholder="Ex: 5" />
                     </div>
                     <div className="form-group">
-                      <label>Base de calculo</label>
+                      <label>Base de cálculo</label>
                       <label className={css.opcao}>
                         <input type="checkbox" checked={form.comissao_sobre_servicos} onChange={e => setF('comissao_sobre_servicos', e.target.checked)} />
-                        Servicos
+                        Serviços
                       </label>
                       <label className={css.opcao}>
                         <input type="checkbox" checked={form.comissao_sobre_pecas} onChange={e => setF('comissao_sobre_pecas', e.target.checked)} />
-                        Pecas e produtos
+                        Peças e produtos
                       </label>
                     </div>
                   </div>
@@ -259,7 +259,7 @@ export function Funcionarios() {
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn-secondary" onClick={() => setModalAberto(false)}>Cancelar</button>
-                <button type="submit" className="btn-primary" disabled={salvando}>{salvando ? 'Salvando...' : editandoId ? 'Salvar Alteracoes' : 'Criar Funcionario'}</button>
+                <button type="submit" className="btn-primary" disabled={salvando}>{salvando ? 'Salvando...' : editandoId ? 'Salvar Alterações' : 'Criar Funcionário'}</button>
               </div>
             </form>
           </div>

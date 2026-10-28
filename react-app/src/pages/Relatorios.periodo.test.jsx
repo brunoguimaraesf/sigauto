@@ -51,7 +51,7 @@ describe('Relatorios — fronteiras do periodo (RF07/RN24)', () => {
     definirPeriodo('2026-10-01', '2026-10-31')
     const receita = screen.getByText('Receita Total').parentElement
     expect(within(receita).getByText(/500,00/)).toBeInTheDocument()
-    const concluidas = screen.getByText('O.S. Concluidas').parentElement
+    const concluidas = screen.getByText('O.S. Concluídas').parentElement
     expect(within(concluidas).getByText('2')).toBeInTheDocument()
   })
 

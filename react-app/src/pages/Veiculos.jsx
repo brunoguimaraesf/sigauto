@@ -56,12 +56,12 @@ export function Veiculos() {
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!clienteId) {
-      alert('Associe um proprietario ao veiculo.')
+      alert('Associe um proprietário ao veículo.')
       return
     }
     const clienteSelecionado = clientes.find(cliente => cliente.id === clienteId)
     if (!clienteSelecionado || clienteSelecionado.ativo === false) {
-      alert('Selecione um proprietario ativo para o veiculo.')
+      alert('Selecione um proprietário ativo para o veículo.')
       return
     }
 
@@ -77,7 +77,7 @@ export function Veiculos() {
     )
     if (duplicado) {
       const clienteDuplicado = clientes.find(c => c.id === (duplicado.cliente_id || duplicado.id_cliente))
-      alert(`Esta placa ja esta cadastrada para ${clienteDuplicado?.nome || 'outro cliente'}.`)
+      alert(`Esta placa já está cadastrada para ${clienteDuplicado?.nome || 'outro cliente'}.`)
       return
     }
 
@@ -96,7 +96,7 @@ export function Veiculos() {
     }
 
     if (editingId) updateVeiculo(editingId, payload)
-    else addVeiculo(payload).catch(err => alert(`Erro ao salvar veiculo: ${err?.message || 'tente novamente.'}`))
+    else addVeiculo(payload).catch(err => alert(`Erro ao salvar veículo: ${err?.message || 'tente novamente.'}`))
 
     setModalOpen(false)
   }
@@ -118,10 +118,10 @@ export function Veiculos() {
       <section className={`welcome-section stagger-1 ${css.topo}`}>
         <div>
           <h2>Veículos</h2>
-          <p>Gerenciamento completo dos veiculos cadastrados no sistema.</p>
+          <p>Gerenciamento completo dos veículos cadastrados no sistema.</p>
         </div>
         <button className={`btn-primary ${css.btnNovo}`} onClick={handleOpenAdd}>
-          <Plus size={16} /> Adicionar Veiculo
+          <Plus size={16} /> Adicionar Veículo
         </button>
       </section>
 
@@ -131,7 +131,7 @@ export function Veiculos() {
             <input
               type="text"
               className={`form-control ${css.buscaInput}`}
-              placeholder="Buscar veiculo por modelo, marca, placa, proprietario ou observacao..."
+              placeholder="Buscar veículo por modelo, marca, placa, proprietário ou observação..."
               value={searchFilter}
               onChange={(e) => setSearchFilter(e.target.value)}
             />
@@ -141,19 +141,19 @@ export function Veiculos() {
 
         <div className="tech-table-container">
           {loading ? (
-            <div className={css.aviso}>Buscando veiculos...</div>
+            <div className={css.aviso}>Buscando veículos...</div>
           ) : filteredVeiculos.length === 0 ? (
-            <div className={css.aviso}>Nenhum veiculo encontrado.</div>
+            <div className={css.aviso}>Nenhum veículo encontrado.</div>
           ) : (
             <table className="tech-table">
               <thead>
                 <tr>
                   <th>Modelo / Marca</th>
                   <th>Placa / Ano / Cor</th>
-                  <th>Proprietario</th>
-                  <th>Servico Atual</th>
+                  <th>Proprietário</th>
+                  <th>Serviço Atual</th>
                   <th>Status</th>
-                  <th>Acoes</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -192,7 +192,7 @@ export function Veiculos() {
                           <button className={`btn-secondary ${css.btnAcao}`} onClick={() => handleOpenEdit(v)}>
                             <Edit2 size={12} /> Editar
                           </button>
-                          <button className={`btn-danger ${css.btnIcone}`} onClick={() => confirm(`Excluir ${v.marca} ${v.modelo} (${v.placa})?`) && deleteVeiculo(v.id).catch(err => alert(`Nao foi possivel inativar o veiculo: ${err?.message || 'erro desconhecido'}`))}>
+                          <button className={`btn-danger ${css.btnIcone}`} onClick={() => confirm(`Excluir ${v.marca} ${v.modelo} (${v.placa})?`) && deleteVeiculo(v.id).catch(err => alert(`Não foi possível inativar o veículo: ${err?.message || 'erro desconhecido'}`))}>
                             <Trash2 size={14} />
                           </button>
                         </div>
@@ -210,13 +210,13 @@ export function Veiculos() {
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h3>{editingId ? 'Editar Veiculo' : 'Cadastrar Novo Veiculo'}</h3>
+              <h3>{editingId ? 'Editar Veículo' : 'Cadastrar Novo Veículo'}</h3>
               <button onClick={() => setModalOpen(false)} className={css.btnFechar}><X size={20} /></button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
                 <div className="form-group">
-                  <label>Proprietario</label>
+                  <label>Proprietário</label>
                   <select className="form-control" value={clienteId} onChange={(e) => setClienteId(e.target.value)} required>
                     <option value="">Selecione o cliente...</option>
                     {clientes.map(c => <option key={c.id} value={c.id}>{c.nome} ({c.telefone})</option>)}
@@ -224,7 +224,7 @@ export function Veiculos() {
                 </div>
 
                 <div className="form-group">
-                  <label>Placa do veiculo</label>
+                  <label>Placa do veículo</label>
                   <input
                     type="text"
                     className={`form-control ${css.campoPlaca}`}
@@ -248,25 +248,25 @@ export function Veiculos() {
 
                 {editingId && (
                   <div className="form-row">
-                    <div className="form-group"><label>Servico atual</label><input className="form-control" value={servicoAtual} onChange={(e) => setServicoAtual(e.target.value)} /></div>
+                    <div className="form-group"><label>Serviço atual</label><input className="form-control" value={servicoAtual} onChange={(e) => setServicoAtual(e.target.value)} /></div>
                     <div className="form-group">
                       <label>Status operacional</label>
                       <select className="form-control" value={status} onChange={(e) => setStatus(e.target.value)}>
                         <option value="Pendente">Pendente</option>
                         <option value="Em Andamento">Em Andamento</option>
-                        <option value="Concluido">Concluido</option>
+                        <option value="Concluido">Concluído</option>
                       </select>
                     </div>
                   </div>
                 )}
 
                 <div className="form-group">
-                  <label>Observacao</label>
+                  <label>Observação</label>
                   <textarea
                     className="form-control"
                     value={observacoes}
                     onChange={(e) => setObservacoes(e.target.value)}
-                    placeholder="Detalhes relevantes sobre o veiculo, historico ou preferencias do proprietario"
+                    placeholder="Detalhes relevantes sobre o veículo, histórico ou preferências do proprietário"
                     rows={3}
                   />
                 </div>
@@ -274,7 +274,7 @@ export function Veiculos() {
 
               <div className="modal-footer">
                 <button type="button" className="btn-secondary" onClick={() => setModalOpen(false)}>Cancelar</button>
-                <button type="submit" className="btn-primary">{editingId ? 'Salvar Alteracoes' : 'Adicionar Veiculo'}</button>
+                <button type="submit" className="btn-primary">{editingId ? 'Salvar Alterações' : 'Adicionar Veículo'}</button>
               </div>
             </form>
           </div>

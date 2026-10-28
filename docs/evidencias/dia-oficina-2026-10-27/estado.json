@@ -1,0 +1,52 @@
+{
+  "tag": "9787",
+  "joana": "joana9787@oficina.local",
+  "c1": {
+    "nome": "Marcos Pereira 9787",
+    "cpf": "52978738197",
+    "email": "marcos9787@email.local",
+    "tel": "(64) 99812-4455"
+  },
+  "v1": {
+    "placa": "QWE9A87",
+    "marca": "Volkswagen",
+    "modelo": "Gol 1.6",
+    "ano": "2019",
+    "cor": "Branco"
+  },
+  "c2": {
+    "nome": "Fernanda Rocha 9787",
+    "cpf": "71978729448",
+    "email": "fernanda9787@email.local",
+    "tel": "(64) 98877-1122"
+  },
+  "v2": {
+    "placa": "RTY7B87",
+    "marca": "Chevrolet",
+    "modelo": "Onix LT",
+    "ano": "2021",
+    "cor": "Prata",
+    "km": "48200"
+  },
+  "os1": "168",
+  "os2": "169",
+  "servicos": [
+    "Troca de oleo e filtro 9787",
+    "Revisao de freios 9787",
+    "Alinhamento e balanceamento 9787"
+  ],
+  "itens": [
+    "Oleo 5W30 sintetico 9787",
+    "Filtro de oleo 9787",
+    "Pastilha de freio dianteira 9787"
+  ],
+  "codigos": [
+    "OLEO-5W30-9787",
+    "FILT-OLEO-9787",
+    "PAST-DIANT-9787"
+  ],
+  "os1id": "aa6188f4-4c0f-4b69-b65c-5e607bfddd03",
+  "os2id": "37825155-87b2-4099-b79a-a3fadef0e09c",
+  "os4": "170",
+  "os4id": "f04c33f9-90d1-4fc7-875c-0e302c66cccb"
+}

@@ -2,6 +2,8 @@ import { Navigate } from 'react-router-dom'
 import { useAuth } from '../../context/AuthContext'
 import css from './ProtectedRoute.module.css'
 
+const PERFIL_ROTULO = { gestor: 'gestor', atendente: 'atendente', mecanico: 'mecânico' }
+
 export function ProtectedRoute({ children, requiredRoles }) {
   const { isAuthenticated, perfil, loading } = useAuth()
 
@@ -23,7 +25,7 @@ export function ProtectedRoute({ children, requiredRoles }) {
       <div className={`${css.tela} ${css.negado}`}>
         <div className={css.icone}>⚠️</div>
         <h2 className={css.titulo}>Acesso Negado</h2>
-        <p>Seu perfil ({perfil}) não tem permissão para acessar esta página.</p>
+        <p>Seu perfil ({PERFIL_ROTULO[perfil] || perfil}) não tem permissão para acessar esta página.</p>
       </div>
     )
   }

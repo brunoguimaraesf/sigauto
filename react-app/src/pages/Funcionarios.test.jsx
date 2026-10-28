@@ -48,7 +48,7 @@ beforeEach(() => {
 describe('Tela de Funcionarios', () => {
   it('mostra o titulo', () => {
     render(<Funcionarios />)
-    expect(screen.getByRole('heading', { name: 'Funcionarios' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Funcionários' })).toBeInTheDocument()
   })
 
   it('carrega e lista os funcionarios com a comissao', async () => {
@@ -67,8 +67,8 @@ describe('Tela de Funcionarios', () => {
 async function cadastrarFuncionario({ nome = 'Novo Func', cargo, percentual } = {}) {
   render(<Funcionarios />)
   await screen.findByText('Carlos Mecânico')
-  fireEvent.click(screen.getByRole('button', { name: /Novo Funcionario/i }))
-  const form = screen.getByRole('button', { name: /Criar Funcionario/i }).closest('form')
+  fireEvent.click(screen.getByRole('button', { name: /Novo Funcionário/i }))
+  const form = screen.getByRole('button', { name: /Criar Funcionário/i }).closest('form')
   fireEvent.change(within(form).getByPlaceholderText(/Joao da Silva/i), { target: { value: nome } })
   if (cargo !== undefined) {
     fireEvent.change(within(form).getAllByRole('combobox')[0], { target: { value: cargo } })
@@ -125,8 +125,8 @@ describe('Funcionarios — validação e clamp da comissão', () => {
   it('deve_oferecer_apenas_os_tres_cargos_do_enum_sem_opcao_vazia', async () => {
     render(<Funcionarios />)
     await screen.findByText('Carlos Mecânico')
-    fireEvent.click(screen.getByRole('button', { name: /Novo Funcionario/i }))
-    const form = screen.getByRole('button', { name: /Criar Funcionario/i }).closest('form')
+    fireEvent.click(screen.getByRole('button', { name: /Novo Funcionário/i }))
+    const form = screen.getByRole('button', { name: /Criar Funcionário/i }).closest('form')
     const opcoes = within(within(form).getAllByRole('combobox')[0]).getAllByRole('option')
     expect(opcoes.map(o => o.value)).toEqual(['mecanico', 'atendente', 'gestor'])
   })
@@ -137,13 +137,13 @@ describe('Funcionarios — validação e clamp da comissão', () => {
   // Postgres — a tela nem tenta impedir.
   it('deve_rejeitar_cargo_vazio_antes_de_chamar_o_banco', async () => {
     await cadastrarFuncionario({ cargo: '' })
-    expect(await screen.findByText(/cargo valido/i)).toBeInTheDocument()
+    expect(await screen.findByText(/cargo válido/i)).toBeInTheDocument()
     expect(mocks.escritas).toHaveLength(0)
   })
 
   it('deve_rejeitar_cargo_fora_do_enum', async () => {
     await cadastrarFuncionario({ cargo: 'superadmin' })
-    expect(await screen.findByText(/cargo valido/i)).toBeInTheDocument()
+    expect(await screen.findByText(/cargo válido/i)).toBeInTheDocument()
     expect(mocks.escritas).toHaveLength(0)
   })
 
@@ -151,14 +151,14 @@ describe('Funcionarios — validação e clamp da comissão', () => {
     mocks.erroEscrita = { message: 'new row violates row-level security policy' }
     await cadastrarFuncionario({ nome: 'Joao' })
     expect(await screen.findByText(/row-level security/i)).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: /Criar Funcionario/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Criar Funcionário/i })).toBeInTheDocument()
   })
 
   it('deve_editar_pela_rota_de_update_preservando_o_clamp', async () => {
     render(<Funcionarios />)
     await screen.findByText('Carlos Mecânico')
     fireEvent.click(screen.getAllByRole('button', { name: /Editar/i })[0])
-    const form = screen.getByRole('button', { name: /Salvar Alteracoes/i }).closest('form')
+    const form = screen.getByRole('button', { name: /Salvar Alterações/i }).closest('form')
     fireEvent.change(within(form).getByRole('spinbutton'), { target: { value: '250' } })
     fireEvent.submit(form)
     await waitFor(() => expect(mocks.escritas).toHaveLength(1))

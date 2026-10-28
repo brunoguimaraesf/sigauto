@@ -62,16 +62,25 @@ export function Historico() {
             <Search size={16} color="var(--text-secondary)" className={css.buscaIcone} />
             <input type="text" className={`form-control ${css.buscaInput}`} placeholder="Buscar cliente, placa, nº OS..." value={busca} onChange={e => setBusca(e.target.value)} />
           </div>
-          <select className={`form-control ${css.campoFiltro}`} value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}>
-            <option value="Todos">Todos</option>
-            <option value="concluida">Concluída</option>
-            <option value="Concluído">Concluída (leg.)</option>
-            <option value="cancelada">Cancelada</option>
-            <option value="aberta">Aberta</option>
-            <option value="em_andamento">Em Andamento</option>
-          </select>
-          <input type="date" className={`form-control ${css.campoFiltro}`} value={dataInicio} onChange={e => setDataInicio(e.target.value)} title="Data início" />
-          <input type="date" className={`form-control ${css.campoFiltro}`} value={dataFim} onChange={e => setDataFim(e.target.value)} title="Data fim" />
+          <div className={css.campoRotulado}>
+            <label htmlFor="historico-status">Status</label>
+            <select id="historico-status" className={`form-control ${css.campoFiltro}`} value={filtroStatus} onChange={e => setFiltroStatus(e.target.value)}>
+              <option value="Todos">Todos</option>
+              <option value="concluida">Concluída</option>
+              <option value="Concluído">Concluída (leg.)</option>
+              <option value="cancelada">Cancelada</option>
+              <option value="aberta">Aberta</option>
+              <option value="em_andamento">Em Andamento</option>
+            </select>
+          </div>
+          <div className={css.campoRotulado}>
+            <label htmlFor="historico-data-inicio">Data de início</label>
+            <input id="historico-data-inicio" type="date" className={`form-control ${css.campoFiltro}`} value={dataInicio} onChange={e => setDataInicio(e.target.value)} />
+          </div>
+          <div className={css.campoRotulado}>
+            <label htmlFor="historico-data-fim">Data de fim</label>
+            <input id="historico-data-fim" type="date" className={`form-control ${css.campoFiltro}`} value={dataFim} onChange={e => setDataFim(e.target.value)} />
+          </div>
         </div>
 
         <div className="tech-table-container">

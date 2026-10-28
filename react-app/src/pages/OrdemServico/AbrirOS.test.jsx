@@ -117,6 +117,49 @@ describe('Tela de Abrir O.S.', () => {
     expect(addOrdemServico.mock.calls[0][0]).toMatchObject({ id_veiculo: 'v-gravado', cliente_id: 'c1' })
   })
 
+  // RF03: com o Consumidor ja gravado (id real), o atalho selecionava o id
+  // ficticio 'cliente-consumidor'; a lista de veiculos vinha vazia e a O.S. de
+  // balcao nao abria. Achado no teste do dia completo de 27/10/2026.
+  it('Usar Consumidor ja gravado lista os veiculos dele e abre a O.S.', async () => {
+    const addOrdemServico = vi.fn().mockResolvedValue({ numero_os: 8 })
+    useDatabase.mockReturnValue({
+      ...baseDb,
+      clientes: [...baseDb.clientes, { id: 'uuid-consumidor', nome: 'Consumidor', cpf_cnpj: '000.000.000-00' }],
+      veiculos: [...baseDb.veiculos, { id: 'v-balcao', id_cliente: 'uuid-consumidor', placa: 'BAL8C97', marca: 'Fiat', modelo: 'Strada' }],
+      addOrdemServico,
+    })
+
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: /Usar "Consumidor"/i }))
+    const veiculo = screen.getByRole('option', { name: /BAL8C97/ })
+    fireEvent.change(veiculo.closest('select'), { target: { value: 'v-balcao' } })
+    fireEvent.change(screen.getByPlaceholderText(/Descreva a queixa/i), { target: { value: 'Alinhamento e balanceamento no balcao' } })
+    fireEvent.click(screen.getByRole('button', { name: /Confirmar Abertura/i }))
+
+    await waitFor(() => expect(addOrdemServico).toHaveBeenCalledTimes(1))
+    expect(addOrdemServico.mock.calls[0][0]).toMatchObject({ id_veiculo: 'v-balcao', cliente_id: 'uuid-consumidor' })
+  })
+
+  it('Consumidor criado pelo cadastro rapido do veiculo passa a ser o cliente da O.S.', async () => {
+    const addCliente = vi.fn().mockResolvedValue({ id: 'uuid-novo-consumidor', nome: 'Consumidor' })
+    const addVeiculo = vi.fn().mockResolvedValue({ id: 'v-novo', id_cliente: 'uuid-novo-consumidor', placa: 'BAL1C23', marca: 'Fiat', modelo: 'Strada' })
+    const addOrdemServico = vi.fn().mockResolvedValue({ numero_os: 9 })
+    useDatabase.mockReturnValue({ ...baseDb, addCliente, addVeiculo, addOrdemServico })
+
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: /Usar "Consumidor"/i }))
+    fireEvent.click(screen.getAllByRole('button', { name: '+ Novo' }).at(-1))
+    fireEvent.change(screen.getByPlaceholderText('Placa *'), { target: { value: 'BAL1C23' } })
+    fireEvent.change(screen.getByPlaceholderText('Marca *'), { target: { value: 'Fiat' } })
+    fireEvent.change(screen.getByPlaceholderText('Modelo *'), { target: { value: 'Strada' } })
+    fireEvent.change(screen.getByPlaceholderText(/Descreva a queixa/i), { target: { value: 'Alinhamento e balanceamento no balcao' } })
+    fireEvent.click(screen.getByRole('button', { name: /Confirmar Abertura/i }))
+
+    await waitFor(() => expect(addOrdemServico).toHaveBeenCalledTimes(1))
+    expect(addVeiculo.mock.calls[0][0]).toMatchObject({ id_cliente: 'uuid-novo-consumidor' })
+    expect(addOrdemServico.mock.calls[0][0]).toMatchObject({ id_veiculo: 'v-novo', cliente_id: 'uuid-novo-consumidor' })
+  })
+
   it('nao grava a O.S. se o veiculo novo foi recusado pelo banco', async () => {
     const addVeiculo = vi.fn().mockRejectedValue(new Error('duplicate key value violates unique constraint "veiculo_placa_key"'))
     const addOrdemServico = vi.fn()

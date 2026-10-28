@@ -38,8 +38,8 @@ export function Usuarios() {
       .order('nome')
 
     if (error) {
-      console.error('Erro ao carregar usuarios do Supabase:', error)
-      setErroForm('Nao foi possivel carregar os usuarios do banco.')
+      console.error('Erro ao carregar usuários do Supabase:', error)
+      setErroForm('Não foi possível carregar os usuários do banco.')
       setUsuarios([])
     } else {
       setUsuarios(data || [])
@@ -87,14 +87,14 @@ export function Usuarios() {
 
     try {
       if (!PERFIS_VALIDOS.has(fPerfil)) {
-        throw new Error('Selecione um perfil de acesso valido.')
+        throw new Error('Selecione um perfil de acesso válido.')
       }
       const emailNormalizado = fEmail.trim().toLowerCase()
       const emailDuplicado = usuarios.some(usuario =>
         usuario.id !== editandoId && String(usuario.email || '').trim().toLowerCase() === emailNormalizado
       )
       if (emailDuplicado) {
-        throw new Error('Este e-mail ja esta cadastrado.')
+        throw new Error('Este e-mail já está cadastrado.')
       }
 
       if (editandoId) {
@@ -117,15 +117,15 @@ export function Usuarios() {
       await reloadDatabase()
       setModalAberto(false)
     } catch (error) {
-      console.error('Erro ao salvar usuario:', error)
-      setErroForm(error.message || 'Nao foi possivel salvar o usuario.')
+      console.error('Erro ao salvar usuário:', error)
+      setErroForm(error.message || 'Não foi possível salvar o usuário.')
     } finally {
       setSalvando(false)
     }
   }
 
   const handleInativar = async (id) => {
-    if (!confirm('Deseja inativar este usuario? Ele nao podera mais acessar o sistema.')) return
+    if (!confirm('Deseja inativar este usuário? Ele não poderá mais acessar o sistema.')) return
     const atual = usuarios.find(usuario => usuario.id === id)
     try {
       await usuariosApi.atualizar(id, {
@@ -135,8 +135,8 @@ export function Usuarios() {
         ativo: false,
       })
     } catch (error) {
-      alert('Nao foi possivel inativar o usuario.')
-      console.error('Erro ao inativar usuario:', error)
+      alert('Não foi possível inativar o usuário.')
+      console.error('Erro ao inativar usuário:', error)
       return
     }
     await carregarUsuarios()
@@ -152,7 +152,7 @@ export function Usuarios() {
     <div className="dashboard-grid">
       <section className={`welcome-section stagger-1 ${css.topo}`}>
         <div>
-          <h2>Gestao de Usuarios</h2>
+          <h2>Gestão de Usuários</h2>
           <p>Controle de acesso e perfis do sistema SIGAuto.</p>
         </div>
         <div className={css.acoesTopo}>
@@ -160,7 +160,7 @@ export function Usuarios() {
             <RefreshCw size={16} /> Atualizar
           </button>
           <button className={`btn-primary ${css.btnNovo}`} onClick={abrirNovo}>
-            <Plus size={16} /> Novo Usuario
+            <Plus size={16} /> Novo Usuário
           </button>
         </div>
       </section>
@@ -173,19 +173,19 @@ export function Usuarios() {
 
         <div className="tech-table-container">
           {carregando ? (
-            <div className={css.vazio}>Carregando usuarios...</div>
+            <div className={css.vazio}>Carregando usuários...</div>
           ) : filtrados.length === 0 ? (
-            <div className={css.vazio}>Nenhum usuario encontrado.</div>
+            <div className={css.vazio}>Nenhum usuário encontrado.</div>
           ) : (
             <table className="tech-table">
               <thead>
                 <tr>
-                  <th>Usuario</th>
+                  <th>Usuário</th>
                   <th>E-mail</th>
                   <th>Telefone</th>
                   <th>Perfil</th>
                   <th>Status</th>
-                  <th>Acoes</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -239,7 +239,7 @@ export function Usuarios() {
         <div className="modal-overlay">
           <div className="modal-content">
             <div className="modal-header">
-              <h3>{editandoId ? 'Editar Usuario' : 'Novo Usuario'}</h3>
+              <h3>{editandoId ? 'Editar Usuário' : 'Novo Usuário'}</h3>
               <button onClick={() => setModalAberto(false)} className={css.btnFechar}><X size={20} /></button>
             </div>
             <form onSubmit={handleSubmit}>
@@ -264,7 +264,7 @@ export function Usuarios() {
                     <select className="form-control" value={fPerfil} onChange={e => setFPerfil(e.target.value)}>
                       <option value="gestor">Gestor (Acesso Total)</option>
                       <option value="atendente">Atendente (Operacional)</option>
-                      <option value="mecanico">Mecanico (Tecnico)</option>
+                      <option value="mecanico">Mecânico (Técnico)</option>
                     </select>
                   </div>
                   {!editandoId && (
@@ -283,12 +283,12 @@ export function Usuarios() {
                   </div>
                 )}
                 <div className={`alert-box ${css.alertaRodape}`}>
-                  <strong>Perfis de acesso:</strong> <strong>Gestor</strong> tem acesso completo. <strong>Atendente</strong> gerencia OS, clientes e veiculos. <strong>Mecanico</strong> acessa diagnosticos e consultas tecnicas.
+                  <strong>Perfis de acesso:</strong> <strong>Gestor</strong> tem acesso completo. <strong>Atendente</strong> gerencia OS, clientes e veículos. <strong>Mecânico</strong> acessa diagnósticos e consultas técnicas.
                 </div>
               </div>
               <div className="modal-footer">
                 <button type="button" className="btn-secondary" onClick={() => setModalAberto(false)}>Cancelar</button>
-                <button type="submit" className="btn-primary" disabled={salvando}>{salvando ? 'Salvando...' : editandoId ? 'Salvar Alteracoes' : 'Criar Usuario'}</button>
+                <button type="submit" className="btn-primary" disabled={salvando}>{salvando ? 'Salvando...' : editandoId ? 'Salvar Alterações' : 'Criar Usuário'}</button>
               </div>
             </form>
           </div>

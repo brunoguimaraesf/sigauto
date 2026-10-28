@@ -177,7 +177,7 @@ export function EncerrarOS() {
       })
       setEncerrada(true)
     } catch (error) {
-      setErroEncerramento(error?.message || 'Nao foi possivel finalizar a O.S.')
+      setErroEncerramento(error?.message || 'Não foi possível finalizar a O.S.')
       setConfirmando(false)
     } finally {
       setFinalizando(false)

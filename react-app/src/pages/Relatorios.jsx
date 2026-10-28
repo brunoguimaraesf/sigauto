@@ -8,24 +8,24 @@ import { dentroDoPeriodo } from '../utils/periodo'
 import css from './Relatorios.module.css'
 
 const TIPOS = [
-  { id: 'faturamento', label: 'Faturamento', icon: TrendingUp, desc: 'Receita por periodo' },
-  { id: 'atendimentos', label: 'Atendimentos', icon: BarChart3, desc: 'OS abertas e concluidas' },
-  { id: 'estoque', label: 'Estoque', icon: Package, desc: 'Posicao atual de estoque' },
-  { id: 'servicos', label: 'Servicos Frequentes', icon: Wrench, desc: 'Servicos mais realizados' },
-  { id: 'clientes', label: 'Clientes Frequentes', icon: Users, desc: 'Clientes com mais OS' },
-  { id: 'comissoes', label: 'Comissoes', icon: Percent, desc: 'Valores por responsavel' },
+  { id: 'faturamento', label: 'Faturamento', icon: TrendingUp, desc: 'Receita por período' },
+  { id: 'atendimentos', label: 'Atendimentos', icon: BarChart3, desc: 'O.S. abertas e concluídas' },
+  { id: 'estoque', label: 'Estoque', icon: Package, desc: 'Posição atual de estoque' },
+  { id: 'servicos', label: 'Serviços Frequentes', icon: Wrench, desc: 'Serviços mais realizados' },
+  { id: 'clientes', label: 'Clientes Frequentes', icon: Users, desc: 'Clientes com mais O.S.' },
+  { id: 'comissoes', label: 'Comissões', icon: Percent, desc: 'Valores por responsável' },
 ]
 
 const statusLabel = (status) => ({
   aberta: 'Aberta',
   em_andamento: 'Em andamento',
-  aguardando_peca: 'Aguardando peca',
-  concluida: 'Concluida',
+  aguardando_peca: 'Aguardando peça',
+  concluida: 'Concluída',
   cancelada: 'Cancelada',
   Pendente: 'Aberta',
   'Em Andamento': 'Em andamento',
-  'Concluido': 'Concluida',
-  'Concluído': 'Concluida',
+  'Concluido': 'Concluída',
+  'Concluído': 'Concluída',
 }[status] || status || 'Sem status')
 
 export function Relatorios() {
@@ -82,7 +82,7 @@ export function Relatorios() {
       if (!est.error) setEstoque(est.data || [])
       else console.error('Erro ao carregar estoque do Supabase:', est.error)
       if (!fun.error) setFuncionarios(fun.data || [])
-      else console.error('Erro ao carregar funcionarios do Supabase:', fun.error)
+      else console.error('Erro ao carregar funcionários do Supabase:', fun.error)
     }
     carregar()
   }, [])
@@ -100,12 +100,12 @@ export function Relatorios() {
       )
       const receita = concluidas.reduce((s, os) => s + centesimos(getValorOS(os)), 0) / 100
       return {
-        titulo: 'Faturamento no Periodo',
+        titulo: 'Faturamento no Período',
         totais: [
           { label: 'Total de O.S.', valor: osNoPeriodo.length },
-          { label: 'O.S. Concluidas', valor: concluidas.length },
+          { label: 'O.S. Concluídas', valor: concluidas.length },
           { label: 'Receita Total', valor: formatCurrency(receita) },
-          { label: 'Ticket Medio', valor: concluidas.length ? formatCurrency(Math.round(receita * 100 / concluidas.length) / 100) : formatCurrency(0) },
+          { label: 'Ticket Médio', valor: concluidas.length ? formatCurrency(Math.round(receita * 100 / concluidas.length) / 100) : formatCurrency(0) },
         ],
         // As linhas sao as O.S. que compoem a receita, para o CSV fechar com o
         // total exibido (RN25).
@@ -132,8 +132,8 @@ export function Relatorios() {
         contagem[label] = (contagem[label] || 0) + 1
       })
       return {
-        titulo: 'Atendimentos no Periodo',
-        totais: [{ label: 'Total no Periodo', valor: osNoPeriodo.length }, ...Object.entries(contagem).map(([s, n]) => ({ label: s, valor: n }))],
+        titulo: 'Atendimentos no Período',
+        totais: [{ label: 'Total no Período', valor: osNoPeriodo.length }, ...Object.entries(contagem).map(([s, n]) => ({ label: s, valor: n }))],
         colunas: ['Status', 'Quantidade', '% do Total'],
         linhas: Object.entries(contagem).map(([s, n]) => [s, n, `${osNoPeriodo.length ? Math.round((n / osNoPeriodo.length) * 100) : 0}%`]),
       }
@@ -142,13 +142,13 @@ export function Relatorios() {
     if (tipoSel === 'estoque') {
       const ativos = estoque.filter(i => i.ativo !== false)
       return {
-        titulo: 'Posicao Atual de Estoque',
+        titulo: 'Posição Atual de Estoque',
         totais: [
           { label: 'Total de Itens', valor: ativos.length },
           { label: 'Itens em Alerta', valor: ativos.filter(i => Number(i.quantidade) <= Number(i.qtd_minima || 0)).length },
           { label: 'Itens Zerados', valor: ativos.filter(i => Number(i.quantidade) === 0).length },
         ],
-        colunas: ['Codigo', 'Item', 'Un.', 'Qtd.', 'Min.', 'Status'],
+        colunas: ['Código', 'Item', 'Un.', 'Qtd.', 'Min.', 'Status'],
         linhas: ativos.map(i => [
           i.codigo || i.id,
           i.nome,
@@ -165,18 +165,18 @@ export function Relatorios() {
       osNoPeriodo.forEach(os => {
         const itens = os.servicos_itens?.length
           ? os.servicos_itens
-          : [{ descricao: os.servicos_executados || os.servicoNome || os.descricao?.slice(0, 40) || 'Servico Geral' }]
+          : [{ descricao: os.servicos_executados || os.servicoNome || os.descricao?.slice(0, 40) || 'Serviço Geral' }]
         itens.forEach(item => {
-          const desc = item.descricao || servicos.find(s => s.id === item.catalogo_id)?.nome || 'Servico Geral'
+          const desc = item.descricao || servicos.find(s => s.id === item.catalogo_id)?.nome || 'Serviço Geral'
           contagem[desc] = (contagem[desc] || 0) + Number(item.quantidade || 1)
         })
       })
       const total = Object.values(contagem).reduce((s, n) => s + n, 0)
       const top10 = Object.entries(contagem).sort((a, b) => b[1] - a[1]).slice(0, 10)
       return {
-        titulo: 'Servicos Mais Frequentes',
-        totais: [{ label: 'Total de O.S.', valor: osNoPeriodo.length }, { label: 'Servicos Lancados', valor: total }],
-        colunas: ['Servico', 'Qtd. Realizacoes', '% do Total'],
+        titulo: 'Serviços Mais Frequentes',
+        totais: [{ label: 'Total de O.S.', valor: osNoPeriodo.length }, { label: 'Serviços Lançados', valor: total }],
+        colunas: ['Serviço', 'Qtd. Realizações', '% do Total'],
         linhas: top10.map(([s, n]) => [s, n, `${total ? Math.round((n / total) * 100) : 0}%`]),
       }
     }
@@ -208,9 +208,9 @@ export function Relatorios() {
 
         if ((mecanico || snapshotMecanico) && (Number(snapshotMecanico?.valor || 0) > 0 || Number(mecanico?.comissao_percentual || 0) > 0)) {
           linhasComissao.push({
-            perfil: 'Mecanico',
+            perfil: 'Mecânico',
             idFuncionario: snapshotMecanico?.id_funcionario || mecanico?.id || null,
-            nome: snapshotMecanico?.nome || mecanico?.nome || 'Mecanico nao identificado',
+            nome: snapshotMecanico?.nome || mecanico?.nome || 'Mecânico não identificado',
             numero,
             cliente: c.nome || '-',
             placa: v.placa || '-',
@@ -226,7 +226,7 @@ export function Relatorios() {
           linhasComissao.push({
             perfil: 'Atendente',
             idFuncionario: snapshotAtendente?.id_funcionario || atendente?.id || null,
-            nome: snapshotAtendente?.nome || atendente?.nome || 'Atendente nao identificado',
+            nome: snapshotAtendente?.nome || atendente?.nome || 'Atendente não identificado',
             numero,
             cliente: c.nome || '-',
             placa: v.placa || '-',
@@ -246,21 +246,21 @@ export function Relatorios() {
         : linhasComissao
 
       const totalComissao = linhasDoFiltro.reduce((s, item) => s + item.valor, 0)
-      const totalMecanicos = linhasDoFiltro.filter(item => item.perfil === 'Mecanico').reduce((s, item) => s + item.valor, 0)
+      const totalMecanicos = linhasDoFiltro.filter(item => item.perfil === 'Mecânico').reduce((s, item) => s + item.valor, 0)
       const totalAtendentes = linhasDoFiltro.filter(item => item.perfil === 'Atendente').reduce((s, item) => s + item.valor, 0)
       const profissionais = new Set(linhasDoFiltro.map(item => item.idFuncionario || `${item.perfil}:${item.nome}`)).size
       const osComComissao = new Set(linhasDoFiltro.map(item => item.numero)).size
 
       return {
-        titulo: 'Comissoes no Periodo',
+        titulo: 'Comissões no Período',
         totais: [
-          { label: 'O.S. Concluidas', valor: funcionarioSel ? osComComissao : concluidas.length },
+          { label: 'O.S. Concluídas', valor: funcionarioSel ? osComComissao : concluidas.length },
           { label: 'Profissionais', valor: profissionais },
-          { label: 'Total Comissoes', valor: formatCurrency(totalComissao) },
-          { label: 'Mecanicos', valor: formatCurrency(totalMecanicos) },
+          { label: 'Total Comissões', valor: formatCurrency(totalComissao) },
+          { label: 'Mecânicos', valor: formatCurrency(totalMecanicos) },
           { label: 'Atendentes', valor: formatCurrency(totalAtendentes) },
         ],
-        colunas: ['Profissional', 'Perfil', 'O.S.', 'Cliente', 'Placa', 'Base Serv.', 'Base Pecas', '%', 'Comissao', 'Data'],
+        colunas: ['Profissional', 'Perfil', 'O.S.', 'Cliente', 'Placa', 'Base Serv.', 'Base Peças', '%', 'Comissão', 'Data'],
         linhas: [...linhasDoFiltro]
           .sort((a, b) => a.nome.localeCompare(b.nome) || new Date(a.data) - new Date(b.data))
           .map(item => [
@@ -286,8 +286,8 @@ export function Relatorios() {
     const top10 = Object.entries(contagem).sort((a, b) => b[1] - a[1]).slice(0, 10)
     return {
       titulo: 'Clientes Mais Frequentes',
-      totais: [{ label: 'Total de Clientes', valor: clientes.length }, { label: 'Clientes no Periodo', valor: Object.keys(contagem).length }],
-      colunas: ['Cliente', 'Total de O.S.', '% do Periodo'],
+      totais: [{ label: 'Total de Clientes', valor: clientes.length }, { label: 'Clientes no Período', valor: Object.keys(contagem).length }],
+      colunas: ['Cliente', 'Total de O.S.', '% do Período'],
       linhas: top10.map(([c, n]) => [c, n, `${osNoPeriodo.length ? Math.round((n / osNoPeriodo.length) * 100) : 0}%`]),
     }
   }
@@ -319,8 +319,8 @@ export function Relatorios() {
   return (
     <div className="dashboard-grid">
       <section className="welcome-section stagger-1">
-        <h2>Relatorios Gerenciais</h2>
-        <p>Analise de desempenho da oficina por periodo.</p>
+        <h2>Relatórios Gerenciais</h2>
+        <p>Análise de desempenho da oficina por período.</p>
       </section>
 
       <section className={`stagger-2 ${css.tipos}`}>
@@ -347,7 +347,7 @@ export function Relatorios() {
         <div className={css.filtros}>
           <div className={css.filtrosCampos}>
             <div className={`form-group ${css.campo}`}>
-              <label>Data Inicio</label>
+              <label>Data Início</label>
               <input type="date" className="form-control" value={dataInicio} onChange={e => setDataInicio(e.target.value)} />
             </div>
             <div className={`form-group ${css.campo}`}>
@@ -355,16 +355,16 @@ export function Relatorios() {
               <input type="date" className="form-control" value={dataFim} onChange={e => setDataFim(e.target.value)} />
             </div>
             <div className={`form-group ${css.campo} ${css.campoFuncionario}`}>
-              <label htmlFor="filtro-funcionario">Funcionario</label>
+              <label htmlFor="filtro-funcionario">Funcionário</label>
               <select
                 id="filtro-funcionario"
                 className="form-control"
                 value={funcionarioSel}
                 onChange={e => setFuncionarioSel(e.target.value)}
                 disabled={!aceitaFiltroFuncionario}
-                title={aceitaFiltroFuncionario ? undefined : 'A posicao de estoque nao depende de funcionario.'}
+                title={aceitaFiltroFuncionario ? undefined : 'A posição de estoque não depende de funcionário.'}
               >
-                <option value="">Todos os funcionarios</option>
+                <option value="">Todos os funcionários</option>
                 {funcionarios.map(f => (
                   <option key={f.id} value={f.id}>
                     {f.nome}{f.cargo ? ` - ${f.cargo}` : ''}
@@ -396,7 +396,7 @@ export function Relatorios() {
         )}
 
         {dados.linhas.length === 0 ? (
-          <div className={css.vazio}>Nenhum dado encontrado para o periodo selecionado.</div>
+          <div className={css.vazio}>Nenhum dado encontrado para o período selecionado.</div>
         ) : (
           <div className="tech-table-container">
             <table className="tech-table">

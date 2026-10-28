@@ -1,0 +1,268 @@
+{
+  "comparacoes": {
+    "faturamento": {
+      "atual": 3505.75,
+      "anterior": 0,
+      "diferenca": 3505.75,
+      "variacao_percentual": null
+    },
+    "ticket_medio": {
+      "atual": 194.76388888888889,
+      "anterior": 0,
+      "diferenca": 194.76388888888889,
+      "variacao_percentual": null
+    },
+    "itens_criticos": {
+      "atual": 1,
+      "anterior": 0,
+      "diferenca": 1,
+      "variacao_percentual": null
+    },
+    "ordens_abertas": {
+      "atual": 22,
+      "anterior": 0,
+      "diferenca": 22,
+      "variacao_percentual": null
+    },
+    "modelos_veiculo": [
+      {
+        "atual": 17,
+        "rotulo": "Fiat Argo",
+        "anterior": 0,
+        "diferenca": 17,
+        "variacao_percentual": null
+      },
+      {
+        "atual": 2,
+        "rotulo": "Volkswagen Gol",
+        "anterior": 0,
+        "diferenca": 2,
+        "variacao_percentual": null
+      },
+      {
+        "atual": 2,
+        "rotulo": "Volkswagen Gol 1.6",
+        "anterior": 0,
+        "diferenca": 2,
+        "variacao_percentual": null
+      },
+      {
+        "atual": 1,
+        "rotulo": "Chevrolet Onix LT",
+        "anterior": 0,
+        "diferenca": 1,
+        "variacao_percentual": null
+      }
+    ],
+    "ordens_concluidas": {
+      "atual": 18,
+      "anterior": 0,
+      "diferenca": 18,
+      "variacao_percentual": null
+    },
+    "quantidade_saidas": {
+      "atual": 25,
+      "anterior": 0,
+      "diferenca": 25,
+      "variacao_percentual": null
+    },
+    "duracao_media_horas": {
+      "atual": 0.017133240740740737,
+      "anterior": 0,
+      "diferenca": 0.017133240740740737,
+      "variacao_percentual": null
+    },
+    "servicos_mais_frequentes": [
+      {
+        "atual": 19,
+        "rotulo": "Troca de oleo",
+        "anterior": 0,
+        "diferenca": 19,
+        "variacao_percentual": null
+      },
+      {
+        "atual": 1,
+        "rotulo": "Alinhamento e balanceamento 9787",
+        "anterior": 0,
+        "diferenca": 1,
+        "variacao_percentual": null
+      },
+      {
+        "atual": 1,
+        "rotulo": "Revisao de freios 9787",
+        "anterior": 0,
+        "diferenca": 1,
+        "variacao_percentual": null
+      },
+      {
+        "atual": 1,
+        "rotulo": "Troca de oleo e filtro 9787",
+        "anterior": 0,
+        "diferenca": 1,
+        "variacao_percentual": null
+      }
+    ]
+  },
+  "periodo_atual": {
+    "fim": "2026-10-27T21:51:22.226Z",
+    "dias": 90,
+    "inicio": "2026-07-29T21:51:22.226Z"
+  },
+  "produtividade": {
+    "taxa_conclusao": 81.81818181818183,
+    "total_aberturas": 22,
+    "total_por_status": {
+      "aberta": 1,
+      "cancelada": 1,
+      "concluida": 18,
+      "em_andamento": 2,
+      "aguardando_peca": 0
+    },
+    "tempo_medio_horas": 0.017133240740740737,
+    "tempo_mediano_horas": 0.0016790277777777775
+  },
+  "periodo_anterior": {
+    "fim": "2026-07-29T21:51:22.226Z",
+    "dias": 90,
+    "inicio": "2026-04-30T21:51:22.226Z"
+  },
+  "metricas_destaque": {
+    "faturamento": 3505.75,
+    "ticket_medio": 194.76388888888889,
+    "itens_criticos": 1,
+    "ordens_abertas": 22,
+    "taxa_conclusao": 81.81818181818183,
+    "ordens_concluidas": 18,
+    "quantidade_saidas": 25,
+    "duracao_media_horas": 0.017133240740740737,
+    "duracao_mediana_horas": 0.0016790277777777775
+  },
+  "catalogo_evidencias": {
+    "ordens.abertas": {
+      "valor": 22,
+      "unidade": "ordens",
+      "periodo_fim": "2026-10-27T21:51:22.226Z",
+      "periodo_inicio": "2026-07-29T21:51:22.226Z"
+    },
+    "faturamento.valor": {
+      "valor": 3505.75,
+      "unidade": "BRL",
+      "periodo_fim": "2026-10-27T21:51:22.226Z",
+      "periodo_inicio": "2026-07-29T21:51:22.226Z"
+    },
+    "ordens.concluidas": {
+      "valor": 18,
+      "unidade": "ordens",
+      "periodo_fim": "2026-10-27T21:51:22.226Z",
+      "periodo_inicio": "2026-07-29T21:51:22.226Z"
+    },
+    "ordens.ticket_medio": {
+      "valor": 194.76388888888889,
+      "unidade": "BRL",
+      "periodo_fim": "2026-10-27T21:51:22.226Z",
+      "periodo_inicio": "2026-07-29T21:51:22.226Z"
+    },
+    "ordens.taxa_conclusao": {
+      "valor": 81.81818181818183,
+      "unidade": "percentual",
+      "periodo_fim": "2026-10-27T21:51:22.226Z",
+      "periodo_inicio": "2026-07-29T21:51:22.226Z"
+    },
+    "estoque.itens_criticos": {
+      "valor": 1,
+      "unidade": "itens",
+      "periodo_fim": "2026-10-27T21:51:22.226Z",
+      "periodo_inicio": "2026-07-29T21:51:22.226Z"
+    },
+    "estoque.quantidade_saidas": {
+      "valor": 25,
+      "unidade": "unidades",
+      "periodo_fim": "2026-10-27T21:51:22.226Z",
+      "periodo_inicio": "2026-07-29T21:51:22.226Z"
+    },
+    "produtividade.tempo_medio_horas": {
+      "valor": 0.017133240740740737,
+      "unidade": "horas",
+      "periodo_fim": "2026-10-27T21:51:22.226Z",
+      "periodo_inicio": "2026-07-29T21:51:22.226Z"
+    },
+    "produtividade.tempo_mediano_horas": {
+      "valor": 0.0016790277777777775,
+      "unidade": "horas",
+      "periodo_fim": "2026-10-27T21:51:22.226Z",
+      "periodo_inicio": "2026-07-29T21:51:22.226Z"
+    }
+  },
+  "estoque_inteligente": {
+    "itens_parados": [],
+    "itens_criticos": [
+      {
+        "id": "2eb7b0e7-41d1-4411-a008-d49174728c05",
+        "nome": "Pastilha de freio dianteira 9787",
+        "codigo": "PAST-DIANT-9787",
+        "parado": false,
+        "unidade": "PC",
+        "qtd_minima": 2,
+        "quantidade": 2,
+        "cobertura_dias": 90,
+        "consumo_diario": 0.022222222222222223,
+        "quantidade_saida": 2,
+        "sugestao_reposicao": 1
+      }
+    ],
+    "mais_consumidos": [
+      {
+        "id": "d1000000-0000-4000-8000-000000000001",
+        "nome": "Filtro de Oleo",
+        "codigo": "FIL-001",
+        "parado": false,
+        "unidade": "UN",
+        "qtd_minima": 3,
+        "quantidade": 17,
+        "cobertura_dias": 95.625,
+        "consumo_diario": 0.17777777777777778,
+        "quantidade_saida": 16,
+        "sugestao_reposicao": 0
+      },
+      {
+        "id": "a4e2d77a-537e-4b28-958a-be700285a985",
+        "nome": "Oleo 5W30 sintetico 9787",
+        "codigo": "OLEO-5W30-9787",
+        "parado": false,
+        "unidade": "LT",
+        "qtd_minima": 6,
+        "quantidade": 16,
+        "cobertura_dias": 360,
+        "consumo_diario": 0.044444444444444446,
+        "quantidade_saida": 4,
+        "sugestao_reposicao": 0
+      },
+      {
+        "id": "c6c78526-c3ed-4765-ab33-1bafacef7b52",
+        "nome": "Filtro de oleo 9787",
+        "codigo": "FILT-OLEO-9787",
+        "parado": false,
+        "unidade": "UN",
+        "qtd_minima": 3,
+        "quantidade": 9,
+        "cobertura_dias": 270,
+        "consumo_diario": 0.03333333333333333,
+        "quantidade_saida": 3,
+        "sugestao_reposicao": 0
+      },
+      {
+        "id": "2eb7b0e7-41d1-4411-a008-d49174728c05",
+        "nome": "Pastilha de freio dianteira 9787",
+        "codigo": "PAST-DIANT-9787",
+        "parado": false,
+        "unidade": "PC",
+        "qtd_minima": 2,
+        "quantidade": 2,
+        "cobertura_dias": 90,
+        "consumo_diario": 0.022222222222222223,
+        "quantidade_saida": 2,
+        "sugestao_reposicao": 1
+      }
+    ]
+  }
+}

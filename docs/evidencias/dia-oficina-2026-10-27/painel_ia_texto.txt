@@ -1,0 +1,112 @@
+3
+Painel de Inteligência Artificial
+Análise automatizada dos dados da oficina com recomendações gerenciais.
+Analisar Dados
+⚠️ Aviso Importante: As recomendações geradas pela IA têm caráter exclusivamente consultivo. Nenhuma ação será executada automaticamente. O gestor é responsável por avaliar e decidir sobre cada recomendação apresentada.
+Consultar análises anteriores
+RESUMO EXECUTIVO
+Análise executiva do desempenho operacional e financeiro da oficina mecânica, destacando o volume de ordens de serviço finalizadas, a movimentação de itens de estoque e as principais demandas de manutenção registradas no período.
+OS abertas (90d)
+22
+OS concluídas (90d)
+18
+Faturamento concluído (90d)
+R$ 3.505,75
+Itens críticos
+1
+ Alertas
+ESTOQUE
+Presença de itens em nível crítico requer reposição imediata para evitar paralisação nos serviços.
+Comparação de períodos
+Atual: 29/07/2026 a 27/10/2026 · Anterior: 30/04/2026 a 29/07/2026
+Indicador	Atual	Anterior	Diferença	Variação
+Faturamento concluído	R$ 3.505,75	R$ 0,00	R$ 3.505,75	Sem base anterior
+OS abertas	22	0	22	Sem base anterior
+OS concluídas	18	0	18	Sem base anterior
+Ticket médio	R$ 194,76	R$ 0,00	R$ 194,76	Sem base anterior
+Tempo médio de conclusão	0 h	0 h	0 h	Sem base anterior
+Saídas de estoque	25	0	25	Sem base anterior
+Itens críticos	1	0	1	Sem base anterior
+Modelos de veículo mais frequentes
+Item	Atual	Anterior	Diferença	Variação
+Fiat Argo	17	0	17	Sem base anterior
+Volkswagen Gol	2	0	2	Sem base anterior
+Volkswagen Gol 1.6	2	0	2	Sem base anterior
+Chevrolet Onix LT	1	0	1	Sem base anterior
+Serviços mais frequentes
+Item	Atual	Anterior	Diferença	Variação
+Troca de oleo	19	0	19	Sem base anterior
+Alinhamento e balanceamento 9787	1	0	1	Sem base anterior
+Revisao de freios 9787	1	0	1	Sem base anterior
+Troca de oleo e filtro 9787	1	0	1	Sem base anterior
+Estoque inteligente
+Reposição sugerida = máximo(0, estoque mínimo + consumo diário × 30 − quantidade atual). A sugestão é apenas consultiva e não altera o estoque.
+Itens críticos
+Itens com quantidade atual igual ou abaixo do estoque mínimo.
+Item	Atual / mínimo	Cobertura	Reposição sugerida
+Pastilha de freio dianteira 9787	2 / 2	90 dias	1 PC
+Peças com maior saída
+Item	Saídas no período	Consumo diário	Cobertura
+Filtro de Oleo	16 UN	0,18 UN	95,63 dias
+Oleo 5W30 sintetico 9787	4 LT	0,04 LT	360 dias
+Filtro de oleo 9787	3 UN	0,03 UN	270 dias
+Pastilha de freio dianteira 9787	2 PC	0,02 PC	90 dias
+Itens sem movimentação
+Não há itens sem movimentação no período.
+Produtividade das OS
+Abertas
+1
+Em andamento
+2
+Aguardando peça
+0
+Concluídas
+18
+Canceladas
+1
+Taxa de conclusão
+81,8%
+Tempo médio
+0 h
+Tempo mediano
+0 h
+OS abertas há mais tempo
+OS	Status	Data de abertura
+9001	aberta	18/10/2026
+140	em_andamento	26/10/2026
+141	em_andamento	26/10/2026
+Conclusões por mecânico
+Mecânico	OS concluídas	Valor médio
+Mecânico não identificado	15	R$ 148,50
+Carlos Mecanico	2	R$ 474,13
+Rafael Souza 9787	1	R$ 330,00
+Recomendações explicáveis
+CARÁTER CONSULTIVO — REQUER APROVAÇÃO DO GESTOR
+Monitoramento de itens essenciais em estoque
+ALTA
+Identificação de componentes com nível de cobertura próximo ao limite de segurança, exigindo atenção para evitar rupturas no atendimento.
+Categoria
+Estoque
+Ação sugerida
+Realizar pedido de reposição para os itens classificados como críticos no inventário.
+Impacto esperado
+Garantia de disponibilidade contínua de peças e manutenção do fluxo de atendimento sem interrupções.
+Período analisado
+29/07/2026 a 27/10/2026
+Evidências calculadas
+estoque.itens_criticos: 1 itens
+CARÁTER CONSULTIVO — REQUER APROVAÇÃO DO GESTOR
+Otimização do fluxo de ordens de serviço
+MEDIA
+Acompanhamento do volume de ordens abertas em relação às concluídas para assegurar a eficiência operacional da oficina.
+Categoria
+Operacional
+Ação sugerida
+Acompanhar os chamados em andamento e priorizar a conclusão das pendências abertas.
+Impacto esperado
+Melhoria na taxa de conclusão e agilidade na entrega dos veículos aos clientes.
+Período analisado
+29/07/2026 a 27/10/2026
+Evidências calculadas
+ordens.taxa_conclusao: 81,8%
+Atualizar Análise

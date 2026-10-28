@@ -24,13 +24,13 @@ describe('Tela de Veiculos', () => {
   it('mostra o carregamento', () => {
     useDatabase.mockReturnValue({ ...baseDb, loading: true, veiculos: [] })
     render(<Veiculos />)
-    expect(screen.getByText(/Buscando veiculos/i)).toBeInTheDocument()
+    expect(screen.getByText(/Buscando veículos/i)).toBeInTheDocument()
   })
 
   it('mostra estado vazio', () => {
     useDatabase.mockReturnValue({ ...baseDb, veiculos: [] })
     render(<Veiculos />)
-    expect(screen.getByText(/Nenhum veiculo encontrado/i)).toBeInTheDocument()
+    expect(screen.getByText(/Nenhum veículo encontrado/i)).toBeInTheDocument()
   })
 
   it('lista veiculos com placa, modelo e proprietario', () => {
@@ -44,7 +44,7 @@ describe('Tela de Veiculos', () => {
   it('filtra pela busca (placa)', () => {
     useDatabase.mockReturnValue(baseDb)
     render(<Veiculos />)
-    const busca = screen.getByPlaceholderText(/Buscar veiculo/i)
+    const busca = screen.getByPlaceholderText(/Buscar veículo/i)
     fireEvent.change(busca, { target: { value: 'DEF4G55' } })
     expect(screen.getByText('VW Gol')).toBeInTheDocument()
     expect(screen.queryByText('Fiat Uno')).not.toBeInTheDocument()
@@ -62,7 +62,7 @@ const CLIENTE_INATIVO = { id: 'c2', nome: 'Joao Inativo', telefone: '(64) 98888-
 // Preenche o modal de criação e dispara o submit direto no <form>, para exercitar
 // o handleSubmit e não a validação nativa do navegador.
 function cadastrarVeiculo({ clienteId, placa, marca = 'Fiat', modelo = 'Uno', ano = '2020', cor = 'Prata' }) {
-  fireEvent.click(screen.getByRole('button', { name: /Adicionar Veiculo/i }))
+  fireEvent.click(screen.getByRole('button', { name: /Adicionar Veículo/i }))
   if (clienteId !== undefined) {
     fireEvent.change(screen.getByRole('combobox'), { target: { value: clienteId } })
   }
@@ -72,7 +72,7 @@ function cadastrarVeiculo({ clienteId, placa, marca = 'Fiat', modelo = 'Uno', an
   // Marca/Modelo/Ano/Cor nao tem <label htmlFor> (achado de acessibilidade):
   // o seletor usa a ordem dentro do <form>, nao da pagina — a busca do topo
   // tambem e um textbox e deslocaria os indices.
-  const form = screen.getAllByRole('button', { name: /Adicionar Veiculo/i })[1].closest('form')
+  const form = screen.getAllByRole('button', { name: /Adicionar Veículo/i })[1].closest('form')
   const campos = within(form).getAllByRole('textbox')
   // ordem no form: placa, marca, modelo, ano, cor, observacoes
   fireEvent.change(campos[1], { target: { value: marca } })
@@ -100,7 +100,7 @@ describe('Veiculos — validação do formulário no submit', () => {
   it('deve_barrar_submit_sem_proprietario_associado', () => {
     montar()
     cadastrarVeiculo({ clienteId: '', placa: 'ABC1D23' })
-    expect(alerta).toHaveBeenCalledWith('Associe um proprietario ao veiculo.')
+    expect(alerta).toHaveBeenCalledWith('Associe um proprietário ao veículo.')
     expect(addVeiculo).not.toHaveBeenCalled()
   })
 
@@ -142,14 +142,14 @@ describe('Veiculos — validação do formulário no submit', () => {
   ])('deve_barrar_placa_ja_cadastrada (%s)', (_caso, placa) => {
     montar([{ id: 'v1', cliente_id: 'c1', placa: 'ABC-1234', marca: 'VW', modelo: 'Gol' }])
     cadastrarVeiculo({ clienteId: 'c1', placa })
-    expect(alerta).toHaveBeenCalledWith(expect.stringContaining('ja esta cadastrada'))
+    expect(alerta).toHaveBeenCalledWith(expect.stringContaining('já está cadastrada'))
     expect(addVeiculo).not.toHaveBeenCalled()
   })
 
   it('deve_barrar_placa_mercosul_duplicada_em_caixa_diferente', () => {
     montar([{ id: 'v1', cliente_id: 'c1', placa: 'XYZ1A11', marca: 'Fiat', modelo: 'Uno' }])
     cadastrarVeiculo({ clienteId: 'c1', placa: 'xyz1a11' })
-    expect(alerta).toHaveBeenCalledWith(expect.stringContaining('ja esta cadastrada'))
+    expect(alerta).toHaveBeenCalledWith(expect.stringContaining('já está cadastrada'))
     expect(addVeiculo).not.toHaveBeenCalled()
   })
 
@@ -169,7 +169,7 @@ describe('Veiculos — validação do formulário no submit', () => {
     })
     render(<Veiculos />)
     fireEvent.click(screen.getByRole('button', { name: /Editar/i }))
-    fireEvent.submit(screen.getByRole('button', { name: /Salvar Alteracoes/i }).closest('form'))
+    fireEvent.submit(screen.getByRole('button', { name: /Salvar Alterações/i }).closest('form'))
     expect(alerta).not.toHaveBeenCalled()
     expect(updateVeiculo).toHaveBeenCalledWith('v1', expect.objectContaining({ placa: 'ABC-1234' }))
   })

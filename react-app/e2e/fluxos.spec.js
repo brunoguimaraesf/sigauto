@@ -32,7 +32,7 @@ test('abre o modal de novo cliente', async ({ page }) => {
 })
 
 test('fluxo de nova O.S. exige cliente antes do veículo', async ({ page }) => {
-  await page.getByRole('link', { name: 'Ordens de Servico', exact: true }).click()
+  await page.getByRole('link', { name: 'Ordens de Serviço', exact: true }).click()
   await page.getByRole('button', { name: /Nova O\.S\./i }).click()
 
   await expect(page.getByRole('heading', { name: /Abrir Nova O\.S\./i })).toBeVisible()
@@ -48,7 +48,7 @@ test('fluxo de nova O.S. exige cliente antes do veículo', async ({ page }) => {
 // das acoes na tela real, sem baixar arquivo.
 for (const [status, rotulo] of [['aberta', 'aberta'], ['concluida', 'concluída']]) {
   test(`O.S. ${rotulo} oferece Visualizar PDF e Imprimir`, async ({ page }) => {
-    await page.getByRole('link', { name: 'Ordens de Servico', exact: true }).click()
+    await page.getByRole('link', { name: 'Ordens de Serviço', exact: true }).click()
     await page.locator('select').filter({ hasText: 'Todos os status' }).selectOption(status)
 
     const ver = page.getByRole('button', { name: /^Ver$/ }).first()

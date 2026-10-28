@@ -222,7 +222,7 @@ export function Dashboard() {
                 <FileText size={28} color="var(--text-muted)" />
                 <span className={css.listaVaziaTexto}>
                   {ehMesCorrente
-                    ? 'Nenhuma O.S. aberta esta semana.'
+                    ? 'Nenhuma O.S. aberta está semana.'
                     : `Nenhuma O.S. aberta em ${rotuloPeriodo}.`}
                 </span>
                 <Link className={`btn-primary ${css.btnListaVazia}`} to="/ordens-servico/nova">Abrir nova O.S.</Link>
