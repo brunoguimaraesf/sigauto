@@ -10,7 +10,7 @@ import css from './Sidebar.module.css'
 const PERFIL_COLORS = {
   gestor: { color: '#79B4E3', label: 'Gestor' },
   atendente: { color: '#F2A24B', label: 'Atendente' },
-  mecanico: { color: '#5FD08A', label: 'Mecanico' },
+  mecanico: { color: '#5FD08A', label: 'Mecânico' },
 }
 
 const semAcao = () => {}
@@ -19,10 +19,10 @@ const semAcao = () => {}
 // sidebar em gaveta sobreposta. Em telas largas ela e coluna fixa e a classe de
 // aberto nao muda nada.
 export function Sidebar({ aberta = false, onFechar = semAcao }) {
-  const { user, perfil, isAuthenticated, logout } = useAuth()
+  const { user, perfil, nome, isAuthenticated, logout } = useAuth()
   const navigate = useNavigate()
   const { pathname } = useLocation()
-  const pc = PERFIL_COLORS[perfil] || { color: 'var(--text-secondary)', label: perfil || 'Usuario' }
+  const pc = PERFIL_COLORS[perfil] || { color: 'var(--text-secondary)', label: perfil || 'Usuário' }
   const [qtdAlertas, setQtdAlertas] = useState(0)
 
   useEffect(() => {
@@ -64,7 +64,7 @@ export function Sidebar({ aberta = false, onFechar = semAcao }) {
   const nc = ({ isActive }) => isActive ? 'nav-link active' : 'nav-link'
 
   return (
-    <nav className={`sidebar${aberta ? ' sidebar-aberta' : ''}`} aria-label="Navegacao principal">
+    <nav className={`sidebar${aberta ? ' sidebar-aberta' : ''}`} aria-label="Navegação principal">
       <div className="brand">
         <div className="brand-logo">
           <img src="/logo-sigauto.png" alt="Logo SIGAUTO" />
@@ -74,13 +74,13 @@ export function Sidebar({ aberta = false, onFechar = semAcao }) {
 
       <ul className="nav-links">
         {isGestorOuAtendente && <li className="sidebar-item"><NavLink to="/" className={nc} end><LayoutDashboard size={20} /> Dashboard</NavLink></li>}
-        <li className="sidebar-item"><NavLink to="/ordens-servico" className={nc}><FileText size={20} /> Ordens de Servico</NavLink></li>
-        <li className="sidebar-item"><NavLink to="/historico" className={nc}><History size={20} /> Historico</NavLink></li>
+        <li className="sidebar-item"><NavLink to="/ordens-servico" className={nc}><FileText size={20} /> Ordens de Serviço</NavLink></li>
+        <li className="sidebar-item"><NavLink to="/historico" className={nc}><History size={20} /> Histórico</NavLink></li>
         {isGestorOuAtendente && (
           <>
             <li className="sidebar-item"><NavLink to="/clientes" className={nc}><Users size={20} /> Clientes</NavLink></li>
-            <li className="sidebar-item"><NavLink to="/veiculos" className={nc}><CarFront size={20} /> Veiculos</NavLink></li>
-            <li className="sidebar-item"><NavLink to="/servicos" className={nc}><Wrench size={20} /> Servicos</NavLink></li>
+            <li className="sidebar-item"><NavLink to="/veiculos" className={nc}><CarFront size={20} /> Veículos</NavLink></li>
+            <li className="sidebar-item"><NavLink to="/servicos" className={nc}><Wrench size={20} /> Serviços</NavLink></li>
             <li className={`sidebar-item ${css.itemEstoque}`}>
               <NavLink to="/estoque" className={nc}>
                 <Package size={20} /> Estoque
@@ -95,19 +95,18 @@ export function Sidebar({ aberta = false, onFechar = semAcao }) {
         )}
         {isGestor && (
           <>
-            <li className="sidebar-item"><NavLink to="/relatorios" className={nc}><BarChart3 size={20} /> Relatorios</NavLink></li>
+            <li className="sidebar-item"><NavLink to="/relatorios" className={nc}><BarChart3 size={20} /> Relatórios</NavLink></li>
             <li className="sidebar-item"><NavLink to="/painel-ia" className={nc}><Brain size={20} /> Painel IA</NavLink></li>
-            <li className="sidebar-item"><NavLink to="/funcionarios" className={nc}><HardHat size={20} /> Funcionarios</NavLink></li>
-            <li className="sidebar-item"><NavLink to="/usuarios" className={nc}><UserCog size={20} /> Usuarios</NavLink></li>
+            <li className="sidebar-item"><NavLink to="/funcionarios" className={nc}><HardHat size={20} /> Funcionários</NavLink></li>
+            <li className="sidebar-item"><NavLink to="/usuarios" className={nc}><UserCog size={20} /> Usuários</NavLink></li>
             <li className="sidebar-item"><NavLink to="/configuracao-oficina" className={nc}><Building2 size={20} /> Oficina</NavLink></li>
           </>
         )}
       </ul>
 
       <div className="user-profile">
-        <div className="avatar"></div>
         <div className={`user-info ${css.userInfo}`}>
-          <span className="user-name">{user?.user_metadata?.nome || user?.email?.split('@')[0] || 'Usuario'}</span>
+          <span className="user-name">{nome || user?.user_metadata?.nome || 'Usuário'}</span>
           <span className="user-role" style={{ color: pc.color }}>{pc.label}</span>
         </div>
         {isAuthenticated && (

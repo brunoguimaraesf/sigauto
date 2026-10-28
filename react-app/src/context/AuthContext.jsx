@@ -40,7 +40,7 @@ const buildDemoUser = (email, demo) => ({
 
 const loginDemo = (email, senha) => {
   if (!DEMO_LOGIN_HABILITADO) {
-    throw new Error('Configuracao do servidor ausente. Procure o administrador.')
+    throw new Error('Configuração do servidor ausente. Procure o administrador.')
   }
   // `DEMO_USERS[chave]` alcancava o prototipo: e-mail '__proto__' devolvia
   // Object.prototype (truthy) e, com senha undefined, a comparacao passava.
@@ -57,6 +57,9 @@ const loginDemo = (email, senha) => {
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [perfil, setPerfil] = useState(null)
+  // Nome cadastrado em `usuario`: o metadata do Auth pode nao ter nome, e o
+  // e-mail nao deve aparecer no lugar dele.
+  const [nome, setNome] = useState(null)
   const [loading, setLoading] = useState(isSupabaseReal())
 
   const carregarPerfil = async (userId) => {
@@ -69,6 +72,7 @@ export function AuthProvider({ children }) {
       if (error) throw error
       if (data && data.ativo) {
         setPerfil(data.perfil)
+        setNome(data.nome || null)
         return data.perfil
       }
     } catch {
@@ -79,10 +83,12 @@ export function AuthProvider({ children }) {
       // a tela abria as rotas de gestor e, na de estoque, mandava `custo` no
       // payload com o formulario vazio — apagando o custo real.
       setPerfil(null)
+      setNome(null)
       return null
     }
     // Linha ausente ou `ativo = false` caem aqui: mesmo tratamento.
     setPerfil(null)
+    setNome(null)
     return null
   }
 
@@ -107,6 +113,7 @@ export function AuthProvider({ children }) {
       } else {
         setUser(null)
         setPerfil(null)
+        setNome(null)
       }
     })
 
@@ -119,6 +126,7 @@ export function AuthProvider({ children }) {
       const fakeUser = loginDemo(email, senha)
       setUser(fakeUser)
       setPerfil(fakeUser.perfil)
+      setNome(fakeUser.user_metadata.nome)
       return { user: fakeUser }
     }
 
@@ -145,12 +153,13 @@ export function AuthProvider({ children }) {
     }
     setUser(null)
     setPerfil(null)
+    setNome(null)
   }
 
   const isAuthenticated = !!user
 
   return (
-    <AuthContext.Provider value={{ user, perfil, isAuthenticated, loading, login, statusLogin, logout }}>
+    <AuthContext.Provider value={{ user, perfil, nome, isAuthenticated, loading, login, statusLogin, logout }}>
       {children}
     </AuthContext.Provider>
   )
