@@ -5,6 +5,7 @@ const AGORA = new Date('2026-10-20T15:00:00Z')
 const mes = (mes, ano = 2026) => ({ tipo: 'mes', mes, ano })
 const argumentos = (periodos = [mes(8)], metrica = 'faturamento') => ({ metrica, periodos })
 const preparar = (args = argumentos(), pergunta = 'Qual o faturamento de agosto de 2026?', historico = []) => prepararConsultaFinanceira(args, pergunta, historico, AGORA)
+const ESCLARECIMENTO_PERIODO = 'Informe o mês e o ano desejados, ou um intervalo com as duas datas completas. Qual ano e período devo consultar?'
 const OS = [
   { status: 'concluida', data_encerramento: '2026-08-01T00:00:00-03:00', valor_total: 1000 },
   { status: 'concluida', data_encerramento: '2026-08-15T12:00:00-03:00', valor_total: '2000.00' },
@@ -117,11 +118,27 @@ describe('RF11 / RN39 / RN43 — consulta financeira determinística', () => {
     expect(resposta).not.toMatch(/Infinity|NaN/)
   })
 
-  it('CHAT-11: período ausente significa histórico completo explicitamente identificado', () => {
-    const plano = preparar(argumentos([{ tipo: 'historico' }]), 'Qual o faturamento?')
+  it.each([
+    ['Quanto eu faturei?', 'faturamento'],
+    ['Qual o faturamento?', 'faturamento'],
+    ['Qual o ticket médio?', 'ticket_medio'],
+  ])('CHAT-11: período ausente solicita esclarecimento: %s', (pergunta, metrica) => {
+    expect(preparar(argumentos([{ tipo: 'historico' }], metrica), pergunta)).toEqual({ esclarecimento: ESCLARECIMENTO_PERIODO })
+  })
+
+  it.each([
+    'Quanto faturei no total, desde o início?',
+    'Qual o faturamento de todo o histórico?',
+    'Qual o faturamento no total?',
+    'Qual o faturamento total geral?',
+    'Qual o faturamento do histórico completo?',
+    'Qual o faturamento desde sempre?',
+    'Qual o faturamento acumulado?',
+    'Qual o faturamento de todos os tempos?',
+  ])('CHAT-11: histórico completo exige acumulado explícito: %s', pergunta => {
+    const plano = preparar(argumentos([{ tipo: 'historico' }]), pergunta)
     expect(responder(plano)).toContain('todoo histórico'.replace(/\s/g, ''))
     expect(responder(plano)).toContain('R$8.750,00')
-    expect(preparar(argumentos([{ tipo: 'ultimos_90_dias' }]), 'Qual o faturamento?')).toHaveProperty('esclarecimento')
   })
 
   it('últimos 90 dias somente se expressos na pergunta', () => {
@@ -130,8 +147,27 @@ describe('RF11 / RN39 / RN43 — consulta financeira determinística', () => {
     expect(plano.periodos[0].inicio).toBe('2026-07-22T15:00:00.000Z')
   })
 
-  it('CHAT-12: lucro não é faturamento e não direciona a despesas inexistentes em Relatórios', () => {
-    const plano = preparar(argumentos([], 'lucro_indisponivel'), 'Qual foi o lucro líquido de agosto?')
+  it.each([
+    'Quanto a oficina faturou hoje?',
+    'Qual o faturamento até hoje?',
+  ])('hoje sem mês e ano continua exigindo esclarecimento: %s', pergunta => {
+    expect(preparar(argumentos([{ tipo: 'historico' }]), pergunta)).toEqual({ esclarecimento: ESCLARECIMENTO_PERIODO })
+  })
+
+  // O marcador de acumulado não pode prevalecer sobre um recorte de tempo na
+  // mesma pergunta: "desde o início do mês" pede o mês, não todo o histórico.
+  it.each([
+    'Qual o faturamento desde o início do mês?',
+    'Qual o faturamento desde o início do ano?',
+    'Quanto faturei desde o início desta semana?',
+    'Qual o faturamento acumulado deste trimestre?',
+    'Qual o faturamento no total dos últimos dias?',
+  ])('acumulado com recorte de tempo exige esclarecimento: %s', pergunta => {
+    expect(preparar(argumentos([{ tipo: 'historico' }]), pergunta)).toEqual({ esclarecimento: ESCLARECIMENTO_PERIODO })
+  })
+
+  it.each(['Qual foi o lucro líquido?', 'Quais foram as despesas?'])('CHAT-12: lucro e despesas permanecem indisponíveis: %s', pergunta => {
+    const plano = preparar(argumentos([], 'lucro_indisponivel'), pergunta)
     const resposta = formatarRespostaFinanceira(plano, [])
     expect(resposta).toContain('não possui módulo financeiro')
     expect(resposta).not.toContain('Relatórios')
