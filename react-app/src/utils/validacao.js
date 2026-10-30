@@ -46,3 +46,28 @@ export function validarEmail(email) {
   if (!email) return false
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(email))
 }
+
+// RN07: regra única de documento para todo cadastro de cliente (formulário
+// principal e cadastro rápido da abertura de O.S.). Devolve a mensagem a exibir
+// ou null quando o documento é aceito. O documento é obrigatório: o atendimento
+// sem identificação usa o cadastro genérico "Consumidor", e não um cliente com
+// identificador provisório no lugar do CPF/CNPJ.
+export function erroDocumentoCliente(documento, tipoPessoa, clientes = [], idAtual = null) {
+  const digitos = String(documento || '').replace(/\D/g, '')
+  const tipo = tipoPessoa || (digitos.length === 14 ? 'juridica' : 'fisica')
+  const rotulo = tipo === 'juridica' ? 'CNPJ' : 'CPF'
+  if (!digitos) return `Informe o ${rotulo} do cliente.`
+  if (!validarCpfCnpj(digitos, tipo)) return `${rotulo} inválido. Confira o número informado.`
+  const duplicado = clientes.some(cliente =>
+    cliente.id !== idAtual && String(cliente.cpf_cnpj || '').replace(/\D/g, '') === digitos
+  )
+  if (duplicado) return 'CPF/CNPJ já cadastrado para outro cliente.'
+  return null
+}
+
+// Erro de gravação traduzido para o usuário: o texto técnico do banco não é
+// exibido, e os dados digitados continuam no formulário para nova tentativa.
+export function mensagemFalhaGravacaoCliente(erro) {
+  if (erro?.code === '23505') return 'CPF/CNPJ já cadastrado para outro cliente.'
+  return 'Não foi possível salvar o cliente. Os dados digitados foram mantidos; verifique a conexão e tente novamente.'
+}

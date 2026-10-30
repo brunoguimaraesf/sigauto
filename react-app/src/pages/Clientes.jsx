@@ -4,7 +4,7 @@ import { useDatabase } from '../hooks/useDatabase'
 import { Plus, Search, UserX, Edit2, X, Car } from 'lucide-react'
 import { maskCpfCnpj, maskTelefone } from '../utils/masks'
 import { UFS, maskCep, cepValido, buscarCep, formatarEndereco } from '../utils/endereco'
-import { validarCpfCnpj, validarEmail } from '../utils/validacao'
+import { validarEmail, erroDocumentoCliente, mensagemFalhaGravacaoCliente } from '../utils/validacao'
 import css from './Clientes.module.css'
 
 const enderecoEmBranco = {
@@ -36,6 +36,7 @@ export function Clientes() {
   const [buscandoCep, setBuscandoCep] = useState(false)
   const [erroCep, setErroCep] = useState('')
   const [formSujo, setFormSujo] = useState(false)
+  const [salvando, setSalvando] = useState(false)
 
   // Filtro de busca
   const [searchFilter, setSearchFilter] = useState('')
@@ -100,25 +101,20 @@ export function Clientes() {
     setModalOpen(true)
   }
 
-  // Submissão do formulário (Criar/Editar)
-  const handleSubmit = (e) => {
+  // Submissão do formulário (Criar/Editar). A janela só fecha depois que o
+  // banco confirma a gravação: em caso de falha, os dados digitados permanecem
+  // no formulário e o usuário pode tentar novamente sem redigitar.
+  const handleSubmit = async (e) => {
     e.preventDefault()
+    if (salvando) return
 
     // Validação de formato no próprio caminho de escrita (o app grava direto no
     // Supabase). Campos opcionais só são checados quando preenchidos.
     if (!nome.trim()) { alert('Informe o nome do cliente.'); return }
     if (!telefone.trim()) { alert('Informe o telefone do cliente.'); return }
-    if (cpfCnpj.trim() && !validarCpfCnpj(cpfCnpj, tipoPessoa)) {
-      alert(`${tipoPessoa === 'juridica' ? 'CNPJ' : 'CPF'} inválido. Confira o número informado.`)
-      return
-    }
+    const erroDocumento = erroDocumentoCliente(cpfCnpj, tipoPessoa, clientes, editingId)
+    if (erroDocumento) { alert(erroDocumento); return }
     if (email.trim() && !validarEmail(email)) { alert('E-mail inválido.'); return }
-
-    const documento = cpfCnpj.replace(/\D/g, '')
-    const documentoDuplicado = documento && clientes.some(cliente =>
-      cliente.id !== editingId && String(cliente.cpf_cnpj || '').replace(/\D/g, '') === documento
-    )
-    if (documentoDuplicado) { alert('CPF/CNPJ já cadastrado para outro cliente.'); return }
 
     const payload = {
       nome: nome.trim(),
@@ -129,10 +125,15 @@ export function Clientes() {
       endereco_estruturado: endereco
     }
 
-    if (editingId) {
-      updateCliente(editingId, payload).catch(err => alert(`Erro ao atualizar cliente: ${err?.message || 'tente novamente.'}`))
-    } else {
-      addCliente(payload).catch(err => alert(`Erro ao salvar cliente: ${err?.message || 'tente novamente.'}`))
+    setSalvando(true)
+    try {
+      if (editingId) await updateCliente(editingId, payload)
+      else await addCliente(payload)
+    } catch (err) {
+      alert(mensagemFalhaGravacaoCliente(err))
+      return
+    } finally {
+      setSalvando(false)
     }
 
     setFormSujo(false)
@@ -459,7 +460,7 @@ export function Clientes() {
 
               <div className="modal-footer">
                 <button type="button" className="btn-secondary" onClick={fecharModal}>Cancelar</button>
-                <button type="submit" className="btn-primary">{editingId ? 'Salvar Alterações' : 'Confirmar Cadastro'}</button>
+                <button type="submit" className="btn-primary" disabled={salvando}>{salvando ? 'Salvando...' : editingId ? 'Salvar Alterações' : 'Confirmar Cadastro'}</button>
               </div>
             </form>
           </div>

@@ -5,6 +5,7 @@ import { GlassPanel } from '../../components/GlassPanel'
 import { useDatabase } from '../../hooks/useDatabase'
 import { maskCpfCnpj, maskTelefone, maskPlaca } from '../../utils/masks'
 import { filtrarClientesPorTermo, descreverResultado } from '../../utils/clienteBusca'
+import { erroDocumentoCliente, mensagemFalhaGravacaoCliente, validarEmail } from '../../utils/validacao'
 import css from './AbrirOS.module.css'
 
 const CONSUMIDOR_ID = 'cliente-consumidor'
@@ -22,6 +23,7 @@ export function AbrirOS() {
   const [novoCliente, setNovoCliente] = useState(false)
   const [novoVeiculo, setNovoVeiculo] = useState(false)
   const [clienteForm, setClienteForm] = useState(emptyCliente)
+  const [salvandoCliente, setSalvandoCliente] = useState(false)
   const [veiculoForm, setVeiculoForm] = useState(emptyVeiculo)
   const [descricao, setDescricao] = useState('')
   const [prioridade, setPrioridade] = useState('normal')
@@ -99,23 +101,39 @@ export function AbrirOS() {
 
   // addCliente/addVeiculo resolvem so depois do insert. Esperar aqui e o que
   // garante a ordem cliente -> veiculo -> O.S. que as FKs exigem.
+  // O cadastro rápido aplica a mesma regra de documento do cadastro principal
+  // (RN07): CPF/CNPJ obrigatório, dígitos verificadores conferidos e sem
+  // repetição. O atendimento sem identificação usa o cliente "Consumidor".
   const salvarClienteRapido = async () => {
+    if (salvandoCliente) return null
     if (!clienteForm.nome.trim()) {
       alert('Informe o nome do cliente.')
       return null
     }
+    const erroDocumento = erroDocumentoCliente(clienteForm.cpf_cnpj, clienteForm.tipo_pessoa, clientes)
+    if (erroDocumento) {
+      alert(erroDocumento)
+      return null
+    }
+    if (clienteForm.email.trim() && !validarEmail(clienteForm.email)) {
+      alert('E-mail inválido.')
+      return null
+    }
     let cliente
+    setSalvandoCliente(true)
     try {
       cliente = await addCliente({
         ...clienteForm,
         nome: clienteForm.nome.trim(),
+        email: clienteForm.email.trim(),
         telefone: clienteForm.telefone || 'Não informado',
-        cpf_cnpj: clienteForm.cpf_cnpj || `SC${Date.now().toString().slice(-9)}`,
         ativo: true,
       })
     } catch (err) {
-      alert(`Erro ao salvar cliente: ${err?.message || 'tente novamente.'}`)
+      alert(mensagemFalhaGravacaoCliente(err))
       return null
+    } finally {
+      setSalvandoCliente(false)
     }
     setClienteId(cliente.id)
     setNovoCliente(false)
@@ -372,18 +390,25 @@ export function AbrirOS() {
                     <label htmlFor="os-cliente-telefone">Telefone</label>
                     <input id="os-cliente-telefone" className="form-control" placeholder="(00) 00000-0000" value={clienteForm.telefone} onChange={e => setClienteForm(f => ({ ...f, telefone: maskTelefone(e.target.value) }))} />
                   </div>
+                  <div className={css.campoRapido}>
+                    <label htmlFor="os-cliente-email">E-mail</label>
+                    <input id="os-cliente-email" className="form-control" type="email" placeholder="E-mail" value={clienteForm.email} onChange={e => setClienteForm(f => ({ ...f, email: e.target.value }))} />
+                  </div>
                   <div className={css.linha2}>
                     <div className={css.campoRapido}>
-                      <label htmlFor="os-cliente-email">E-mail</label>
-                      <input id="os-cliente-email" className="form-control" type="email" placeholder="E-mail" value={clienteForm.email} onChange={e => setClienteForm(f => ({ ...f, email: e.target.value }))} />
+                      <label htmlFor="os-cliente-tipo-pessoa">Tipo de Pessoa</label>
+                      <select id="os-cliente-tipo-pessoa" className="form-control" value={clienteForm.tipo_pessoa} onChange={e => setClienteForm(f => ({ ...f, tipo_pessoa: e.target.value, cpf_cnpj: maskCpfCnpj(f.cpf_cnpj, e.target.value) }))}>
+                        <option value="fisica">Pessoa Física</option>
+                        <option value="juridica">Pessoa Jurídica</option>
+                      </select>
                     </div>
                     <div className={css.campoRapido}>
-                      <label htmlFor="os-cliente-documento">CPF/CNPJ</label>
+                      <label htmlFor="os-cliente-documento">{clienteForm.tipo_pessoa === 'juridica' ? 'CNPJ *' : 'CPF *'}</label>
                       <input id="os-cliente-documento" className="form-control" placeholder="CPF/CNPJ" value={clienteForm.cpf_cnpj} onChange={e => setClienteForm(f => ({ ...f, cpf_cnpj: maskCpfCnpj(e.target.value, f.tipo_pessoa) }))} />
                     </div>
                   </div>
-                  <button type="button" className={`btn-secondary ${css.btnSalvarRapido}`} onClick={salvarClienteRapido}>
-                    Salvar cliente
+                  <button type="button" className={`btn-secondary ${css.btnSalvarRapido}`} onClick={salvarClienteRapido} disabled={salvandoCliente}>
+                    {salvandoCliente ? 'Salvando...' : 'Salvar cliente'}
                   </button>
                 </div>
               )}
