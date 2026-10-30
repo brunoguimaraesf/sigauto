@@ -84,7 +84,7 @@ A interface deve ser uma aplicação web de página única desenvolvida em React
 
 A persistência, a autenticação e a API de dados devem ser providas pelo Supabase, que reúne o PostgreSQL gerenciado, o Supabase Auth e o PostgREST, acessado diretamente pelo frontend com a chave pública. A plataforma elimina a manutenção de servidor próprio, oferece integridade relacional e autenticação nativa e dispõe de plano gratuito compatível com o contexto acadêmico. O critério de ajuste exige que todas as tabelas tenham RLS habilitado, com políticas por perfil, e que nenhuma chave administrativa esteja presente no código executado no navegador.
 
-As funções que exigem credenciais secretas ou controle no servidor, como o login com limite de tentativas, a comunicação com o modelo de linguagem e a criação administrativa de contas de acesso, devem ser executadas por um serviço em Node.js com Express, publicado como função serverless na Vercel, uma vez que a chave do modelo de linguagem e a chave administrativa do banco não podem ser expostas no navegador. Como critério de ajuste, as rotas protegidas do serviço devem exigir JWT válido de usuário ativo, conferir o perfil diretamente na tabela de usuários e aplicar limite de requisições, e o controle das tentativas de login deve ser mantido no banco de dados, sem armazenar o e-mail em texto claro. No provedor de autenticação, as chamadas diretas ao endpoint de senha devem ser limitadas pelo hook de verificação de senha, quando o plano contratado o oferecer, ou pelo CAPTCHA nativo do provedor (Supabase, 2026a; Cloudflare, 2026).
+As funções que exigem credenciais secretas ou controle no servidor, como o login com limite de tentativas, a comunicação com o modelo de linguagem e a criação administrativa de contas de acesso, devem ser executadas por um serviço em Node.js com Express, publicado como função serverless na Vercel, uma vez que a chave do modelo de linguagem e a chave administrativa do banco não podem ser expostas no navegador. Como critério de ajuste, as rotas protegidas do serviço devem exigir JWT válido de usuário ativo, conferir o perfil diretamente na tabela de usuários e aplicar limite de requisições, e o controle das tentativas de login deve ser mantido no banco de dados, sem armazenar o e-mail em texto claro. No provedor de autenticação, o bloqueio por tentativas nas chamadas diretas ao endpoint de senha deve ser aplicado pelo hook de verificação de senha, quando o plano contratado o oferecer; o CAPTCHA nativo do provedor constitui proteção complementar, ativada conforme a configuração de cada ambiente, que impõe um desafio a cada tentativa sem reproduzir esse bloqueio (Supabase, 2026a; Cloudflare, 2026).
 
 O processamento de linguagem natural deve utilizar o Google Gemini, no modelo gemini-flash-lite-latest, com o modelo gemini-3.1-flash-lite como alternativa, por meio do SDK oficial, em razão da baixa latência, do custo reduzido e da qualidade das respostas em português. A indisponibilidade do modelo não pode interromper os demais módulos: o serviço repete a chamada em falhas transitórias, recorre ao modelo alternativo e, esgotadas as tentativas, informa a indisponibilidade, sem fabricar respostas, análises ou números.
 
@@ -105,7 +105,7 @@ Quadro  – Termos e siglas do projeto SIGAuto
 | BaaS | Backend as a Service – modelo em que banco de dados, autenticação e API são fornecidos como serviço gerenciado, papel exercido pelo Supabase. |
 | Backend | Serviço em Node.js com Express, executado como função serverless, responsável pelo login com controle de tentativas, pela comunicação com o modelo de linguagem, pela criação administrativa de contas e pelo acesso administrativo ao banco para o chatbot e a IA. |
 | Baixa automática | Saída de estoque gerada no encerramento da ordem de serviço para as peças vinculadas a itens do estoque, registrada uma única vez por item. |
-| CAPTCHA | Completely Automated Public Turing test to tell Computers and Humans Apart – desafio de verificação, fornecido opcionalmente pelo Cloudflare Turnstile, que distingue pessoas de programas automatizados no login e na recuperação de senha. |
+| CAPTCHA | Completely Automated Public Turing test to tell Computers and Humans Apart – desafio de verificação, fornecido pelo Cloudflare Turnstile, que distingue pessoas de programas automatizados no login e na recuperação de senha; complementa, sem substituir, o bloqueio de tentativas. |
 | Chatbot | Assistente conversacional disponível em todas as telas, destinado a suporte operacional e a consultas rápidas pelos usuários autenticados. |
 | Comissão | Valor devido a um funcionário em uma ordem de serviço, calculado pelo percentual cadastrado sobre os serviços, as peças ou ambos e registrado no encerramento. |
 | Configuração da oficina | Cadastro único com os dados de identificação da oficina, o logotipo e o texto de rodapé utilizados no documento da ordem de serviço. |
@@ -177,7 +177,7 @@ As regras de negócio orientam o comportamento esperado do sistema e garantem a 
 
 •	RN06: não é permitido cadastrar dois clientes com o mesmo CPF ou CNPJ.
 
-•	RN07: CPF e CNPJ devem ser validados pelo dígito verificador, e o e-mail pelo formato, antes da gravação.
+•	RN07: CPF e CNPJ devem ser validados pelos dígitos verificadores, com recusa de sequências de dígitos repetidos, e o e-mail, quando informado, pelo formato, antes da gravação.
 
 •	RN08: as recomendações geradas pela inteligência artificial possuem caráter exclusivamente consultivo; nenhuma ação sobre os dados operacionais é executada automaticamente com base nelas.
 
@@ -229,7 +229,7 @@ As regras de negócio orientam o comportamento esperado do sistema e garantem a 
 
 •	RN28: em caso de falha no login, o sistema exibe mensagem genérica de credenciais inválidas, sem indicar qual campo está incorreto.
 
-•	RN29: após cinco tentativas consecutivas de login sem sucesso para o mesmo e-mail, novas tentativas com esse e-mail ficam bloqueadas por 15 minutos; o controle é mantido no servidor, persiste após o recarregamento da página ou a troca de navegador e não armazena o e-mail em texto claro. As chamadas feitas diretamente ao provedor de autenticação são limitadas pelo hook de verificação de senha ou, quando o plano não o oferece, pelo CAPTCHA.
+•	RN29: após cinco tentativas consecutivas de login sem sucesso para o mesmo e-mail, novas tentativas com esse e-mail ficam bloqueadas por 15 minutos; o controle é mantido no servidor, persiste após o recarregamento da página ou a troca de navegador e não armazena o e-mail em texto claro. Nas chamadas feitas diretamente ao provedor de autenticação, o mesmo bloqueio é aplicado pelo hook de verificação de senha, quando o plano do provedor o oferece; o CAPTCHA, quando ativado, impõe um desafio a cada tentativa, mas não reproduz o bloqueio após cinco falhas.
 
 •	RN30: a solicitação de recuperação de senha não informa se o e-mail está ou não cadastrado.
 
@@ -269,7 +269,7 @@ As regras de negócio orientam o comportamento esperado do sistema e garantem a 
 
 •	RN45: todo serviço deve possuir nome preenchido e preço base igual ou maior que zero, restrição aplicada na tela e no banco de dados.
 
-•	RN46: serviços removidos do catálogo são inativados, e apenas serviços ativos podem ser incluídos em ordens de serviço, inclusive por chamadas diretas à API de dados; um serviço que já constava da ordem de serviço antes da inativação permanece nela.
+•	RN46: serviços retirados do catálogo são inativados, e apenas serviços ativos podem ser incluídos em ordens de serviço, inclusive por chamadas diretas à API de dados; um serviço que já constava da ordem de serviço antes da inativação permanece nela.
 
 **Regras específicas — Usuários e funcionários (RF14, RF15)**
 
@@ -323,7 +323,7 @@ O SIGAuto centraliza e digitaliza os processos operacionais da oficina. Fazem pa
 
 •	chatbot para suporte e consultas operacionais e painel de recomendações da inteligência artificial;
 
-•	autenticação com bloqueio de tentativas controlado no servidor e no provedor de autenticação, verificação CAPTCHA opcional, redefinição de senha por e-mail e controle de acesso por perfil, gerenciamento de usuários pelo gestor e cadastro único da oficina, com logotipo e texto de rodapé.
+•	autenticação com bloqueio de tentativas por e-mail controlado no servidor, bloqueio nas chamadas diretas ao provedor de autenticação pelo hook de verificação de senha, quando o plano o oferece, verificação CAPTCHA, redefinição de senha por e-mail e controle de acesso por perfil, gerenciamento de usuários pelo gestor e cadastro único da oficina, com logotipo e texto de rodapé.
 
 
 #### 2.6.3 Escopo excluído
@@ -548,13 +548,13 @@ Os fluxos de eventos do RF01 compreendem o fluxo básico, os fluxos alternativos
 
 4.	O sistema apresenta o formulário de cadastro.
 
-5.	O usuário informa nome completo, tipo de pessoa, CPF ou CNPJ, e-mail e telefone e, opcionalmente, o endereço.
+5.	O usuário informa nome completo, tipo de pessoa, CPF ou CNPJ e telefone, campos obrigatórios identificados por asterisco e pela legenda “* Campos obrigatórios”, e, opcionalmente, o e-mail e o endereço.
 
 6.	Ao ser informado um CEP válido, o sistema consulta o serviço ViaCEP e preenche logradouro, bairro, cidade e UF.
 
 7.	O usuário confirma o cadastro.
 
-8.	O sistema valida os campos obrigatórios, o dígito verificador do CPF/CNPJ e o formato do e-mail.
+8.	O sistema valida os campos obrigatórios e os dígitos verificadores do CPF/CNPJ, recusando sequências de dígitos repetidos, verifica se o documento já está cadastrado para outro cliente e, quando o e-mail é informado, valida o seu formato.
 
 9.	O sistema grava o cliente e o respectivo endereço no banco de dados e atualiza a listagem.
 
@@ -565,7 +565,9 @@ Os fluxos de eventos do RF01 compreendem o fluxo básico, os fluxos alternativos
 
 •	**Pesquisar cliente**: o usuário digita no campo de pesquisa; o sistema filtra a listagem por nome, e-mail, telefone, CPF/CNPJ ou endereço.
 
-•	**Inativar cliente**: o usuário aciona a opção de exclusão e confirma a operação; o sistema inativa o cadastro, que deixa de ser listado e de ser oferecido em novas ordens de serviço, mantendo o histórico.
+•	**Inativar cliente**: o usuário aciona o botão Inativar cliente e confirma a operação; o sistema inativa o cadastro, que deixa de ser listado e de ser oferecido em novas ordens de serviço, mantendo o histórico.
+
+•	**Descartar o preenchimento**: ao acionar Cancelar ou fechar o formulário com dados já digitados, o sistema solicita a confirmação “Descartar as alterações não salvas?”; ao confirmar, os dados são descartados e o formulário é fechado, e, ao recusar, o preenchimento é mantido.
 
 •	**CEP não localizado**: quando o ViaCEP não retorna o endereço, o sistema exibe a mensagem “CEP não encontrado. Preencha manualmente.” e mantém os campos editáveis.
 
@@ -576,9 +578,9 @@ Os fluxos de eventos do RF01 compreendem o fluxo básico, os fluxos alternativos
 
 •	**CPF/CNPJ inválido**: o sistema exibe a mensagem “CPF inválido. Confira o número informado.” (ou “CNPJ inválido...”, para pessoa jurídica) e não grava o registro.
 
-•	**E-mail inválido**: o sistema exibe a mensagem “E-mail inválido.” e não grava o registro.
+•	**E-mail inválido**: quando o e-mail é informado com formato inválido, o sistema exibe a mensagem “E-mail inválido.” e não grava o registro.
 
-•	**CPF/CNPJ duplicado**: a restrição de unicidade do banco de dados rejeita a gravação, e o cadastro não é persistido.
+•	**CPF/CNPJ duplicado**: o sistema exibe a mensagem “CPF/CNPJ já cadastrado para outro cliente.” e não grava o registro; a restrição de unicidade do banco de dados também rejeita documento repetido.
 
 
 ##### 2.7.1.4 Pré-condições
@@ -603,6 +605,8 @@ Os fluxos de eventos do RF01 compreendem o fluxo básico, os fluxos alternativos
 
 •	O sistema deve bloquear CPF ou CNPJ com dígito verificador inválido.
 
+•	O sistema deve identificar os campos obrigatórios e solicitar confirmação antes de descartar dados digitados no formulário.
+
 •	O sistema deve preencher o endereço automaticamente a partir de um CEP válido.
 
 •	O sistema deve permitir editar e inativar clientes, retirando os inativos da listagem.
@@ -621,8 +625,8 @@ Quadro  – Campos da tela do RF01 – Manter clientes
 | --- | --- | --- | --- | --- | --- |
 | Nome completo | – | Texto com até 120 caracteres | Texto | Sim | Não pode ficar em branco. |
 | Tipo de pessoa | Pessoa Física | Pessoa Física ou Pessoa Jurídica | Seleção | Sim | Define se o documento é CPF ou CNPJ. |
-| CPF/CNPJ | – | 11 dígitos (CPF) ou 14 dígitos (CNPJ), com máscara | Texto | Sim | Dígito verificador; unicidade no banco de dados. |
-| E-mail de contato | – | Formato usuario@dominio | Texto | Sim | Formato válido de e-mail. |
+| CPF/CNPJ | – | 11 dígitos (CPF) ou 14 dígitos (CNPJ), com máscara | Texto | Sim | Dígitos verificadores e recusa de sequências repetidas, na tela; documento não repetido, verificado na tela e pela restrição de unicidade do banco de dados. |
+| E-mail de contato | – | Formato usuario@dominio | Texto | Não | Quando informado, deve possuir formato válido. |
 | Telefone celular | – | DDD e 8 ou 9 dígitos, com máscara | Texto | Sim | Preenchimento obrigatório. |
 | CEP | – | 8 dígitos | Texto | Não | Quando válido, aciona a consulta ao ViaCEP. |
 | Logradouro | – | Texto com até 150 caracteres | Texto | Não | – |
@@ -651,13 +655,13 @@ A Figura 2 apresenta a listagem de clientes, e a Figura 3, o formulário de cada
 
 Figura  – Protótipo da tela Manter clientes
 
-![image2.png](img/image2.png)
+![image121.png](img/image121.png)
 
 Fonte: elaborado pelo autor (2026).
 
 Figura  – Protótipo da tela Manter clientes – novo cliente
 
-![image3.png](img/image3.png)
+![image122.png](img/image122.png)
 
 Fonte: elaborado pelo autor (2026).
 
@@ -690,13 +694,13 @@ Os fluxos de eventos do RF02 compreendem o fluxo básico, os fluxos alternativos
 
 2.	O sistema exibe a listagem de veículos ativos, com modelo e marca, placa, ano e cor, proprietário e ações disponíveis.
 
-3.	O usuário seleciona a opção Adicionar Veículo.
+3.	O usuário seleciona a opção Novo Veículo.
 
 4.	O sistema apresenta o formulário de cadastro.
 
-5.	O usuário seleciona o proprietário e informa placa, marca, modelo, ano, cor e, opcionalmente, uma observação.
+5.	O usuário seleciona o proprietário e informa placa, marca, modelo, ano e cor, campos obrigatórios identificados por asterisco e pela legenda “* Campos obrigatórios”, e, opcionalmente, uma observação.
 
-6.	O usuário confirma o cadastro.
+6.	O usuário confirma o cadastro pelo botão Cadastrar Veículo.
 
 7.	O sistema verifica se há proprietário selecionado, valida o formato da placa e verifica se a placa já está cadastrada.
 
@@ -709,7 +713,7 @@ Os fluxos de eventos do RF02 compreendem o fluxo básico, os fluxos alternativos
 
 •	**Pesquisar veículo**: o sistema filtra a listagem por marca, modelo, placa, observação ou nome do proprietário.
 
-•	**Inativar veículo**: o usuário aciona a opção de exclusão e confirma; o sistema inativa o veículo, que deixa de ser oferecido em novas ordens de serviço.
+•	**Inativar veículo**: o usuário aciona o botão Inativar veículo e confirma; o sistema inativa o veículo, que deixa de ser oferecido em novas ordens de serviço.
 
 
 ###### 2.7.2.3.3 Fluxos de exceção
@@ -783,7 +787,7 @@ A Figura 4 apresenta a tela do RF02 implementada no sistema.
 
 Figura  – Protótipo da tela Manter veículos
 
-![image4.png](img/image4.png)
+![image123.png](img/image123.png)
 
 Fonte: elaborado pelo autor (2026).
 
@@ -814,7 +818,7 @@ Os fluxos de eventos do RF03 compreendem o fluxo básico, os fluxos alternativos
 
 1.	O usuário acessa Ordens de Serviço e seleciona a opção de nova ordem de serviço.
 
-2.	O sistema apresenta o formulário de abertura.
+2.	O sistema apresenta o formulário de abertura, organizado em três etapas numeradas, 1. Cliente e veículo, 2. Responsáveis e 3. Dados da entrada, com os campos obrigatórios identificados por asterisco e pela legenda “* Campos obrigatórios”.
 
 3.	O usuário pesquisa o cliente por nome, CPF/CNPJ ou placa de veículo.
 
@@ -835,13 +839,15 @@ Os fluxos de eventos do RF03 compreendem o fluxo básico, os fluxos alternativos
 
 ###### 2.7.3.3.2 Fluxos alternativos
 
-•	**Cadastro rápido de cliente**: o usuário opta por cadastrar novo cliente na própria tela, informando ao menos o nome; o cliente é criado e selecionado automaticamente.
+•	**Cadastro rápido de cliente: o usuário opta por cadastrar novo cliente na própria tela, informando ao menos o nome; o cliente é criado e selecionado automaticamente. Na versão avaliada, o CPF/CNPJ informado nesse cadastro não passa pela validação dos dígitos verificadores exigida pela RN07. Quando o documento é omitido, o fluxo encaminha um identificador provisório no campo destinado ao documento; a persistência desse resultado não foi verificada no ensaio complementar. A correção desse fluxo é descrita na seção 4.1.2.**
 
 •	**Cadastro rápido de veículo**: o usuário opta por cadastrar novo veículo, informando ao menos placa, marca e modelo; o veículo é criado para o cliente selecionado.
 
 •	**Cliente não identificado**: o usuário seleciona o cadastro genérico Consumidor, e o atendimento é registrado sem identificação do cliente.
 
 •	**Quilometragem não informada**: o sistema utiliza a quilometragem atual cadastrada no veículo, quando existente.
+
+•	**Cancelar a abertura**: ao acionar Cancelar ou Voltar com dados já preenchidos, o sistema solicita a confirmação “Descartar os dados preenchidos da O.S.?”; ao confirmar, retorna à listagem sem gravar, e, ao recusar, mantém o formulário preenchido.
 
 
 ###### 2.7.3.3.3 Fluxos de exceção
@@ -895,7 +901,7 @@ Quadro  – Campos da tela do RF03 – Abrir ordem de serviço
 | Veículo | – | Veículos do cliente selecionado | Seleção | Sim | Deve haver veículo selecionado. |
 | Novo veículo | – | Placa, marca, modelo, ano, cor e KM | Formulário | Não | Placa, marca e modelo obrigatórios. |
 | Mecânico responsável | A definir | Funcionários com cargo mecânico | Seleção | Não | – |
-| Atendente responsável | Funcionário do usuário autenticado | Funcionários com cargo atendente ou gestor | Seleção | Não | – |
+| Atendente responsável | Funcionário do usuário autenticado | Funcionários com cargo atendente ou gestor | Seleção | Sim | Deve haver atendente selecionado. |
 | Queixa / descrição do problema | – | Texto livre | Área de texto | Sim | Mínimo de 10 caracteres. |
 | Prioridade | Normal | Baixa, Normal, Alta ou Urgente | Seleção | Sim | – |
 | KM de entrada | KM atual do veículo | Número inteiro maior ou igual a zero | Numérico | Não | – |
@@ -920,7 +926,7 @@ A Figura 5 apresenta a tela do RF03 implementada no sistema.
 
 Figura  – Protótipo da tela Abrir ordem de serviço
 
-![image5.png](img/image5.png)
+![image124.png](img/image124.png)
 
 Fonte: elaborado pelo autor (2026).
 
@@ -1594,7 +1600,7 @@ Fonte: elaborado pelo autor (2026).
 
 •	Autenticação em dois fatores.
 
-•	Ativação, no ambiente publicado, do CAPTCHA do provedor de autenticação ou do hook de verificação de senha, conforme o plano contratado.
+•	Ativação, no ambiente publicado, do hook de verificação de senha, conforme o plano contratado; o CAPTCHA do provedor já está ativo nesse ambiente.
 
 
 ##### 2.7.8.9 Protótipo
@@ -1906,6 +1912,8 @@ Os fluxos de eventos do RF11 compreendem o fluxo básico, os fluxos alternativos
 
 •	**Limpar conversa**: o usuário limpa a conversa, e a janela retorna à saudação inicial.
 
+•	**Orientação de uso**: quando o usuário pergunta como executar uma tarefa, o assistente responde com os nomes dos menus e controles e a sequência real das telas; para abrir uma O.S., orienta acessar Ordens de Serviço, acionar Nova O.S., pesquisar o cliente por nome, CPF/CNPJ ou placa, selecionar o cliente e depois o veículo, usar + Novo quando o cadastro não existir, preencher a queixa e os demais dados obrigatórios e confirmar a abertura.
+
 •	**Fechar janela**: o usuário fecha a janela pelo botão ou pela tecla Esc.
 
 
@@ -1939,6 +1947,8 @@ Os fluxos de eventos do RF11 compreendem o fluxo básico, os fluxos alternativos
 •	O sistema deve calcular os valores financeiros informados ao gestor a partir das ordens de serviço concluídas, sem estimativa do modelo.
 
 •	O sistema deve informar a indisponibilidade do modelo sem fabricar respostas e sem interromper os demais módulos.
+
+Na versão avaliada, a pergunta financeira sem período é respondida com o histórico completo, identificado na resposta, e os períodos relativos, como hoje, não são interpretados: o assistente solicita mês e ano ou um intervalo de datas, sem fornecer valor. A divergência em relação ao pedido de esclarecimento previsto neste requisito está registrada na seção 4.1.5, e o requisito é classificado como parcialmente atendido.
 
 
 ##### 2.7.11.7 Campos da tela
@@ -2141,7 +2151,7 @@ Os fluxos de eventos do RF13 compreendem o fluxo básico, os fluxos alternativos
 
 •	**Pesquisar serviço**: o sistema filtra o catálogo por nome ou descrição.
 
-•	**Remover serviço**: o usuário confirma a remoção, e o sistema inativa o serviço, que deixa de ser oferecido nas ordens de serviço.
+•	**Inativar serviço**: o usuário aciona o botão Inativar serviço e confirma a operação, e o sistema inativa o serviço, que deixa de ser oferecido nas novas ordens de serviço.
 
 
 ###### 2.7.13.3.3 Fluxos de exceção
@@ -2196,13 +2206,13 @@ As Figuras 21 e 22 apresentam a tela do RF13 implementada no sistema.
 
 Figura  – Protótipo da tela Manter serviços
 
-![image21.png](img/image21.png)
+![image125.png](img/image125.png)
 
 Fonte: elaborado pelo autor (2026).
 
 Figura  – Protótipo da tela Manter serviços – novo serviço
 
-![image22.png](img/image22.png)
+![image126.png](img/image126.png)
 
 Fonte: elaborado pelo autor (2026).
 
@@ -2471,11 +2481,13 @@ Os requisitos não funcionais definem características de qualidade que o SIGAut
 
 •	RNF-DS02: as operações de gravação devem ser concluídas em até 3 segundos em condições normais de rede e carga.
 
-•	RNF-DS03: o sistema deve suportar até 20 usuários simultâneos sem degradação perceptível do tempo de resposta.
+•	RNF-DS03: o sistema deve suportar 20 sessões simultâneas mantendo as consultas e gravações dentro dos limites definidos em RNF-DS01 e RNF-DS02, nas condições de ensaio documentadas.
 
 •	RNF-DS04: os dados principais devem ser carregados uma vez por sessão e compartilhados entre as telas, de modo que a navegação não repita as consultas ao banco de dados.
 
 •	RNF-DS05: o painel da IA pode apresentar latência superior a 3 segundos e deve exibir indicador visual de carregamento durante o processamento.
+
+A redação do RNF-DS03 foi revisada em 30 de outubro de 2026. O texto original, “o sistema deve suportar até 20 usuários simultâneos sem degradação perceptível do tempo de resposta”, não definia medida para a degradação perceptível; por decisão de projeto, o critério passou a ser a permanência das consultas e gravações dentro dos limites de RNF-DS01 e RNF-DS02 com 20 sessões simultâneas, e o aumento relativo do percentil 95 em relação a uma sessão continua informado na avaliação, sem constituir critério de aceite. A capacidade do ambiente hospedado não foi medida.
 
 
 #### 2.8.4 Requisitos operacionais e ambientais
@@ -2510,7 +2522,7 @@ Os requisitos não funcionais definem características de qualidade que o SIGAut
 
 •	RNF-SE03: as senhas devem ser armazenadas pelo Supabase Auth com algoritmo de hash, nunca em texto plano.
 
-•	RNF-SE04: o sistema deve bloquear, no servidor, novas tentativas de login com o mesmo e-mail por 15 minutos após cinco falhas consecutivas, sem armazenar o e-mail em texto claro, e oferecer meios de estender o limite às chamadas diretas ao provedor de autenticação, pelo hook de verificação de senha ou pelo CAPTCHA.
+•	RNF-SE04: o sistema deve bloquear, no servidor, novas tentativas de login com o mesmo e-mail por 15 minutos após cinco falhas consecutivas, sem armazenar o e-mail em texto claro, e aplicar o mesmo bloqueio às chamadas diretas ao provedor de autenticação pelo hook de verificação de senha, quando disponível no plano do provedor; o CAPTCHA pode ser utilizado como proteção complementar, sem equivalência a esse bloqueio.
 
 •	RNF-SE05: a chave administrativa do banco e a chave do modelo de linguagem devem existir apenas no serviço em Node.js; o frontend utiliza somente a chave pública.
 
@@ -2584,52 +2596,70 @@ Os diagramas de sequência modelam a interação entre os atores e os componente
 
 Figura  – Diagrama de sequência – abertura de ordem de serviço
 
-![image30.png](img/image30.png)
+![image55.png](img/image55.png)
 
 Fonte: elaborado pelo autor (2026).
 
 Figura  – Diagrama de sequência – autenticação de usuário
 
-![image31.png](img/image31.png)
+![image56.png](img/image56.png)
 
 Fonte: elaborado pelo autor (2026).
 
 Figura  – Diagrama de sequência – geração de recomendações da IA
 
-![image32.png](img/image32.png)
+![image57.png](img/image57.png)
 
 Fonte: elaborado pelo autor (2026).
 
 
 #### 2.9.4 Diagrama de classes
 
-A Figura 33 apresenta o diagrama de classes do domínio. As classes principais são ConfiguracaoOficina, Cliente, Endereco, Veiculo, OrdemServico, OSServico, OSPeca, ComissaoOS, ServicoCatalogo, ItemEstoque, MovimentacaoEstoque, Funcionario, Usuario, MensagemChatbot, RecomendacaoIA e HistoricoStatusOS, e seus relacionamentos refletem as regras de negócio definidas na seção 2.4.2.
+As Figuras 33 e 34 apresentam o diagrama de classes do domínio, dividido em duas partes para facilitar a leitura: a primeira reúne o atendimento e a ordem de serviço, e a segunda, o estoque, a inteligência artificial e a configuração da oficina. As classes principais são ConfiguracaoOficina, Cliente, Endereco, Veiculo, OrdemServico, OSServico, OSPeca, ComissaoOS, ServicoCatalogo, ItemEstoque, MovimentacaoEstoque, Funcionario, Usuario, MensagemChatbot, RecomendacaoIA, HistoricoStatusOS e BaixaEstoqueOS, e seus relacionamentos refletem as regras de negócio definidas na seção 2.4.2.
 
-Figura  – Diagrama de classes
+Figura  – Diagrama de classes – atendimento e ordem de serviço
 
-![image33.png](img/image33.png)
+![image62.png](img/image62.png)
+
+Fonte: elaborado pelo autor (2026).
+
+Figura  – Diagrama de classes – estoque, inteligência artificial e configuração
+
+![image63.png](img/image63.png)
 
 Fonte: elaborado pelo autor (2026).
 
 
 #### 2.9.5 Modelo dos dados
 
-A Figura 34 apresenta o modelo entidade-relacionamento implementado no PostgreSQL. Os serviços e as peças de cada ordem de serviço são registrados nas tabelas os_servico e os_peca, vinculadas ao catálogo de serviços e aos itens de estoque; as comissões calculadas no encerramento ficam em os_comissao; a tabela os_baixa_estoque controla, por item, a quantidade já baixada de cada ordem, o que impede baixas duplicadas; o endereço do cliente ocupa tabela própria; as regras de comissão pertencem à entidade funcionario, separada da conta de acesso; configuracao_oficina mantém o cadastro único da oficina; historico_status_os registra o status inicial e cada mudança de status da ordem de serviço; login_tentativa e login_tentativa_reserva guardam o controle das tentativas de login, identificadas pelo HMAC do e-mail e acessíveis somente pelo serviço em Node.js; e login_tentativa_auth registra as tentativas verificadas pelo hook de senha do provedor de autenticação, acessível somente por ele.
+As Figuras 35, 36 e 37 apresentam o modelo entidade-relacionamento implementado no PostgreSQL, dividido em três partes: clientes, veículos e ordens de serviço; estoque; e usuários, inteligência artificial, configuração e controle de acesso. As entidades que aparecem em mais de uma parte são exibidas, nas demais, apenas com a chave primária e a indicação da figura em que estão detalhadas. Os serviços e as peças de cada ordem de serviço são registrados nas tabelas os_servico e os_peca, vinculadas ao catálogo de serviços e aos itens de estoque; as comissões calculadas no encerramento ficam em os_comissao; a tabela os_baixa_estoque controla, por item, a quantidade já baixada de cada ordem, o que impede baixas duplicadas; o endereço do cliente ocupa tabela própria; as regras de comissão pertencem à entidade funcionario, separada da conta de acesso; configuracao_oficina mantém o cadastro único da oficina; historico_status_os registra o status inicial e cada mudança de status da ordem de serviço; login_tentativa e login_tentativa_reserva guardam o controle das tentativas de login, identificadas pelo HMAC do e-mail e acessíveis somente pelo serviço em Node.js; e login_tentativa_auth registra as tentativas verificadas pelo hook de senha do provedor de autenticação, acessível somente por ele.
 
-Figura  – Modelo entidade-relacionamento
+Figura  – Modelo entidade-relacionamento – clientes, veículos e ordens de serviço
 
-![image34.png](img/image34.png)
+![image64.png](img/image64.png)
+
+Fonte: elaborado pelo autor (2026).
+
+Figura  – Modelo entidade-relacionamento – estoque
+
+![image65.png](img/image65.png)
+
+Fonte: elaborado pelo autor (2026).
+
+Figura  – Modelo entidade-relacionamento – usuários, inteligência artificial, configuração e controle de acesso
+
+![image66.png](img/image66.png)
 
 Fonte: elaborado pelo autor (2026).
 
 
 #### 2.9.6 Diagrama de componentes
 
-A Figura 35 apresenta o diagrama de componentes do SIGAuto. A aplicação React concentra as páginas, os componentes de interface, o componente de CAPTCHA, o contexto de autenticação, o provedor de dados e os utilitários, e se comunica diretamente com o Supabase, inclusive com o armazenamento do logotipo da oficina. O serviço em Node.js com Express reúne as rotas de login, de autenticação administrativa, de chatbot e de IA, os middlewares, os controladores e os serviços de integração com o Google Gemini.
+A Figura 38 apresenta o diagrama de componentes do SIGAuto. A aplicação React concentra as páginas, os componentes de interface, o componente de CAPTCHA, o contexto de autenticação, o provedor de dados e os utilitários, e se comunica diretamente com o Supabase, inclusive com o armazenamento do logotipo da oficina. O serviço em Node.js com Express reúne as rotas de login, de autenticação administrativa, de chatbot e de IA, os middlewares, os controladores e os serviços de integração com o Google Gemini.
 
 Figura  – Diagrama de componentes do SIGAuto
 
-![image35.png](img/image35.png)
+![image58.png](img/image58.png)
 
 Fonte: elaborado pelo autor (2026).
 
@@ -2647,7 +2677,7 @@ Quadro  – Alterações nos requisitos funcionais em relação à especificaç�
 | RF04 | O cancelamento passou a ser executado por função transacional do banco, com estorno das peças baixadas, e o mecânico passou a editar apenas o diagnóstico, as observações e o status; as mudanças de status passaram a ser registradas em histórico próprio. | Evitar saldo de estoque inconsistente após cancelamentos, impedir que o mecânico altere valores e comissões que não lhe cabem e permitir medir o tempo de cada etapa do atendimento. |
 | RF05 | Inclusão do cadastro único da oficina, do documento personalizado da ordem de serviço em qualquer status e da baixa automática e atômica das peças no encerramento; o documento passou a ser exibido em visualizador na própria página, e não em nova guia, e é baixado em PDF quando o celular não abre a impressão. | Identificar a oficina, manter o saldo coerente com as peças utilizadas e evitar que o bloqueio de janelas do navegador ou a limitação dos navegadores móveis impeça a visualização e a impressão do documento. |
 | RF07 | Inclusão do relatório de comissões e do filtro por funcionário; a exportação passou a ocorrer em CSV. O faturamento passou a considerar a data de encerramento das O.S. concluídas e os dias civis no fuso da oficina. | Permitir a conferência da produção e das comissões de cada profissional; o formato CSV é aberto por qualquer editor de planilhas. Alinhar o faturamento ao chatbot, ao painel da IA e ao relatório de comissões. |
-| RF08 | O login passou a ser intermediado pelo serviço em Node.js, que mantém no banco de dados o controle das tentativas por e-mail, de modo que o bloqueio persiste após o recarregamento da página; foi incluída a tela de redefinição de senha acessada pelo link enviado por e-mail. Foram incluídos o suporte ao CAPTCHA no login e na recuperação de senha e o bloqueio também nas chamadas diretas ao provedor de autenticação. | Impedir que o bloqueio seja contornado pela recarga da página ou pela troca de navegador, sem armazenar o e-mail em texto claro, e concluir a recuperação de senha no próprio sistema. Evitar que o endpoint público do provedor seja usado para contornar o limite. |
+| RF08 | O login passou a ser intermediado pelo serviço em Node.js, que mantém no banco de dados o controle das tentativas por e-mail, de modo que o bloqueio persiste após o recarregamento da página; foi incluída a tela de redefinição de senha acessada pelo link enviado por e-mail. Foram incluídos o suporte ao CAPTCHA no login e na recuperação de senha, ativo no ambiente publicado, e o bloqueio nas chamadas diretas ao provedor de autenticação pelo hook de verificação de senha (script 35), demonstrado no ambiente local e não aplicado em produção. | Impedir que o bloqueio seja contornado pela recarga da página ou pela troca de navegador, sem armazenar o e-mail em texto claro, e concluir a recuperação de senha no próprio sistema. Evitar que o endpoint público do provedor seja usado para contornar o limite. |
 | RF09 | Inclusão do custo unitário, do preço de venda e da margem, com o custo visível e editável somente pelo gestor; a inativação de itens não foi disponibilizada na interface. | Apoiar a formação de preço das peças e restringir informação gerencial de custo ao perfil responsável. |
 | RF10 | Inclusão do histórico imutável de movimentações, com motivo obrigatório, usuário e O.S., integrado à baixa automática; o ajuste de saldo foi restrito ao gestor. | Garantir rastreabilidade operacional do saldo e reservar a redefinição direta do saldo ao responsável pelo estoque. |
 | RF11 | As respostas locais de contingência foram removidas; a contingência passou a ser feita por novas tentativas e por modelo alternativo; os valores financeiros passaram a ser calculados pelo sistema; e o histórico persistido foi restrito ao gestor. | Evitar respostas e números fabricados e impedir que perfis sem permissão obtenham dados financeiros, inclusive de conversas anteriores. |
