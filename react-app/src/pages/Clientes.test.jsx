@@ -50,6 +50,51 @@ describe('Tela de Clientes', () => {
     expect(screen.getByText('Maria Souza')).toBeInTheDocument()
     expect(screen.queryByText('Auto Peças LTDA')).not.toBeInTheDocument()
   })
+
+  it('identifica os campos obrigatorios no formulario', () => {
+    useDatabase.mockReturnValue(baseDb)
+    render(<Clientes />)
+    fireEvent.click(screen.getByRole('button', { name: /Novo Cliente/i }))
+
+    expect(screen.getByText('* Campos obrigatórios')).toBeInTheDocument()
+    expect(screen.getByLabelText('Nome Completo *')).toBeRequired()
+    expect(screen.getByLabelText('CPF *')).toBeRequired()
+    expect(screen.getByLabelText('E-mail de Contato')).not.toBeRequired()
+    expect(screen.getByLabelText('Telefone Celular *')).toBeRequired()
+  })
+
+  it('pede confirmacao antes de descartar alteracoes', () => {
+    const confirmar = vi.fn().mockReturnValue(false)
+    vi.stubGlobal('confirm', confirmar)
+    useDatabase.mockReturnValue(baseDb)
+    render(<Clientes />)
+
+    fireEvent.click(screen.getByRole('button', { name: /Novo Cliente/i }))
+    fireEvent.change(screen.getByLabelText('Nome Completo *'), { target: { value: 'Cliente parcial' } })
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+
+    expect(confirmar).toHaveBeenCalledWith('Descartar as alterações não salvas?')
+    expect(screen.getByRole('heading', { name: /Cadastrar Novo Proprietário/i })).toBeInTheDocument()
+
+    confirmar.mockReturnValue(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+    expect(screen.queryByRole('heading', { name: /Cadastrar Novo Proprietário/i })).not.toBeInTheDocument()
+    vi.unstubAllGlobals()
+  })
+
+  it('nomeia e confirma a acao como inativacao', () => {
+    const confirmar = vi.fn().mockReturnValue(true)
+    vi.stubGlobal('confirm', confirmar)
+    baseDb.deleteCliente.mockResolvedValue({})
+    useDatabase.mockReturnValue(baseDb)
+    render(<Clientes />)
+
+    fireEvent.click(screen.getByRole('button', { name: 'Inativar cliente Maria Souza' }))
+
+    expect(confirmar).toHaveBeenCalledWith('Tem certeza que deseja inativar o cliente Maria Souza?')
+    expect(baseDb.deleteCliente).toHaveBeenCalledWith('c1')
+    vi.unstubAllGlobals()
+  })
 })
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -153,6 +198,14 @@ describe('Clientes — validação do formulário no submit', () => {
       cpf_cnpj: CPF_VALIDO,
       tipo_pessoa: 'fisica',
     }))
+  })
+
+  it('deve_aceitar_submit_sem_email', () => {
+    render(<Clientes />)
+    abrirEPreencher({ nome: 'Joao', email: '', telefone: '(64) 99999-0000', cpfCnpj: CPF_VALIDO })
+
+    expect(alerta).not.toHaveBeenCalled()
+    expect(addCliente).toHaveBeenCalledWith(expect.objectContaining({ email: '' }))
   })
 
   it('deve_aceitar_cnpj_valido_quando_tipo_pessoa_e_juridica', () => {

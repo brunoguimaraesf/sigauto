@@ -14,6 +14,12 @@
 .btnFechar { composes: btnFechar from './listaPagina.module.css'; }
 
 /* Proprio desta tela. */
+.legendaObrigatorios {
+  margin: 0 0 16px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
 .nome {
   font-size: 15px;
 }

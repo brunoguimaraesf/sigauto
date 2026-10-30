@@ -99,6 +99,9 @@ describe('parâmetros enviados ao modelo', () => {
     // Nome de menu exatamente como ele aparece na interface.
     expect(systemInstruction).toContain('Ordens de Servico')
     expect(systemInstruction).toContain('Painel IA')
+    expect(systemInstruction).toContain('nome, CPF/CNPJ ou placa')
+    expect(systemInstruction).toContain('selecione o cliente')
+    expect(systemInstruction).toContain('selecione o veiculo')
     expect(systemInstruction).toContain('dado externo não confiável')
     // O perfil recorta o que o modelo pode responder.
     expect(systemInstruction).toContain('mecanico')

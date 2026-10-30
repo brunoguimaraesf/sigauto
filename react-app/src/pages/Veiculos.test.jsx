@@ -62,17 +62,14 @@ const CLIENTE_INATIVO = { id: 'c2', nome: 'Joao Inativo', telefone: '(64) 98888-
 // Preenche o modal de criação e dispara o submit direto no <form>, para exercitar
 // o handleSubmit e não a validação nativa do navegador.
 function cadastrarVeiculo({ clienteId, placa, marca = 'Fiat', modelo = 'Uno', ano = '2020', cor = 'Prata' }) {
-  fireEvent.click(screen.getByRole('button', { name: /Adicionar Veículo/i }))
+  fireEvent.click(screen.getByRole('button', { name: /Novo Veículo/i }))
   if (clienteId !== undefined) {
     fireEvent.change(screen.getByRole('combobox'), { target: { value: clienteId } })
   }
   if (placa !== undefined) {
     fireEvent.change(screen.getByPlaceholderText(/ABC1D23/i), { target: { value: placa } })
   }
-  // Marca/Modelo/Ano/Cor nao tem <label htmlFor> (achado de acessibilidade):
-  // o seletor usa a ordem dentro do <form>, nao da pagina — a busca do topo
-  // tambem e um textbox e deslocaria os indices.
-  const form = screen.getAllByRole('button', { name: /Adicionar Veículo/i })[1].closest('form')
+  const form = screen.getByRole('button', { name: /Cadastrar Veículo/i }).closest('form')
   const campos = within(form).getAllByRole('textbox')
   // ordem no form: placa, marca, modelo, ano, cor, observacoes
   fireEvent.change(campos[1], { target: { value: marca } })
@@ -95,6 +92,17 @@ describe('Veiculos — validação do formulário no submit', () => {
     alerta = vi.fn()
     addVeiculo = vi.fn().mockResolvedValue({})
     vi.stubGlobal('alert', alerta)
+  })
+
+  it('usa a nomenclatura Novo Veiculo e identifica campos obrigatorios', () => {
+    montar()
+    fireEvent.click(screen.getByRole('button', { name: /Novo Veículo/i }))
+
+    expect(screen.getByText('* Campos obrigatórios')).toBeInTheDocument()
+    expect(screen.getByLabelText('Proprietário *')).toBeRequired()
+    expect(screen.getByLabelText('Placa do veículo *')).toBeRequired()
+    expect(screen.getByLabelText('Marca *')).toBeRequired()
+    expect(screen.getByLabelText('Modelo *')).toBeRequired()
   })
 
   it('deve_barrar_submit_sem_proprietario_associado', () => {

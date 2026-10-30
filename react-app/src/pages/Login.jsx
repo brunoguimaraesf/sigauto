@@ -167,6 +167,8 @@ export function Login() {
                 type="button"
                 onClick={() => setMostrarSenha(v => !v)}
                 className={css.btnOlho}
+                aria-label={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
+                title={mostrarSenha ? 'Ocultar senha' : 'Mostrar senha'}
               >
                 {mostrarSenha ? <EyeOff size={18} /> : <Eye size={18} />}
               </button>
@@ -244,7 +246,7 @@ export function Login() {
           <div className={`modal-content ${css.modal}`}>
             <div className="modal-header">
               <h3>Recuperar Senha</h3>
-              <button onClick={() => setModalEsqueci(false)} className={css.btnFechar}>
+              <button type="button" onClick={() => setModalEsqueci(false)} className={css.btnFechar} aria-label="Fechar recuperação de senha" title="Fechar recuperação de senha">
                 <X size={20} />
               </button>
             </div>

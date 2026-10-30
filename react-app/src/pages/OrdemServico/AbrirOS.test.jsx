@@ -37,6 +37,33 @@ describe('Tela de Abrir O.S.', () => {
     expect(screen.getByRole('heading', { name: /Abrir Nova O\.S\./i })).toBeInTheDocument()
   })
 
+  it('organiza o fluxo em etapas e identifica os campos obrigatorios', () => {
+    renderPage()
+
+    expect(screen.getByText('* Campos obrigatórios')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '1. Cliente e veículo' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '2. Responsáveis' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: '3. Dados da entrada' })).toBeInTheDocument()
+    expect(screen.getByText('Cliente *')).toBeInTheDocument()
+    expect(screen.getByText('Veículo *')).toBeInTheDocument()
+    expect(screen.getByLabelText('Atendente responsável *')).toBeRequired()
+    expect(screen.getByLabelText('Queixa / Descrição do problema *')).toBeRequired()
+  })
+
+  it('pede confirmacao antes de cancelar uma O.S. parcialmente preenchida', () => {
+    const confirmar = vi.fn().mockReturnValue(false)
+    vi.stubGlobal('confirm', confirmar)
+    renderPage()
+
+    fireEvent.change(campoBusca(), { target: { value: 'maria' } })
+    fireEvent.click(screen.getByText('Maria Souza'))
+    fireEvent.click(screen.getByRole('button', { name: 'Cancelar' }))
+
+    expect(confirmar).toHaveBeenCalledWith('Descartar os dados preenchidos da O.S.?')
+    expect(screen.getByRole('heading', { name: /Abrir Nova O\.S\./i })).toBeInTheDocument()
+    vi.unstubAllGlobals()
+  })
+
   it('oferece o atalho de Consumidor e o mecanico no formulario', () => {
     renderPage()
     expect(screen.getByRole('button', { name: /Consumidor/i })).toBeInTheDocument()

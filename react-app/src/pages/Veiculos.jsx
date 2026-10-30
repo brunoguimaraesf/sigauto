@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { GlassPanel } from '../components/GlassPanel'
 import { useDatabase } from '../hooks/useDatabase'
-import { Plus, Search, Trash2, Edit2, CarFront, X } from 'lucide-react'
+import { Plus, Search, UserX, Edit2, CarFront, X } from 'lucide-react'
 import { normalizarPlaca, formatarPlaca, placaValida } from '../utils/placa'
 import css from './Veiculos.module.css'
 
@@ -121,7 +121,7 @@ export function Veiculos() {
           <p>Gerenciamento completo dos veículos cadastrados no sistema.</p>
         </div>
         <button className={`btn-primary ${css.btnNovo}`} onClick={handleOpenAdd}>
-          <Plus size={16} /> Adicionar Veículo
+          <Plus size={16} /> Novo Veículo
         </button>
       </section>
 
@@ -192,8 +192,14 @@ export function Veiculos() {
                           <button className={`btn-secondary ${css.btnAcao}`} onClick={() => handleOpenEdit(v)}>
                             <Edit2 size={12} /> Editar
                           </button>
-                          <button className={`btn-danger ${css.btnIcone}`} onClick={() => confirm(`Excluir ${v.marca} ${v.modelo} (${v.placa})?`) && deleteVeiculo(v.id).catch(err => alert(`Não foi possível inativar o veículo: ${err?.message || 'erro desconhecido'}`))}>
-                            <Trash2 size={14} />
+                          <button
+                            type="button"
+                            className={`btn-danger ${css.btnIcone}`}
+                            aria-label={`Inativar veículo ${v.marca} ${v.modelo} (${v.placa})`}
+                            title="Inativar veículo"
+                            onClick={() => confirm(`Inativar ${v.marca} ${v.modelo} (${v.placa})?`) && deleteVeiculo(v.id).catch(err => alert(`Não foi possível inativar o veículo: ${err?.message || 'erro desconhecido'}`))}
+                          >
+                            <UserX size={14} />
                           </button>
                         </div>
                       </td>
@@ -211,21 +217,23 @@ export function Veiculos() {
           <div className="modal-content">
             <div className="modal-header">
               <h3>{editingId ? 'Editar Veículo' : 'Cadastrar Novo Veículo'}</h3>
-              <button onClick={() => setModalOpen(false)} className={css.btnFechar}><X size={20} /></button>
+              <button type="button" onClick={() => setModalOpen(false)} className={css.btnFechar} aria-label="Fechar formulário de veículo" title="Fechar formulário"><X size={20} /></button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
+                <p className={css.legendaObrigatorios}>* Campos obrigatórios</p>
                 <div className="form-group">
-                  <label>Proprietário</label>
-                  <select className="form-control" value={clienteId} onChange={(e) => setClienteId(e.target.value)} required>
+                  <label htmlFor="veiculo-proprietario">Proprietário *</label>
+                  <select id="veiculo-proprietario" className="form-control" value={clienteId} onChange={(e) => setClienteId(e.target.value)} required>
                     <option value="">Selecione o cliente...</option>
                     {clientes.map(c => <option key={c.id} value={c.id}>{c.nome} ({c.telefone})</option>)}
                   </select>
                 </div>
 
                 <div className="form-group">
-                  <label>Placa do veículo</label>
+                  <label htmlFor="veiculo-placa">Placa do veículo *</label>
                   <input
+                    id="veiculo-placa"
                     type="text"
                     className={`form-control ${css.campoPlaca}`}
                     placeholder="Ex: ABC1D23 ou ABC-1234"
@@ -237,13 +245,13 @@ export function Veiculos() {
                 </div>
 
                 <div className="form-row">
-                  <div className="form-group"><label>Marca</label><input className="form-control" value={marca} onChange={(e) => setMarca(e.target.value)} required /></div>
-                  <div className="form-group"><label>Modelo</label><input className="form-control" value={modelo} onChange={(e) => setModelo(e.target.value)} required /></div>
+                  <div className="form-group"><label htmlFor="veiculo-marca">Marca *</label><input id="veiculo-marca" className="form-control" value={marca} onChange={(e) => setMarca(e.target.value)} required /></div>
+                  <div className="form-group"><label htmlFor="veiculo-modelo">Modelo *</label><input id="veiculo-modelo" className="form-control" value={modelo} onChange={(e) => setModelo(e.target.value)} required /></div>
                 </div>
 
                 <div className="form-row">
-                  <div className="form-group"><label>Ano</label><input className="form-control" value={ano} onChange={(e) => setAno(e.target.value)} required /></div>
-                  <div className="form-group"><label>Cor</label><input className="form-control" value={cor} onChange={(e) => setCor(e.target.value)} required /></div>
+                  <div className="form-group"><label htmlFor="veiculo-ano">Ano *</label><input id="veiculo-ano" className="form-control" value={ano} onChange={(e) => setAno(e.target.value)} required /></div>
+                  <div className="form-group"><label htmlFor="veiculo-cor">Cor *</label><input id="veiculo-cor" className="form-control" value={cor} onChange={(e) => setCor(e.target.value)} required /></div>
                 </div>
 
                 {editingId && (
@@ -274,7 +282,7 @@ export function Veiculos() {
 
               <div className="modal-footer">
                 <button type="button" className="btn-secondary" onClick={() => setModalOpen(false)}>Cancelar</button>
-                <button type="submit" className="btn-primary">{editingId ? 'Salvar Alterações' : 'Adicionar Veículo'}</button>
+                <button type="submit" className="btn-primary">{editingId ? 'Salvar Alterações' : 'Cadastrar Veículo'}</button>
               </div>
             </form>
           </div>

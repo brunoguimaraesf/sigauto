@@ -14,6 +14,12 @@
 
 /* Proprio desta tela. */
 
+.legendaObrigatorios {
+  margin: 0 0 16px;
+  color: var(--text-secondary);
+  font-size: 12px;
+}
+
 /* Erro de carregamento, em laranja em vez do cinza de .aviso. */
 .erro {
   composes: aviso from './listaPagina.module.css';

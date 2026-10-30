@@ -110,7 +110,7 @@ export function Sidebar({ aberta = false, onFechar = semAcao }) {
           <span className="user-role" style={{ color: pc.color }}>{pc.label}</span>
         </div>
         {isAuthenticated && (
-          <button onClick={handleLogout} title="Sair" className={css.logout}>
+          <button type="button" onClick={handleLogout} title="Sair" aria-label="Sair" className={css.logout}>
             <LogOut size={16} />
           </button>
         )}

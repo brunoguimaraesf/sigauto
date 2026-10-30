@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { GlassPanel } from '../components/GlassPanel'
 import { useDatabase } from '../hooks/useDatabase'
-import { Plus, Search, Trash2, Edit2, X, Car } from 'lucide-react'
+import { Plus, Search, UserX, Edit2, X, Car } from 'lucide-react'
 import { maskCpfCnpj, maskTelefone } from '../utils/masks'
 import { UFS, maskCep, cepValido, buscarCep, formatarEndereco } from '../utils/endereco'
 import { validarCpfCnpj, validarEmail } from '../utils/validacao'
@@ -35,11 +35,21 @@ export function Clientes() {
   const [endereco, setEndereco] = useState(enderecoEmBranco)
   const [buscandoCep, setBuscandoCep] = useState(false)
   const [erroCep, setErroCep] = useState('')
+  const [formSujo, setFormSujo] = useState(false)
 
   // Filtro de busca
   const [searchFilter, setSearchFilter] = useState('')
 
-  const setCampoEndereco = (campo, valor) => setEndereco(e => ({ ...e, [campo]: valor }))
+  const setCampoEndereco = (campo, valor) => {
+    setFormSujo(true)
+    setEndereco(e => ({ ...e, [campo]: valor }))
+  }
+
+  const fecharModal = () => {
+    if (formSujo && !confirm('Descartar as alterações não salvas?')) return
+    setModalOpen(false)
+    setFormSujo(false)
+  }
 
   // Preenche logradouro/bairro/cidade/UF pelo CEP. Se o ViaCEP nao responder, o
   // aviso e discreto e os campos seguem editaveis: digitar na mao sempre vale.
@@ -72,6 +82,7 @@ export function Clientes() {
     setTipoPessoa('fisica')
     setEndereco(enderecoEmBranco)
     setErroCep('')
+    setFormSujo(false)
     setModalOpen(true)
   }
 
@@ -85,6 +96,7 @@ export function Clientes() {
     setTipoPessoa(c.tipo_pessoa || 'fisica')
     setEndereco({ ...enderecoEmBranco, ...(c.endereco_estruturado || {}) })
     setErroCep('')
+    setFormSujo(false)
     setModalOpen(true)
   }
 
@@ -123,6 +135,7 @@ export function Clientes() {
       addCliente(payload).catch(err => alert(`Erro ao salvar cliente: ${err?.message || 'tente novamente.'}`))
     }
 
+    setFormSujo(false)
     setModalOpen(false)
   }
 
@@ -245,16 +258,19 @@ export function Clientes() {
                             <Edit2 size={12} /> Editar
                           </button>
                           <button 
+                            type="button"
                             className={`btn-danger ${css.btnIcone}`}
+                            aria-label={`Inativar cliente ${c.nome}`}
+                            title="Inativar cliente"
                             onClick={() => {
-                              if (confirm(`Tem certeza que deseja excluir o cliente ${c.nome}?`)) {
+                              if (confirm(`Tem certeza que deseja inativar o cliente ${c.nome}?`)) {
                                 deleteCliente(c.id).catch(err => {
                                   alert(`Não foi possível inativar o cliente: ${err?.message || 'erro desconhecido'}`)
                                 })
                               }
                             }}
                           >
-                            <Trash2 size={14} />
+                            <UserX size={14} />
                           </button>
                         </div>
                       </td>
@@ -273,43 +289,55 @@ export function Clientes() {
           <div className="modal-content">
             <div className="modal-header">
               <h3>{editingId ? 'Editar Dados do Cliente' : 'Cadastrar Novo Proprietário'}</h3>
-              <button onClick={() => setModalOpen(false)} className={css.btnFechar}><X size={20} /></button>
+              <button
+                type="button"
+                onClick={fecharModal}
+                className={css.btnFechar}
+                aria-label="Fechar formulário de cliente"
+                title="Fechar formulário"
+              >
+                <X size={20} />
+              </button>
             </div>
 
             <form onSubmit={handleSubmit}>
               <div className="modal-body">
+                <p className={css.legendaObrigatorios}>* Campos obrigatórios</p>
                 <div className="form-group">
-                  <label>Nome Completo</label>
+                  <label htmlFor="cliente-nome">Nome Completo *</label>
                   <input
+                    id="cliente-nome"
                     type="text"
                     className="form-control"
                     placeholder="Ex: Ayrton Senna da Silva"
                     value={nome}
-                    onChange={(e) => setNome(e.target.value)}
+                    onChange={(e) => { setNome(e.target.value); setFormSujo(true) }}
                     required
                   />
                 </div>
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label>Tipo de Pessoa</label>
+                    <label htmlFor="cliente-tipo-pessoa">Tipo de Pessoa</label>
                     <select
+                      id="cliente-tipo-pessoa"
                       className="form-control"
                       value={tipoPessoa}
-                      onChange={(e) => setTipoPessoa(e.target.value)}
+                      onChange={(e) => { setTipoPessoa(e.target.value); setFormSujo(true) }}
                     >
                       <option value="fisica">Pessoa Física</option>
                       <option value="juridica">Pessoa Jurídica</option>
                     </select>
                   </div>
                   <div className="form-group">
-                    <label>{tipoPessoa === 'juridica' ? 'CNPJ' : 'CPF'}</label>
+                    <label htmlFor="cliente-documento">{tipoPessoa === 'juridica' ? 'CNPJ *' : 'CPF *'}</label>
                     <input
+                      id="cliente-documento"
                       type="text"
                       className="form-control"
                       placeholder={tipoPessoa === 'juridica' ? '12.345.678/0001-99' : '123.456.789-00'}
                       value={cpfCnpj}
-                      onChange={(e) => setCpfCnpj(maskCpfCnpj(e.target.value, tipoPessoa))}
+                      onChange={(e) => { setCpfCnpj(maskCpfCnpj(e.target.value, tipoPessoa)); setFormSujo(true) }}
                       required
                     />
                   </div>
@@ -317,24 +345,25 @@ export function Clientes() {
 
                 <div className="form-row">
                   <div className="form-group">
-                    <label>E-mail de Contato</label>
+                    <label htmlFor="cliente-email">E-mail de Contato</label>
                     <input
+                      id="cliente-email"
                       type="email"
                       className="form-control"
                       placeholder="Ex: senna@mclaren.com"
                       value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      required
+                      onChange={(e) => { setEmail(e.target.value); setFormSujo(true) }}
                     />
                   </div>
                   <div className="form-group">
-                    <label>Telefone Celular</label>
+                    <label htmlFor="cliente-telefone">Telefone Celular *</label>
                     <input
+                      id="cliente-telefone"
                       type="text"
                       className="form-control"
                       placeholder="(11) 99876-5432"
                       value={telefone}
-                      onChange={(e) => setTelefone(maskTelefone(e.target.value))}
+                      onChange={(e) => { setTelefone(maskTelefone(e.target.value)); setFormSujo(true) }}
                       required
                     />
                   </div>
@@ -429,7 +458,7 @@ export function Clientes() {
               </div>
 
               <div className="modal-footer">
-                <button type="button" className="btn-secondary" onClick={() => setModalOpen(false)}>Cancelar</button>
+                <button type="button" className="btn-secondary" onClick={fecharModal}>Cancelar</button>
                 <button type="submit" className="btn-primary">{editingId ? 'Salvar Alterações' : 'Confirmar Cadastro'}</button>
               </div>
             </form>
