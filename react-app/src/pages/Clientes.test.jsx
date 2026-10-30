@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { render, screen, fireEvent } from '@testing-library/react'
+import { render, screen, fireEvent, waitFor } from '@testing-library/react'
 import { Clientes } from './Clientes'
 import { useDatabase } from '../hooks/useDatabase'
 
@@ -279,3 +279,107 @@ describe('Clientes — validação do formulário no submit', () => {
     expect(screen.getByText('🚗 José Ñuñez')).toBeInTheDocument()
   })
 })
+
+// RN07 com a regra compartilhada pelo cadastro rápido da abertura de O.S.
+describe('Clientes — documento obrigatorio e casos de CNPJ', () => {
+  let alerta
+  let addCliente
+
+  beforeEach(() => {
+    alerta = vi.fn()
+    addCliente = vi.fn().mockResolvedValue({})
+    vi.stubGlobal('alert', alerta)
+    useDatabase.mockReturnValue({ ...baseDb, addCliente })
+  })
+
+  it('deve_barrar_submit_sem_cpf', () => {
+    render(<Clientes />)
+    abrirEPreencher({ nome: 'Joao', email: '', telefone: '(64) 99999-0000', cpfCnpj: '' })
+    expect(alerta).toHaveBeenCalledWith('Informe o CPF do cliente.')
+    expect(addCliente).not.toHaveBeenCalled()
+  })
+
+  it('deve_barrar_submit_sem_cnpj', () => {
+    render(<Clientes />)
+    abrirEPreencher({ nome: 'Empresa', email: '', telefone: '(64) 3333-0000', cpfCnpj: '', tipoPessoa: 'juridica' })
+    expect(alerta).toHaveBeenCalledWith('Informe o CNPJ do cliente.')
+    expect(addCliente).not.toHaveBeenCalled()
+  })
+
+  it('deve_barrar_submit_quando_cnpj_tem_todos_os_digitos_iguais', () => {
+    render(<Clientes />)
+    abrirEPreencher({ nome: 'Empresa', email: '', telefone: '(64) 3333-0000', cpfCnpj: '11.111.111/1111-11', tipoPessoa: 'juridica' })
+    expect(alerta).toHaveBeenCalledWith('CNPJ inválido. Confira o número informado.')
+    expect(addCliente).not.toHaveBeenCalled()
+  })
+
+  it('deve_rejeitar_cnpj_ja_cadastrado_em_outro_cliente', () => {
+    useDatabase.mockReturnValue({
+      ...baseDb,
+      addCliente,
+      clientes: [{ id: 'c9', nome: 'Empresa Cadastrada', cpf_cnpj: CNPJ_VALIDO, tipo_pessoa: 'juridica' }],
+    })
+    render(<Clientes />)
+    abrirEPreencher({ nome: 'Outra Empresa', email: '', telefone: '(64) 3333-0000', cpfCnpj: CNPJ_VALIDO, tipoPessoa: 'juridica' })
+    expect(alerta).toHaveBeenCalledWith('CPF/CNPJ já cadastrado para outro cliente.')
+    expect(addCliente).not.toHaveBeenCalled()
+  })
+})
+
+// A janela só fecha depois que o banco confirma a gravação.
+describe('Clientes — falha de gravacao', () => {
+  let alerta
+
+  beforeEach(() => {
+    alerta = vi.fn()
+    vi.stubGlobal('alert', alerta)
+  })
+
+  it('fecha a janela apos gravacao bem-sucedida', async () => {
+    const addCliente = vi.fn().mockResolvedValue({ id: 'novo' })
+    useDatabase.mockReturnValue({ ...baseDb, addCliente })
+    render(<Clientes />)
+    abrirEPreencher({ nome: 'Joao', email: '', telefone: '(64) 99999-0000', cpfCnpj: CPF_VALIDO })
+
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Cadastrar Novo Proprietário' })).not.toBeInTheDocument())
+    expect(addCliente).toHaveBeenCalledTimes(1)
+    expect(alerta).not.toHaveBeenCalled()
+  })
+
+  it('mantem a janela e os dados apos falha controlada e permite nova tentativa', async () => {
+    const addCliente = vi.fn()
+      .mockRejectedValueOnce(new Error('Failed to fetch'))
+      .mockResolvedValueOnce({ id: 'novo' })
+    useDatabase.mockReturnValue({ ...baseDb, addCliente })
+    render(<Clientes />)
+    abrirEPreencher({ nome: 'Joao Retentativa', email: 'joao@exemplo.com', telefone: '(64) 99999-0000', cpfCnpj: CPF_VALIDO })
+
+    await waitFor(() => expect(alerta).toHaveBeenCalledWith(expect.stringContaining('Os dados digitados foram mantidos')))
+    expect(screen.getByRole('heading', { name: 'Cadastrar Novo Proprietário' })).toBeInTheDocument()
+    expect(screen.getByPlaceholderText(/Ayrton Senna/i)).toHaveValue('Joao Retentativa')
+    expect(screen.getByPlaceholderText(/123\.456\.789-00/)).toHaveValue(CPF_VALIDO)
+    expect(screen.getByPlaceholderText(/senna@mclaren\.com/i)).toHaveValue('joao@exemplo.com')
+
+    const botao = await screen.findByRole('button', { name: 'Confirmar Cadastro' })
+    fireEvent.submit(botao.closest('form'))
+    await waitFor(() => expect(addCliente).toHaveBeenCalledTimes(2))
+    await waitFor(() => expect(screen.queryByRole('heading', { name: 'Cadastrar Novo Proprietário' })).not.toBeInTheDocument())
+  })
+
+  it('falha na edicao tambem mantem a janela aberta', async () => {
+    const updateCliente = vi.fn().mockRejectedValueOnce(new Error('timeout'))
+    useDatabase.mockReturnValue({
+      ...baseDb,
+      updateCliente,
+      clientes: [{ id: 'c1', nome: 'Maria Souza', telefone: '(64) 99999-0000', email: '', tipo_pessoa: 'fisica', cpf_cnpj: CPF_VALIDO }],
+    })
+    render(<Clientes />)
+    fireEvent.click(screen.getByRole('button', { name: /Editar/i }))
+    fireEvent.submit(screen.getByRole('button', { name: 'Salvar Alterações' }).closest('form'))
+
+    await waitFor(() => expect(updateCliente).toHaveBeenCalledTimes(1))
+    await waitFor(() => expect(alerta).toHaveBeenCalled())
+    expect(screen.getByRole('heading', { name: 'Editar Dados do Cliente' })).toBeInTheDocument()
+  })
+})
+

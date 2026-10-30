@@ -95,7 +95,9 @@ const normalizeClienteForDb = (cliente) => ({
   ...(isUuid(cliente.id) ? { id: cliente.id } : {}),
   nome: cliente.nome,
   tipo_pessoa: cliente.tipo_pessoa || 'fisica',
-  cpf_cnpj: cliente.cpf_cnpj || `SC${Date.now().toString().slice(-9)}`,
+  // Sem identificador provisório: documento ausente chega nulo e é recusado
+  // pela restrição NOT NULL da coluna, em vez de ocupar o campo do CPF/CNPJ.
+  cpf_cnpj: cliente.cpf_cnpj || null,
   telefone: cliente.telefone || 'Nao informado',
   email: cliente.email || null,
   ativo: cliente.ativo !== false,
