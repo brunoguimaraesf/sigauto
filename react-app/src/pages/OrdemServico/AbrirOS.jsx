@@ -71,6 +71,18 @@ export function AbrirOS() {
   })
   const veiculoSelecionado = veiculos.find(v => v.id === veiculoId)
 
+  const formularioPreenchido = Boolean(
+    clienteId || veiculoId || mecanicoId || atendenteId || descricao.trim() || kmEntrada ||
+    observacoes.trim() || prioridade !== 'normal' || formaPagamento !== 'a_definir' ||
+    clienteForm.nome.trim() || clienteForm.telefone.trim() || clienteForm.email.trim() || clienteForm.cpf_cnpj.trim() ||
+    Object.values(veiculoForm).some(valor => String(valor).trim())
+  )
+
+  const cancelarAbertura = () => {
+    if (formularioPreenchido && !confirm('Descartar os dados preenchidos da O.S.?')) return
+    navigate('/ordens-servico')
+  }
+
   const garantirConsumidor = async () => {
     const existente = clientes.find(c => c.id === CONSUMIDOR_ID || c.nome?.toLowerCase() === 'consumidor')
     if (existente) return existente
@@ -258,22 +270,24 @@ export function AbrirOS() {
           <h2>Abrir Nova O.S.</h2>
           <p>Selecione o cliente, escolha o veículo e registre a entrada.</p>
         </div>
-        <button className={`btn-secondary ${css.btnVoltar}`} onClick={() => navigate('/ordens-servico')}>
+        <button type="button" className={`btn-secondary ${css.btnVoltar}`} onClick={cancelarAbertura}>
           <ArrowLeft size={16} /> Voltar
         </button>
       </section>
 
       <form onSubmit={handleSubmit}>
         <GlassPanel className="panel stagger-2">
+          <p className={css.legendaObrigatorios}>* Campos obrigatórios</p>
 
           {/* ── Linha 1: Cliente | Veículo ── */}
+          <h3 className={css.etapaTitulo}>1. Cliente e veículo</h3>
           <div className={css.colunas}>
 
             {/* CLIENTE */}
             <div>
               <div className={css.secaoHeader}>
                 <span className={css.secaoTitulo}>
-                  <User size={12} className={css.iconeRotulo} />Cliente
+                  <User size={12} className={css.iconeRotulo} />Cliente *
                 </span>
                 <button type="button" className={`btn-link ${css.btnAtalho}`} onClick={() => setNovoCliente(v => !v)}>
                   {novoCliente ? 'Usar existente' : '+ Novo'}
@@ -350,11 +364,23 @@ export function AbrirOS() {
                 </>
               ) : (
                 <div className={css.cadastroRapido}>
-                  <input className="form-control" placeholder="Nome *" value={clienteForm.nome} onChange={e => setClienteForm(f => ({ ...f, nome: e.target.value }))} />
-                  <input className="form-control" placeholder="(00) 00000-0000" value={clienteForm.telefone} onChange={e => setClienteForm(f => ({ ...f, telefone: maskTelefone(e.target.value) }))} />
+                  <div className={css.campoRapido}>
+                    <label htmlFor="os-cliente-nome">Nome *</label>
+                    <input id="os-cliente-nome" className="form-control" placeholder="Nome *" value={clienteForm.nome} onChange={e => setClienteForm(f => ({ ...f, nome: e.target.value }))} />
+                  </div>
+                  <div className={css.campoRapido}>
+                    <label htmlFor="os-cliente-telefone">Telefone</label>
+                    <input id="os-cliente-telefone" className="form-control" placeholder="(00) 00000-0000" value={clienteForm.telefone} onChange={e => setClienteForm(f => ({ ...f, telefone: maskTelefone(e.target.value) }))} />
+                  </div>
                   <div className={css.linha2}>
-                    <input className="form-control" type="email" placeholder="E-mail" value={clienteForm.email} onChange={e => setClienteForm(f => ({ ...f, email: e.target.value }))} />
-                    <input className="form-control" placeholder="CPF/CNPJ" value={clienteForm.cpf_cnpj} onChange={e => setClienteForm(f => ({ ...f, cpf_cnpj: maskCpfCnpj(e.target.value, f.tipo_pessoa) }))} />
+                    <div className={css.campoRapido}>
+                      <label htmlFor="os-cliente-email">E-mail</label>
+                      <input id="os-cliente-email" className="form-control" type="email" placeholder="E-mail" value={clienteForm.email} onChange={e => setClienteForm(f => ({ ...f, email: e.target.value }))} />
+                    </div>
+                    <div className={css.campoRapido}>
+                      <label htmlFor="os-cliente-documento">CPF/CNPJ</label>
+                      <input id="os-cliente-documento" className="form-control" placeholder="CPF/CNPJ" value={clienteForm.cpf_cnpj} onChange={e => setClienteForm(f => ({ ...f, cpf_cnpj: maskCpfCnpj(e.target.value, f.tipo_pessoa) }))} />
+                    </div>
                   </div>
                   <button type="button" className={`btn-secondary ${css.btnSalvarRapido}`} onClick={salvarClienteRapido}>
                     Salvar cliente
@@ -367,7 +393,7 @@ export function AbrirOS() {
             <div>
               <div className={css.secaoHeader}>
                 <span className={css.secaoTitulo}>
-                  <Car size={12} className={css.iconeRotulo} />Veículo
+                  <Car size={12} className={css.iconeRotulo} />Veículo *
                 </span>
                 <button type="button" className={`btn-link ${css.btnAtalho}`} onClick={() => setNovoVeiculo(v => !v)} disabled={!clienteId && !novoCliente}>
                   {novoVeiculo ? 'Usar cadastrado' : '+ Novo'}
@@ -376,7 +402,7 @@ export function AbrirOS() {
 
               {!novoVeiculo ? (
                 <>
-                  <select className="form-control" value={veiculoId} onChange={e => setVeiculoId(e.target.value)} disabled={!clienteId} required>
+                  <select aria-label="Veículo" className="form-control" value={veiculoId} onChange={e => setVeiculoId(e.target.value)} disabled={!clienteId} required>
                     <option value="">{clienteId ? 'Selecione o veículo...' : 'Selecione um cliente primeiro'}</option>
                     {veiculosDoCliente.map(v => <option key={v.id} value={v.id}>{v.placa} — {v.marca} {v.modelo}</option>)}
                   </select>
@@ -394,14 +420,32 @@ export function AbrirOS() {
               ) : (
                 <div className={css.cadastroRapido}>
                   <div className={css.linha3}>
-                    <input className="form-control" placeholder="Placa *" value={veiculoForm.placa} onChange={e => setVeiculoForm(f => ({ ...f, placa: maskPlaca(e.target.value) }))} />
-                    <input className="form-control" placeholder="Marca *" value={veiculoForm.marca} onChange={e => setVeiculoForm(f => ({ ...f, marca: e.target.value }))} />
-                    <input className="form-control" placeholder="Modelo *" value={veiculoForm.modelo} onChange={e => setVeiculoForm(f => ({ ...f, modelo: e.target.value }))} />
+                    <div className={css.campoRapido}>
+                      <label htmlFor="os-veiculo-placa">Placa *</label>
+                      <input id="os-veiculo-placa" className="form-control" placeholder="Placa *" value={veiculoForm.placa} onChange={e => setVeiculoForm(f => ({ ...f, placa: maskPlaca(e.target.value) }))} />
+                    </div>
+                    <div className={css.campoRapido}>
+                      <label htmlFor="os-veiculo-marca">Marca *</label>
+                      <input id="os-veiculo-marca" className="form-control" placeholder="Marca *" value={veiculoForm.marca} onChange={e => setVeiculoForm(f => ({ ...f, marca: e.target.value }))} />
+                    </div>
+                    <div className={css.campoRapido}>
+                      <label htmlFor="os-veiculo-modelo">Modelo *</label>
+                      <input id="os-veiculo-modelo" className="form-control" placeholder="Modelo *" value={veiculoForm.modelo} onChange={e => setVeiculoForm(f => ({ ...f, modelo: e.target.value }))} />
+                    </div>
                   </div>
                   <div className={css.linha3}>
-                    <input className="form-control" type="number" placeholder="Ano" value={veiculoForm.ano} onChange={e => setVeiculoForm(f => ({ ...f, ano: e.target.value }))} />
-                    <input className="form-control" placeholder="Cor" value={veiculoForm.cor} onChange={e => setVeiculoForm(f => ({ ...f, cor: e.target.value }))} />
-                    <input className="form-control" type="number" placeholder="KM atual" value={veiculoForm.km_atual} onChange={e => setVeiculoForm(f => ({ ...f, km_atual: e.target.value }))} />
+                    <div className={css.campoRapido}>
+                      <label htmlFor="os-veiculo-ano">Ano</label>
+                      <input id="os-veiculo-ano" className="form-control" type="number" placeholder="Ano" value={veiculoForm.ano} onChange={e => setVeiculoForm(f => ({ ...f, ano: e.target.value }))} />
+                    </div>
+                    <div className={css.campoRapido}>
+                      <label htmlFor="os-veiculo-cor">Cor</label>
+                      <input id="os-veiculo-cor" className="form-control" placeholder="Cor" value={veiculoForm.cor} onChange={e => setVeiculoForm(f => ({ ...f, cor: e.target.value }))} />
+                    </div>
+                    <div className={css.campoRapido}>
+                      <label htmlFor="os-veiculo-km">KM atual</label>
+                      <input id="os-veiculo-km" className="form-control" type="number" placeholder="KM atual" value={veiculoForm.km_atual} onChange={e => setVeiculoForm(f => ({ ...f, km_atual: e.target.value }))} />
+                    </div>
                   </div>
                   <button type="button" className={`btn-secondary ${css.btnSalvarRapido}`} onClick={() => salvarVeiculoRapido()}>
                     Salvar veículo
@@ -414,17 +458,18 @@ export function AbrirOS() {
           {/* ── Divisor ── */}
           <div className={css.divisor} />
 
+          <h3 className={css.etapaTitulo}>2. Responsáveis</h3>
           <div className={css.gradeEquipe}>
             <div className={`form-group ${css.campoSemMargem}`}>
-              <label><Wrench size={12} className={css.iconeRotulo} />Mecânico responsável</label>
-              <select className="form-control" value={mecanicoId} onChange={e => setMecanicoId(e.target.value)}>
+              <label htmlFor="os-mecanico"><Wrench size={12} className={css.iconeRotulo} />Mecânico responsável</label>
+              <select id="os-mecanico" className="form-control" value={mecanicoId} onChange={e => setMecanicoId(e.target.value)}>
                 <option value="">A definir</option>
                 {mecanicos.map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
               </select>
             </div>
             <div className={`form-group ${css.campoSemMargem}`}>
-              <label><User size={12} className={css.iconeRotulo} />Atendente responsável</label>
-              <select className="form-control" value={atendenteSelecionadoId} onChange={e => setAtendenteId(e.target.value)} required>
+              <label htmlFor="os-atendente"><User size={12} className={css.iconeRotulo} />Atendente responsável *</label>
+              <select id="os-atendente" className="form-control" value={atendenteSelecionadoId} onChange={e => setAtendenteId(e.target.value)} required>
                 <option value="">Selecione...</option>
                 {atendentes.map(a => <option key={a.id} value={a.id}>{a.nome}</option>)}
               </select>
@@ -434,9 +479,10 @@ export function AbrirOS() {
           <div className={css.divisor} />
 
           {/* ── Linha 2: Detalhes da O.S. ── */}
+          <h3 className={css.etapaTitulo}>3. Dados da entrada</h3>
           <div className={`form-group ${css.campoQueixa}`}>
-            <label>Queixa / Descrição do problema</label>
-            <textarea className={`form-control ${css.textarea}`} value={descricao} onChange={e => setDescricao(e.target.value)} minLength={10} required placeholder="Descreva a queixa do cliente e os sintomas observados..." />
+            <label htmlFor="os-queixa">Queixa / Descrição do problema *</label>
+            <textarea id="os-queixa" className={`form-control ${css.textarea}`} value={descricao} onChange={e => setDescricao(e.target.value)} minLength={10} required placeholder="Descreva a queixa do cliente e os sintomas observados..." />
           </div>
 
           <div className={css.gradeDetalhes}>
@@ -472,7 +518,7 @@ export function AbrirOS() {
           </div>
 
           <div className={css.acoesForm}>
-            <button type="button" className={`btn-secondary ${css.btnCancelar}`} onClick={() => navigate('/ordens-servico')}>Cancelar</button>
+            <button type="button" className={`btn-secondary ${css.btnCancelar}`} onClick={cancelarAbertura}>Cancelar</button>
             <button type="submit" className={`btn-primary ${css.btnConfirmar}`} disabled={submitting}>
               {submitting ? 'Registrando...' : 'Confirmar Abertura'}
             </button>

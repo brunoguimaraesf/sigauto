@@ -437,7 +437,7 @@ function ItensTable({ items, onRemove, locked }) {
               <td data-label="Total">{formatCurrency(getLineTotal(item))}</td>
               <td>
                 {!locked && (
-                  <button type="button" className="btn-danger" onClick={() => onRemove(item.id)} title="Remover item">
+                  <button type="button" className="btn-danger" onClick={() => onRemove(item.id)} title="Remover item" aria-label={`Remover ${item.descricao}`}>
                     <Trash2 size={12} />
                   </button>
                 )}
@@ -464,7 +464,7 @@ function ItensModal({ tipo, busca, setBusca, catalogo, selecionados, onAdd, onQt
       <div className={`modal-content ${css.modal}`}>
         <div className="modal-header">
           <h3>{tipo === 'servico' ? 'Adicionar servicos' : 'Adicionar produtos/pecas'}</h3>
-          <button onClick={onClose} className={css.btnFechar}><X size={20} /></button>
+          <button type="button" onClick={onClose} className={css.btnFechar} aria-label="Fechar seleção de itens" title="Fechar seleção"><X size={20} /></button>
         </div>
         <div className="modal-body">
           <div className={css.busca}>
@@ -530,7 +530,7 @@ function ItensSelecionados({ items, onQty, onRemove }) {
               <td data-label="Qtd"><input className={`form-control ${css.campoQtd}`} type="number" min="0.01" step="0.01" value={item.quantidade} onChange={e => onQty(item.id, e.target.value)} /></td>
               <td data-label="Valor unit.">{formatCurrency(item.valor_unitario)}</td>
               <td data-label="Total">{formatCurrency(getLineTotal(item))}</td>
-              <td><button type="button" className="btn-danger" onClick={() => onRemove(item.id)}><Trash2 size={12} /></button></td>
+              <td><button type="button" className="btn-danger" onClick={() => onRemove(item.id)} aria-label={`Remover ${item.descricao}`} title="Remover item"><Trash2 size={12} /></button></td>
             </tr>
           ))}
         </tbody>

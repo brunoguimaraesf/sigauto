@@ -151,7 +151,7 @@ export function Historico() {
           <div className={`modal-content ${css.modal}`}>
             <div className="modal-header">
               <h3>O.S. #{detalheModal.numero_os || detalheModal.id?.slice(-4)?.toUpperCase()} — Detalhes</h3>
-              <button onClick={() => setDetalheModal(null)} className={css.btnFechar}><X size={20} /></button>
+              <button type="button" onClick={() => setDetalheModal(null)} className={css.btnFechar} aria-label="Fechar detalhes da O.S." title="Fechar detalhes"><X size={20} /></button>
             </div>
             <div className="modal-body">
               <div className={css.grade}>

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { GlassPanel } from '../components/GlassPanel'
 import css from './Servicos.module.css'
 import { useDatabase } from '../hooks/useDatabase'
-import { Plus, Search, Trash2, Edit2, Wrench, X } from 'lucide-react'
+import { Plus, Search, UserX, Edit2, Wrench, X } from 'lucide-react'
 
 export function Servicos() {
   const {
@@ -153,14 +153,17 @@ export function Servicos() {
                           <Edit2 size={12} /> Editar
                         </button>
                         <button 
+                          type="button"
                           className={`btn-danger ${css.btnIcone}`}
+                          aria-label={`Inativar serviço ${s.nome}`}
+                          title="Inativar serviço"
                           onClick={() => {
-                            if (confirm(`Tem certeza que deseja remover o serviço ${s.nome} do catálogo?`)) {
+                            if (confirm(`Tem certeza que deseja inativar o serviço ${s.nome}?`)) {
                               deleteServico(s.id)
                             }
                           }}
                         >
-                          <Trash2 size={14} />
+                          <UserX size={14} />
                         </button>
                       </div>
                     </td>
@@ -178,7 +181,7 @@ export function Servicos() {
           <div className="modal-content">
             <div className="modal-header">
               <h3>{editingId ? 'Editar Detalhes do Serviço' : 'Cadastrar Novo Serviço no Catálogo'}</h3>
-              <button onClick={() => setModalOpen(false)} className={css.btnFechar}><X size={20} /></button>
+              <button type="button" onClick={() => setModalOpen(false)} className={css.btnFechar} aria-label="Fechar formulário de serviço" title="Fechar formulário"><X size={20} /></button>
             </div>
 
             <form onSubmit={handleSubmit}>

@@ -240,7 +240,7 @@ export function Usuarios() {
           <div className="modal-content">
             <div className="modal-header">
               <h3>{editandoId ? 'Editar Usuário' : 'Novo Usuário'}</h3>
-              <button onClick={() => setModalAberto(false)} className={css.btnFechar}><X size={20} /></button>
+              <button type="button" onClick={() => setModalAberto(false)} className={css.btnFechar} aria-label="Fechar formulário de usuário" title="Fechar formulário"><X size={20} /></button>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="modal-body">

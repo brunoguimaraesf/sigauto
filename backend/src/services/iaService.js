@@ -191,7 +191,7 @@ const MAPA_DO_SISTEMA = `MENUS REAIS (lateral esquerda), com quem enxerga cada u
 - Usuarios — apenas gestor
 
 FLUXOS PRINCIPAIS:
-- Abrir OS: menu "Ordens de Servico" > botao de nova OS. Informe a placa (o sistema busca o veiculo e o cliente), preencha a queixa e confirme. O numero da OS e gerado automaticamente. Restrito a gestor e atendente.
+- Abrir OS: menu "Ordens de Servico" > botao de nova OS. Busque por nome, CPF/CNPJ ou placa, selecione o cliente e depois selecione o veiculo; se nao existirem, use "+ Novo" para cadastra-los. Preencha a queixa e os demais dados obrigatorios e confirme. O numero da OS e gerado automaticamente. Restrito a gestor e atendente.
 - Atualizar OS: menu "Ordens de Servico" > clique na OS desejada. Gestor e atendente lancam servicos e pecas e mudam o status. O mecanico altera apenas diagnostico, observacoes e status das OS em que e o responsavel.
 - Encerrar OS: abra a OS e use a acao de encerrar; informe valor final e forma de pagamento. As pecas do estoque sao baixadas automaticamente. Restrito a gestor e atendente.
 - Reabrir OS concluida ou cancelada: abra a OS > botao "Reabrir O.S." > confirme. O status volta para Em andamento e a edicao e liberada. Restrito a gestor e atendente.

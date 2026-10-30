@@ -19,7 +19,7 @@ beforeEach(() => {
 })
 
 describe('Tela de Serviços', () => {
-  it.each([true, false])('RN46: só solicita a inativação do serviço escolhido se confirmar a remoção (%s)', (confirmado) => {
+  it.each([true, false])('RN46: só solicita a inativação do serviço escolhido após confirmação (%s)', (confirmado) => {
     useDatabase.mockReturnValue({
       ...baseDb,
       servicos: [
@@ -31,12 +31,10 @@ describe('Tela de Serviços', () => {
     try {
       render(<Servicos />)
       const linha = screen.getByText('Alinhamento').closest('tr')
-      // A ação de remover é o botão de ícone, sem texto acessível nesta tela.
-      const remover = within(linha).getAllByRole('button').find(botao => botao.textContent === '')
-      expect(remover).toBeDefined()
-      fireEvent.click(remover)
+      const inativar = within(linha).getByRole('button', { name: 'Inativar serviço Alinhamento' })
+      fireEvent.click(inativar)
 
-      expect(confirmar).toHaveBeenCalledExactlyOnceWith('Tem certeza que deseja remover o serviço Alinhamento do catálogo?')
+      expect(confirmar).toHaveBeenCalledExactlyOnceWith('Tem certeza que deseja inativar o serviço Alinhamento?')
       if (confirmado) {
         expect(baseDb.deleteServico).toHaveBeenCalledExactlyOnceWith('servico-2')
       } else {

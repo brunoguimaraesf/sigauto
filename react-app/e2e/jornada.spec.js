@@ -195,17 +195,17 @@ test.describe('caminhos alternativos e dados invalidos', () => {
 
   test('veiculo com placa invalida e recusado', async ({ page }) => {
     await page.getByRole('link', { name: 'Veículos', exact: true }).click()
-    await page.getByRole('button', { name: 'Adicionar Veículo' }).click()
+    await page.getByRole('button', { name: 'Novo Veículo' }).click()
 
     const modal = page.locator('.modal-content').filter({
       has: page.getByRole('heading', { name: 'Cadastrar Novo Veículo' }),
     })
-    await modal.getByRole('combobox').selectOption({ index: 1 })
-    await modal.getByPlaceholder(/ABC1D23/).fill('ABC123')
-    await modal.getByText('Marca', { exact: true }).locator('..').getByRole('textbox').fill('Fiat')
-    await modal.getByText('Modelo', { exact: true }).locator('..').getByRole('textbox').fill('Argo')
-    await modal.getByText('Ano', { exact: true }).locator('..').getByRole('textbox').fill('2024')
-    await modal.getByText('Cor', { exact: true }).locator('..').getByRole('textbox').fill('Prata')
+    await modal.getByLabel('Proprietário *').selectOption({ index: 1 })
+    await modal.getByLabel('Placa do veículo *').fill('ABC123')
+    await modal.getByLabel('Marca *').fill('Fiat')
+    await modal.getByLabel('Modelo *').fill('Argo')
+    await modal.getByLabel('Ano *').fill('2024')
+    await modal.getByLabel('Cor *').fill('Prata')
 
     const mensagemAviso = new Promise(resolve => page.once('dialog', async dialog => {
       const mensagem = dialog.message()
@@ -213,7 +213,7 @@ test.describe('caminhos alternativos e dados invalidos', () => {
       resolve(mensagem)
     }))
     const [, mensagem] = await Promise.all([
-      modal.getByRole('button', { name: 'Adicionar Veículo' }).click(),
+      modal.getByRole('button', { name: 'Cadastrar Veículo' }).click(),
       mensagemAviso,
     ])
     expect(mensagem).toContain('Placa inválida')

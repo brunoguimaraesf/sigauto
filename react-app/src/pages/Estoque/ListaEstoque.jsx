@@ -373,7 +373,7 @@ export function ListaEstoque() {
           <div className="modal-content">
             <div className="modal-header">
               <h3>{editingId ? 'Editar Item' : 'Novo Item de Estoque'}</h3>
-              <button onClick={() => setModalItem(null)} className={css.btnFechar}><X size={20} /></button>
+              <button type="button" onClick={() => setModalItem(null)} className={css.btnFechar} aria-label="Fechar formulário de item" title="Fechar formulário"><X size={20} /></button>
             </div>
             <form onSubmit={handleSalvarItem}>
               <div className="modal-body">
@@ -444,7 +444,7 @@ export function ListaEstoque() {
           <div className={`modal-content ${css.modalMovimentacao}`}>
             <div className="modal-header">
               <h3>Movimentação — {modalMovimentacao.nome}</h3>
-              <button onClick={() => setModalMovimentacao(null)} className={css.btnFechar}><X size={20} /></button>
+              <button type="button" onClick={() => setModalMovimentacao(null)} className={css.btnFechar} aria-label="Fechar movimentação de estoque" title="Fechar movimentação"><X size={20} /></button>
             </div>
             <form onSubmit={handleMovimentacao}>
               <div className="modal-body">
