@@ -72,6 +72,20 @@ describe('chatbot financeiro — integração do serviço com ferramentas', () =
     expect(consultar).not.toHaveBeenCalled()
   })
 
+  it('deve_pedir_periodo_quando_a_pergunta_financeira_nao_informar_um', async () => {
+    estado.tools = [ferramenta('faturamento', [])]
+    const consultar = vi.fn()
+    const resposta = await responderChatbot('Quanto eu faturei?', 'gestor', [], null, consultar)
+    const ferramentaFinanceira = estado.chamadas[0].tools[0].functionDeclarations[0]
+
+    expect(resposta).toBe('Informe o mês e o ano desejados, ou um intervalo com as duas datas completas. Qual ano e período devo consultar?')
+    expect(consultar).not.toHaveBeenCalled()
+    expect(ferramentaFinanceira.description).toContain('Sem período, chame com periodos vazio')
+    expect(ferramentaFinanceira.description).toContain('use tipo historico só para acumulado explícito')
+    expect(estado.chamadas[0].systemInstruction).toContain('Sem período, chame consultar_financeiro com periodos vazio')
+    expect(estado.chamadas[0].systemInstruction).toContain('use tipo historico só para acumulado explícito')
+  })
+
   it('deve_comparar_agosto_com_julho_com_diferenca_de_600_e_percentual', async () => {
     estado.tools = [ferramenta('comparacao_faturamento', [periodo(), periodo(7)])]
     const consultar = vi.fn().mockResolvedValue([agosto, [os('jul', 2900, '2026-07-15T12:00:00Z')]])

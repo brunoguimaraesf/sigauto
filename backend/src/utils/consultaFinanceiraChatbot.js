@@ -87,6 +87,8 @@ function interpretarPeriodos(texto, anteriores, agora) {
   const mesesNomeados = mesesNoTexto(texto)
   const relativo = /\b(este mes|deste mes|neste mes|nesse mes|desse mes|mes atual|mes passado|mes anterior)\b/.test(texto)
   const noventaDias = /\bultimos 90 dias\b/.test(texto)
+  // Histórico completo exige pedido explícito de acumulado; "hoje" sozinho não basta.
+  const marcadorAcumulado = /\b(?:no total|total geral|todo o historico|historico completo|desde o inicio|desde sempre|acumulad[oa]|de todos os tempos)\b/g
   const padraoDatas = /\b(\d{4}-\d{2}-\d{2}|\d{2}\/\d{2}\/\d{4})\b/g
   const datasTexto = [...texto.matchAll(padraoDatas)]
   const datas = datasTexto.map(match => match[0].includes('/') ? match[0].split('/').reverse().join('-') : match[0])
@@ -123,8 +125,12 @@ function interpretarPeriodos(texto, anteriores, agora) {
     if (anos.length > 1 && anos.length !== meses.length) return null
     return meses.map((m, i) => ({ tipo: 'mes', mes: m.mes, ano: anos.length > 1 ? +anos.at(i)[0] : anos.length ? +anos[0][0] : ultimoAno }))
   }
-  if (anos.length || /\b(semana|trimestre|semestre|anual|ano|dias|mes|meses|periodo|entre|desde|ate|hoje|ontem|amanha|anteontem|proximo|ultimo)\b/.test(texto)) return null
-  return [{ tipo: 'historico' }]
+  // O marcador de acumulado vale apenas quando nada mais recorta o tempo: em
+  // "desde o inicio do mes" o pedido é do mês, e devolver todo o histórico
+  // produziria um total plausível e errado.
+  const semMarcador = texto.replace(marcadorAcumulado, ' ')
+  if (anos.length || /\b(semana|trimestre|semestre|anual|ano|dias|mes|meses|periodo|entre|desde|ate|hoje|ontem|amanha|anteontem|proximo|ultimo)\b/.test(semMarcador)) return null
+  return semMarcador === texto ? null : [{ tipo: 'historico' }]
 }
 
 function metricaSolicitada(texto) {
