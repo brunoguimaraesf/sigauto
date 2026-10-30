@@ -195,7 +195,7 @@ test.describe('caminhos alternativos e dados invalidos', () => {
 
   test('veiculo com placa invalida e recusado', async ({ page }) => {
     await page.getByRole('link', { name: 'Veículos', exact: true }).click()
-    await page.getByRole('button', { name: 'Adicionar Veículo' }).click()
+    await page.getByRole('button', { name: 'Novo Veículo' }).click()
 
     const modal = page.locator('.modal-content').filter({
       has: page.getByRole('heading', { name: 'Cadastrar Novo Veículo' }),
@@ -213,7 +213,7 @@ test.describe('caminhos alternativos e dados invalidos', () => {
       resolve(mensagem)
     }))
     const [, mensagem] = await Promise.all([
-      modal.getByRole('button', { name: 'Adicionar Veículo' }).click(),
+      modal.getByRole('button', { name: 'Cadastrar Veículo' }).click(),
       mensagemAviso,
     ])
     expect(mensagem).toContain('Placa inválida')
