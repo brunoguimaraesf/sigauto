@@ -9,8 +9,9 @@ vi.mock('../../hooks/useDatabase', () => ({ useDatabase: vi.fn() }))
 
 const baseDb = {
   clientes: [
-    { id: 'c1', nome: 'João Silva', cpf_cnpj: '123.456.789-09' },
-    { id: 'c2', nome: 'Maria Souza', cpf_cnpj: '987.654.321-00' },
+    { id: 'c1', nome: 'João Silva', cpf_cnpj: '123.456.789-09', tipo_pessoa: 'fisica', telefone: '(64) 99999-0001' },
+    { id: 'c2', nome: 'Maria Souza', cpf_cnpj: '987.654.321-00', tipo_pessoa: 'fisica', telefone: '(64) 99999-0002' },
+    { id: 'c3', nome: 'Auto Peças LTDA', cpf_cnpj: '12.345.678/0001-95', tipo_pessoa: 'juridica', telefone: '(64) 3333-0003' },
   ],
   veiculos: [{ id: 'v1', cliente_id: 'c1', placa: 'ABC1D23', marca: 'VW', modelo: 'Gol' }],
   funcionarios: [
@@ -81,7 +82,18 @@ describe('Tela de Abrir O.S.', () => {
     fireEvent.change(campoBusca(), { target: { value: 'maria' } })
 
     expect(screen.getByText('Maria Souza')).toBeInTheDocument()
+    expect(screen.getByText('CPF: 987.654.321-00')).toBeInTheDocument()
+    expect(screen.queryByText('(64) 99999-0002')).not.toBeInTheDocument()
     expect(screen.queryByText('João Silva')).not.toBeInTheDocument()
+  })
+
+  it('identifica CNPJ abaixo do nome para pessoa jurídica', () => {
+    renderPage()
+    fireEvent.change(campoBusca(), { target: { value: 'auto peças' } })
+
+    expect(screen.getByText('Auto Peças LTDA')).toBeInTheDocument()
+    expect(screen.getByText('CNPJ: 12.345.678/0001-95')).toBeInTheDocument()
+    expect(screen.queryByText('(64) 3333-0003')).not.toBeInTheDocument()
   })
 
   it('busca cliente por CPF', () => {

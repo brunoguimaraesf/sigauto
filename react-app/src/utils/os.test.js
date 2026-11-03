@@ -5,13 +5,17 @@ describe('statusOSLabel', () => {
   it('mapeia os valores do enum', () => {
     expect(statusOSLabel('aberta')).toBe('Aberta')
     expect(statusOSLabel('em_andamento')).toBe('Em Andamento')
-    expect(statusOSLabel('aguardando_peca')).toBe('Aguard. Peça')
+    expect(statusOSLabel('aguardando_peca')).toBe('Aguardando Peça')
     expect(statusOSLabel('concluida')).toBe('Concluída')
     expect(statusOSLabel('cancelada')).toBe('Cancelada')
   })
   it('aceita valores legados em português', () => {
     expect(statusOSLabel('Pendente')).toBe('Aberta')
     expect(statusOSLabel('Concluído')).toBe('Concluída')
+  })
+  it('normaliza enums recebidos em caixa alta', () => {
+    expect(statusOSLabel('EM_ANDAMENTO')).toBe('Em Andamento')
+    expect(statusOSLabel('AGUARDANDO_PECA')).toBe('Aguardando Peça')
   })
   it('retorna o próprio valor quando desconhecido', () => {
     expect(statusOSLabel('qualquer')).toBe('qualquer')

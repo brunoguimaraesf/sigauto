@@ -2,10 +2,10 @@ import { describe, it, expect } from 'vitest'
 import { filtrarClientesPorTermo, descreverResultado } from './clienteBusca'
 
 const CLIENTES = [
-  { id: 'c1', nome: 'João Gonçalves', cpf_cnpj: '123.456.789-09', telefone: '(64) 99999-0001', ativo: true },
-  { id: 'c2', nome: 'Maria Souza', cpf_cnpj: '987.654.321-00', telefone: '(64) 99999-0002', ativo: true },
-  { id: 'c3', nome: 'Auto Pecas LTDA', cpf_cnpj: '12.345.678/0001-95', telefone: '(64) 3333-0003', ativo: true },
-  { id: 'c4', nome: 'Cliente Inativo', cpf_cnpj: '111.222.333-44', ativo: false },
+  { id: 'c1', nome: 'João Gonçalves', cpf_cnpj: '123.456.789-09', tipo_pessoa: 'fisica', telefone: '(64) 99999-0001', ativo: true },
+  { id: 'c2', nome: 'Maria Souza', cpf_cnpj: '987.654.321-00', tipo_pessoa: 'fisica', telefone: '(64) 99999-0002', ativo: true },
+  { id: 'c3', nome: 'Auto Pecas LTDA', cpf_cnpj: '12.345.678/0001-95', tipo_pessoa: 'juridica', telefone: '(64) 3333-0003', ativo: true },
+  { id: 'c4', nome: 'Cliente Inativo', cpf_cnpj: '111.222.333-44', tipo_pessoa: 'fisica', ativo: false },
 ]
 
 const VEICULOS = [
@@ -94,10 +94,14 @@ describe('descreverResultado', () => {
   })
 
   it('mostra o documento quando o casamento foi por documento', () => {
-    expect(descreverResultado(buscar('12345678909')[0])).toBe('123.456.789-09')
+    expect(descreverResultado(buscar('12345678909')[0])).toBe('CPF: 123.456.789-09')
   })
 
-  it('mostra o telefone quando o casamento foi por nome', () => {
-    expect(descreverResultado(buscar('maria')[0])).toBe('(64) 99999-0002')
+  it('mostra CPF em vez do telefone quando o casamento foi por nome', () => {
+    expect(descreverResultado(buscar('maria')[0])).toBe('CPF: 987.654.321-00')
+  })
+
+  it('identifica CNPJ de pessoa jurídica', () => {
+    expect(descreverResultado(buscar('auto pecas')[0])).toBe('CNPJ: 12.345.678/0001-95')
   })
 })
