@@ -1,4 +1,5 @@
 import { GlassPanel } from '../GlassPanel'
+import { statusOSLabel } from '../../utils/os'
 import css from './ProdutividadeOS.module.css'
 
 const ROTULOS_STATUS = {
@@ -47,7 +48,7 @@ export function ProdutividadeOS({ produtividade }) {
       <section className={css.secao} aria-label="Ordens abertas há mais tempo">
         <h4 className={css.secaoTitulo}>OS abertas há mais tempo</h4>
         {antigas.length === 0 ? <p className={css.vazio}>Não há OS abertas para listar.</p> : (
-          <div className={css.scroll}><table className={`data-table ${css.tabelaAntigas}`}><thead><tr><th>OS</th><th>Status</th><th>Data de abertura</th></tr></thead><tbody>{antigas.map((os, indice) => <tr key={os.id ?? `${os.numero_os}-${indice}`}><td data-label="OS">{os.numero_os ?? '—'}</td><td data-label="Status">{os.status ?? '—'}</td><td data-label="Abertura">{data(os.data_abertura)}</td></tr>)}</tbody></table></div>
+          <div className={css.scroll}><table className={`data-table ${css.tabelaAntigas}`}><thead><tr><th>OS</th><th>Status</th><th>Data de abertura</th></tr></thead><tbody>{antigas.map((os, indice) => <tr key={os.id ?? `${os.numero_os}-${indice}`}><td data-label="OS">{os.numero_os ?? '—'}</td><td data-label="Status">{os.status ? statusOSLabel(os.status) : '—'}</td><td data-label="Abertura">{data(os.data_abertura)}</td></tr>)}</tbody></table></div>
         )}
       </section>
       <section className={css.secao} aria-label="Conclusões por mecânico">

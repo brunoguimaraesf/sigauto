@@ -5,7 +5,7 @@
 const LABELS = {
   aberta: 'Aberta', Pendente: 'Aberta',
   em_andamento: 'Em Andamento', 'Em Andamento': 'Em Andamento',
-  aguardando_peca: 'Aguard. Peça',
+  aguardando_peca: 'Aguardando Peça',
   concluida: 'Concluída', 'Concluído': 'Concluída',
   cancelada: 'Cancelada',
 }
@@ -35,7 +35,8 @@ export function statusOSCanonico(status) {
 }
 
 export function statusOSLabel(status) {
-  return LABELS[status] || status || 'Aberta'
+  const normalizado = typeof status === 'string' ? status.toLowerCase() : status
+  return LABELS[status] || LABELS[normalizado] || status || 'Aberta'
 }
 
 export function statusOSClasse(status) {

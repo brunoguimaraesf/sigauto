@@ -149,6 +149,21 @@ describe('Painel de IA', () => {
     expect(screen.getAllByText('Sem consumo no período').length).toBeGreaterThan(0)
   })
 
+  it('mostra a nomenclatura da O.S. em vez dos valores internos de status', async () => {
+    const comStatus = structuredClone(ANALISE_COMPLETA)
+    comStatus.produtividade.os_abertas_mais_antigas = [
+      { id: 'os-1', numero_os: 101, status: 'EM_ANDAMENTO', data_abertura: '2026-01-01T12:00:00.000Z' },
+      { id: 'os-2', numero_os: 102, status: 'AGUARDANDO_PECA', data_abertura: '2026-01-02T12:00:00.000Z' },
+    ]
+
+    await analisarCom(comStatus)
+
+    expect(screen.getByText('Em Andamento')).toBeInTheDocument()
+    expect(screen.getByText('Aguardando Peça')).toBeInTheDocument()
+    expect(screen.queryByText('EM_ANDAMENTO')).not.toBeInTheDocument()
+    expect(screen.queryByText('AGUARDANDO_PECA')).not.toBeInTheDocument()
+  })
+
   it('trata listas vazias sem quebrar a tela', async () => {
     const semListas = structuredClone(ANALISE_COMPLETA)
     semListas.estoque_inteligente = { mais_consumidos: [], itens_criticos: [], itens_parados: [] }

@@ -55,6 +55,82 @@
   text-transform: uppercase;
 }
 
+.buscaProprietario {
+  position: relative;
+}
+
+.buscaProprietarioIcone {
+  position: absolute;
+  left: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+:global(.form-control).buscaProprietarioInput {
+  padding-left: 34px;
+}
+
+.semResultado {
+  margin-top: 8px;
+  color: var(--text-muted);
+  font-size: 12px;
+}
+
+.resultadosProprietarios {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.resultadoProprietario {
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-bottom: 1px solid var(--border-color);
+  background: transparent;
+  color: var(--text-primary);
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.resultadoProprietario:hover,
+.resultadoProprietario:focus-visible {
+  background: var(--bg-subtle);
+}
+
+.resultadoDetalhe {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.proprietarioSelecionado {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 12px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background: var(--bg-subtle);
+}
+
+.proprietarioNome {
+  display: block;
+  font-size: 13px;
+}
+
+.btnTrocar {
+  font-size: 11px;
+  white-space: nowrap;
+}
+
 /* ── Mobile ── */
 @media (max-width: 768px) {
   .observacao {

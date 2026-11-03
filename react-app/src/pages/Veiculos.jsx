@@ -3,6 +3,7 @@ import { GlassPanel } from '../components/GlassPanel'
 import { useDatabase } from '../hooks/useDatabase'
 import { Plus, Search, UserX, Edit2, CarFront, X } from 'lucide-react'
 import { normalizarPlaca, formatarPlaca, placaValida } from '../utils/placa'
+import { descreverResultado, filtrarClientesPorTermo } from '../utils/clienteBusca'
 import css from './Veiculos.module.css'
 
 export function Veiculos() {
@@ -20,6 +21,7 @@ export function Veiculos() {
   const [servicoAtual, setServicoAtual] = useState('')
   const [observacoes, setObservacoes] = useState('')
   const [searchFilter, setSearchFilter] = useState('')
+  const [buscaProprietario, setBuscaProprietario] = useState('')
 
   const resetForm = () => {
     setMarca('')
@@ -31,6 +33,7 @@ export function Veiculos() {
     setStatus('Pendente')
     setServicoAtual('')
     setObservacoes('')
+    setBuscaProprietario('')
   }
 
   const handleOpenAdd = () => {
@@ -50,6 +53,7 @@ export function Veiculos() {
     setStatus(v.status || 'Pendente')
     setServicoAtual(v.servico_atual || '')
     setObservacoes(v.observacoes || '')
+    setBuscaProprietario('')
     setModalOpen(true)
   }
 
@@ -112,6 +116,8 @@ export function Veiculos() {
       client.nome.toLowerCase().includes(term)
     )
   })
+  const proprietarioSelecionado = clientes.find(cliente => cliente.id === clienteId)
+  const resultadosProprietarios = filtrarClientesPorTermo(clientes, [], buscaProprietario, 8)
 
   return (
     <div className="dashboard-grid">
@@ -224,10 +230,49 @@ export function Veiculos() {
                 <p className={css.legendaObrigatorios}>* Campos obrigatórios</p>
                 <div className="form-group">
                   <label htmlFor="veiculo-proprietario">Proprietário *</label>
-                  <select id="veiculo-proprietario" className="form-control" value={clienteId} onChange={(e) => setClienteId(e.target.value)} required>
-                    <option value="">Selecione o cliente...</option>
-                    {clientes.map(c => <option key={c.id} value={c.id}>{c.nome} ({c.telefone})</option>)}
-                  </select>
+                  {proprietarioSelecionado ? (
+                    <div className={css.proprietarioSelecionado}>
+                      <div>
+                        <strong className={css.proprietarioNome}>{proprietarioSelecionado.nome}</strong>
+                        <span className={css.resultadoDetalhe}>{descreverResultado({ cliente: proprietarioSelecionado, motivo: 'nome' })}</span>
+                      </div>
+                      <button type="button" className={`btn-link ${css.btnTrocar}`} onClick={() => { setClienteId(''); setBuscaProprietario('') }}>Trocar</button>
+                    </div>
+                  ) : (
+                    <>
+                      <div className={css.buscaProprietario}>
+                        <Search size={16} className={css.buscaProprietarioIcone} />
+                        <input
+                          id="veiculo-proprietario"
+                          type="search"
+                          className={`form-control ${css.buscaProprietarioInput}`}
+                          placeholder="Buscar por nome, CPF ou CNPJ"
+                          value={buscaProprietario}
+                          onChange={(e) => setBuscaProprietario(e.target.value)}
+                          required
+                        />
+                      </div>
+                      {buscaProprietario.trim() && resultadosProprietarios.length === 0 && (
+                        <div className={css.semResultado}>Nenhum proprietário ativo encontrado.</div>
+                      )}
+                      {resultadosProprietarios.length > 0 && (
+                        <ul className={css.resultadosProprietarios}>
+                          {resultadosProprietarios.map(resultado => (
+                            <li key={resultado.cliente.id}>
+                              <button
+                                type="button"
+                                className={css.resultadoProprietario}
+                                onClick={() => { setClienteId(resultado.cliente.id); setBuscaProprietario('') }}
+                              >
+                                {resultado.cliente.nome}
+                                <span className={css.resultadoDetalhe}>{descreverResultado(resultado)}</span>
+                              </button>
+                            </li>
+                          ))}
+                        </ul>
+                      )}
+                    </>
+                  )}
                 </div>
 
                 <div className="form-group">

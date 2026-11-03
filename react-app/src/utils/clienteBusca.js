@@ -5,6 +5,7 @@
 // o documento, e nao o nome exato como foi cadastrado.
 
 import { normalizarPlaca } from './placa'
+import { maskCpfCnpj } from './masks'
 
 const semAcento = (v = '') =>
   (v || '')
@@ -72,6 +73,7 @@ export function descreverResultado({ cliente, motivo, veiculo }) {
     const modelo = [veiculo.marca, veiculo.modelo].filter(Boolean).join(' ')
     return `Placa ${veiculo.placa}${modelo ? ` — ${modelo}` : ''}`
   }
-  if (motivo === 'documento') return cliente.cpf_cnpj || ''
-  return cliente.telefone || ''
+  const tipoDocumento = cliente.tipo_pessoa === 'juridica' ? 'CNPJ' : 'CPF'
+  const documento = maskCpfCnpj(cliente.cpf_cnpj || '', cliente.tipo_pessoa)
+  return `${tipoDocumento}: ${documento || 'Não informado'}`
 }

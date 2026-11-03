@@ -8,7 +8,7 @@ vi.mock('../hooks/useDatabase', () => ({ useDatabase: vi.fn() }))
 
 const baseDb = {
   loading: false,
-  clientes: [{ id: 'c1', nome: 'Maria Souza' }],
+  clientes: [{ id: 'c1', nome: 'Maria Souza', cpf_cnpj: '987.654.321-00', tipo_pessoa: 'fisica', ativo: true }],
   veiculos: [
     { id: 'v1', cliente_id: 'c1', placa: 'XYZ1A11', marca: 'Fiat', modelo: 'Uno', ano: 2020, cor: 'Prata', status: 'Pendente' },
     { id: 'v2', cliente_id: 'c1', placa: 'DEF4G55', marca: 'VW', modelo: 'Gol', ano: 2018, cor: 'Preto', status: 'Pendente' },
@@ -56,15 +56,18 @@ describe('Tela de Veiculos', () => {
 // formato de placa e duplicidade insensível a hífen e a caixa.
 // ─────────────────────────────────────────────────────────────────────────────
 
-const CLIENTE_ATIVO = { id: 'c1', nome: 'Maria Souza', telefone: '(64) 99999-0000', ativo: true }
-const CLIENTE_INATIVO = { id: 'c2', nome: 'Joao Inativo', telefone: '(64) 98888-0000', ativo: false }
+const CLIENTE_ATIVO = { id: 'c1', nome: 'Maria Souza', cpf_cnpj: '987.654.321-00', tipo_pessoa: 'fisica', telefone: '(64) 99999-0000', ativo: true }
+const CLIENTE_INATIVO = { id: 'c2', nome: 'Joao Inativo', cpf_cnpj: '111.222.333-44', tipo_pessoa: 'fisica', telefone: '(64) 98888-0000', ativo: false }
 
 // Preenche o modal de criação e dispara o submit direto no <form>, para exercitar
 // o handleSubmit e não a validação nativa do navegador.
 function cadastrarVeiculo({ clienteId, placa, marca = 'Fiat', modelo = 'Uno', ano = '2020', cor = 'Prata' }) {
   fireEvent.click(screen.getByRole('button', { name: /Novo Veículo/i }))
-  if (clienteId !== undefined) {
-    fireEvent.change(screen.getByRole('combobox'), { target: { value: clienteId } })
+  if (clienteId) {
+    const nomes = { c1: 'Maria Souza', c2: 'Joao Inativo' }
+    fireEvent.change(screen.getByRole('searchbox', { name: 'Proprietário *' }), { target: { value: nomes[clienteId] || clienteId } })
+    const resultado = screen.queryByRole('button', { name: new RegExp(nomes[clienteId] || clienteId, 'i') })
+    if (resultado) fireEvent.click(resultado)
   }
   if (placa !== undefined) {
     fireEvent.change(screen.getByPlaceholderText(/ABC1D23/i), { target: { value: placa } })
@@ -103,6 +106,20 @@ describe('Veiculos — validação do formulário no submit', () => {
     expect(screen.getByLabelText('Placa do veículo *')).toBeRequired()
     expect(screen.getByLabelText('Marca *')).toBeRequired()
     expect(screen.getByLabelText('Modelo *')).toBeRequired()
+  })
+
+  it('filtra proprietarios por nome e documento sem usar caixa de selecao', () => {
+    const empresa = { id: 'c3', nome: 'Oficina Parceira LTDA', cpf_cnpj: '12.345.678/0001-95', tipo_pessoa: 'juridica', ativo: true }
+    montar([], [CLIENTE_ATIVO, empresa])
+    fireEvent.click(screen.getByRole('button', { name: /Novo Veículo/i }))
+
+    const busca = screen.getByRole('searchbox', { name: 'Proprietário *' })
+    expect(screen.queryByRole('combobox', { name: 'Proprietário *' })).not.toBeInTheDocument()
+    fireEvent.change(busca, { target: { value: '12345678' } })
+
+    expect(screen.getByRole('button', { name: /Oficina Parceira LTDA/i })).toBeInTheDocument()
+    expect(screen.getByText('CNPJ: 12.345.678/0001-95')).toBeInTheDocument()
+    expect(screen.queryByRole('button', { name: /Maria Souza/i })).not.toBeInTheDocument()
   })
 
   it('deve_barrar_submit_sem_proprietario_associado', () => {
@@ -182,20 +199,32 @@ describe('Veiculos — validação do formulário no submit', () => {
     expect(updateVeiculo).toHaveBeenCalledWith('v1', expect.objectContaining({ placa: 'ABC-1234' }))
   })
 
-  // BUG: Veiculos.jsx:62-81 não checa `ativo` do cliente. O select só não lista
-  // o inativo porque useDatabase já filtra `ativo = true` na leitura — não há
-  // regra na tela. Com o cliente inativo presente na lista (p. ex. inativado em
-  // outra aba antes do reload), o veículo é aceito e gravado nele.
   it('deve_rejeitar_veiculo_novo_para_cliente_inativo', () => {
-    montar([], [CLIENTE_ATIVO, CLIENTE_INATIVO])
-    cadastrarVeiculo({ clienteId: 'c2', placa: 'ABC1D23' })
-    expect(addVeiculo).not.toHaveBeenCalled()
+    const updateVeiculo = vi.fn()
+    useDatabase.mockReturnValue({
+      ...baseDb,
+      clientes: [CLIENTE_ATIVO, CLIENTE_INATIVO],
+      veiculos: [{ id: 'v2', cliente_id: 'c2', placa: 'ABC1D23', marca: 'VW', modelo: 'Gol', ano: 2020, cor: 'Prata' }],
+      updateVeiculo,
+    })
+    render(<Veiculos />)
+    fireEvent.click(screen.getByRole('button', { name: /Editar/i }))
+    fireEvent.submit(screen.getByRole('button', { name: /Salvar Alterações/i }).closest('form'))
+    expect(updateVeiculo).not.toHaveBeenCalled()
   })
 
   it('deve_rejeitar_cliente_que_nao_existe_na_lista_atual', () => {
-    montar([], [CLIENTE_ATIVO])
-    cadastrarVeiculo({ clienteId: 'cliente-removido', placa: 'ABC1D23' })
-    expect(addVeiculo).not.toHaveBeenCalled()
+    const updateVeiculo = vi.fn()
+    useDatabase.mockReturnValue({
+      ...baseDb,
+      clientes: [CLIENTE_ATIVO],
+      veiculos: [{ id: 'v3', cliente_id: 'cliente-removido', placa: 'ABC1D23', marca: 'VW', modelo: 'Gol', ano: 2020, cor: 'Prata' }],
+      updateVeiculo,
+    })
+    render(<Veiculos />)
+    fireEvent.click(screen.getByRole('button', { name: /Editar/i }))
+    fireEvent.submit(screen.getByRole('button', { name: /Salvar Alterações/i }).closest('form'))
+    expect(updateVeiculo).not.toHaveBeenCalled()
   })
 
 })

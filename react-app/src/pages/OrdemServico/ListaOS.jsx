@@ -10,7 +10,7 @@ import css from './ListaOS.module.css'
 const STATUS_COLORS = {
   aberta: { color: 'var(--status-pending)', border: 'var(--color-warning-border)', bg: 'var(--color-warning-border)', label: 'Aberta' },
   em_andamento: { color: 'var(--status-progress)', border: 'var(--color-primary-border)', bg: 'var(--color-primary-border)', label: 'Em Andamento' },
-  aguardando_peca: { color: 'var(--color-primary)', border: 'var(--color-primary-border)', bg: 'var(--color-primary-border)', label: 'Aguard. Peça' },
+  aguardando_peca: { color: 'var(--color-primary)', border: 'var(--color-primary-border)', bg: 'var(--color-primary-border)', label: 'Aguardando Peça' },
   concluida: { color: 'var(--status-done)', border: 'var(--color-success-border)', bg: 'var(--color-success-border)', label: 'Concluída' },
   cancelada: { color: 'var(--text-muted)', border: 'var(--border-color)', bg: 'var(--text-secondary)', label: 'Cancelada' },
   // Compat com dados legado
